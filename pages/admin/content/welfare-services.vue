@@ -53,7 +53,7 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-if="loading">
+          <tr v-if="pending">
             <td colspan="6" class="px-6 py-12 text-center text-gray-500">
               <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -62,7 +62,7 @@
               <p class="mt-2">데이터를 불러오는 중입니다...</p>
             </td>
           </tr>
-          <tr v-else-if="!loading && welfareServices.length === 0">
+          <tr v-else-if="!pending && welfareServices.length === 0">
             <td colspan="6" class="px-6 py-12 text-center text-gray-500">
               <div class="flex flex-col items-center">
                 <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -181,27 +181,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import type { WelfareService as ServerWelfareService } from '~/server/utils/dao/welfare-service-dao';
 
 interface WelfareService extends ServerWelfareService {}
 
-const welfareServices = ref<WelfareService[]>([]);
 const selectedWelfareService = ref<WelfareService | null>(null);
 const editableIsExposed = ref(false);
 const editableAdminMemo = ref('');
 
-const loading = ref(true);
 const currentPage = ref(1);
-const itemsPerPage = ref(10); // 한 페이지에 표시할 항목 수
-const totalItems = ref(0);
-
+const itemsPerPage = ref(10);
 const searchQuery = ref('');
 const filterIsExposed = ref<string>(''); // 'true', 'false', or ''
 
-const toast = ref<{ message: string; type: 'success' | 'error' } | null>(null);
+const toast = ref<{ message: string; type: 'success' | 'error' | 'warn' } | null>(null);
 
-const showToast = (message: string, type: 'success' | 'error') => {
+const showToast = (message: string, type: 'success' | 'error' | 'warn') => {
   toast.value = { message, type };
   setTimeout(() => {
     toast.value = null;
@@ -212,13 +208,61 @@ const dismissToast = () => {
   toast.value = null;
 };
 
+// useFetch를 위한 파라미터 정의 (computed 사용)
+const queryParams = computed(() => {
+  const params: Record<string, any> = {
+    page: currentPage.value,
+    limit: itemsPerPage.value,
+    searchQuery: searchQuery.value || undefined, // 빈 문자열이면 undefined로 보내서 쿼리에서 제외
+  };
+  if (filterIsExposed.value) {
+    params.isExposed = filterIsExposed.value;
+  }
+  return params;
+});
+
+// useFetch를 사용하여 데이터 가져오기
+const { data: apiResponse, pending, error, refresh: refreshWelfareServices } = useFetch('/api/admin/welfare-services', {
+  method: 'GET',
+  params: queryParams, // computed 속성 사용
+  headers: useRequestHeaders(['cookie']),
+  // watch: [queryParams], // Nuxt 3.8+ 에서는 computed 객체 내부의 ref 변경을 자동으로 감지합니다.
+                        // 하위 버전의 경우 명시적으로 queryParams를 watch하거나, 내부 ref들을 watch 배열에 넣어야 할 수 있습니다.
+});
+
+// API 응답에서 실제 데이터와 메타 정보 추출 (computed 사용)
+const welfareServices = computed<WelfareService[]>(() => apiResponse.value?.data || []);
+const totalItems = computed(() => apiResponse.value?.meta?.total || 0);
+
 const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage.value));
 
-const PAGINATION_RANGE_DISPLAY = 5; // 한 번에 표시할 페이지 번호 개수
+// API 에러 처리 (watch 사용)
+watch(error, (newError) => {
+  if (newError) {
+    console.error('API Error:', newError);
+    // @ts-ignore
+    showToast(newError.data?.message || newError.message || '데이터 로딩 중 에러 발생', 'error');
+  }
+});
+
+// API 응답 성공/실패 메시지 처리 (watch 사용)
+watch(apiResponse, (newResponse) => {
+  // 이 watch는 데이터가 성공적으로 로드되었을 때 (pending: false, error: null) 호출됩니다.
+  // apiResponse.value가 null이 아니고, 명시적으로 success: false를 반환하는 경우 에러 토스트를 띄웁니다.
+  if (newResponse && typeof newResponse.success === 'boolean' && !newResponse.success && !error.value) {
+    // @ts-ignore
+    showToast(newResponse.message || '요청 처리 중 문제가 발생했습니다.', 'error');
+  }
+  // 성공적인 데이터 로드(success:true) 시에는 별도의 토스트 메시지를 띄우지 않습니다.
+  // 데이터 업데이트(PUT 요청 등) 후 성공 메시지는 해당 함수 내에서 처리합니다.
+}, { deep: true });
+
+
+const PAGINATION_RANGE_DISPLAY = 5;
 
 const visiblePageNumbers = computed(() => {
   if (totalPages.value === 0) return [];
-  const halfRange = Math.floor((PAGINATION_RANGE_DISPLAY -1) / 2);
+  const halfRange = Math.floor((PAGINATION_RANGE_DISPLAY - 1) / 2);
   let start = Math.max(1, currentPage.value - halfRange);
   let end = Math.min(totalPages.value, currentPage.value + halfRange);
 
@@ -238,68 +282,20 @@ const visiblePageNumbers = computed(() => {
   return pages;
 });
 
-const fetchWelfareServices = async () => {
-  loading.value = true; // 함수 시작 시 로딩 상태로 설정
-
-  const params: Record<string, any> = {
-    page: currentPage.value,
-    limit: itemsPerPage.value,
-    searchQuery: searchQuery.value,
-  };
-  if (filterIsExposed.value) {
-    params.isExposed = filterIsExposed.value;
-  }
-
-  // @ts-ignore: useFetch has known issues with dynamic params typing in Nuxt 3
-  const { data: response, error } = await useFetch('/api/admin/welfare-services', {
-    method: 'GET',
-    params,
-    headers: useRequestHeaders(['cookie']),
-  });
-
-  if (error.value) {
-    console.error('API Error:', error.value);
-    welfareServices.value = [];
-    totalItems.value = 0;
-    // @ts-ignore
-    showToast(error.value.data?.message || error.value.message || '데이터 로딩 중 에러 발생', 'error');
-  } else if (response.value) {
-    console.log('API Response:', response.value);
-    if (response.value.success) {
-      // @ts-ignore
-      welfareServices.value = response.value.data || [];
-      // @ts-ignore
-      totalItems.value = response.value.meta.total || 0;
-    } else {
-      // @ts-ignore
-      showToast(response.value?.message || '데이터 로딩 실패', 'error');
-      welfareServices.value = [];
-      totalItems.value = 0;
-    }
-  } else {
-    // 응답이 null이고 에러도 없는 경우 (예: 204 No Content 또는 네트워크 문제)
-    console.warn('API Response is null and no error reported');
-    // @ts-ignore
-    showToast('서버로부터 응답이 없거나 데이터가 없습니다.', 'warn');
-    welfareServices.value = [];
-    totalItems.value = 0;
-  }
-  loading.value = false; // 모든 처리 후 로딩 상태 해제
-};
-
 const handleSearch = () => {
-  currentPage.value = 1; // 검색 시 첫 페이지로 이동
-  fetchWelfareServices();
+  currentPage.value = 1;
+  // searchQuery.value가 변경되면 queryParams가 변경되고, useFetch가 자동으로 데이터를 다시 가져옵니다.
 };
 
 const handleFilterChange = () => {
-  currentPage.value = 1; // 필터 변경 시 첫 페이지로 이동
-  fetchWelfareServices();
+  currentPage.value = 1;
+  // filterIsExposed.value가 변경되면 queryParams가 변경되고, useFetch가 자동으로 데이터를 다시 가져옵니다.
 };
 
 const changePage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
+    // currentPage.value가 변경되면 queryParams가 변경되고, useFetch가 자동으로 데이터를 다시 가져옵니다.
   }
 };
 
@@ -310,37 +306,32 @@ const toggleVisibility = async (service: WelfareService) => {
   }
   try {
     const newIsExposed = !service.is_exposed;
-    const { data: response, error } = await useFetch(`/api/admin/welfare-services/${service.id}`,
-    {
+    // @ts-ignore
+    const { data: response, error: updateError } = await useFetch(`/api/admin/welfare-services/${service.id}`, {
       method: 'PUT',
       body: { is_exposed: newIsExposed },
       headers: useRequestHeaders(['cookie']),
+      // GET 요청이 아니므로, queryParams나 watch는 여기서는 불필요합니다.
     });
 
-    if (error.value) throw error.value;
-
+    if (updateError.value) throw updateError.value;
+    // @ts-ignore
     if (response.value && response.value.success) {
-      // @ts-ignore
-      const index = welfareServices.value.findIndex(ws => ws.id === service.id);
-      if (index !== -1) {
-        // @ts-ignore
-        welfareServices.value[index].is_exposed = newIsExposed;
-        // @ts-ignore
-        welfareServices.value[index].updated_at = new Date().toISOString();
-      }
       showToast(`서비스가 성공적으로 ${newIsExposed ? '노출' : '숨김'} 처리되었습니다.`, 'success');
+      await refreshWelfareServices(); // 목록 데이터 새로고침
     } else {
       // @ts-ignore
       showToast(response.value?.message || '상태 변경 실패', 'error');
     }
   } catch (err: any) {
     console.error('Error toggling visibility:', err);
-    showToast(err.data?.message || '상태 변경 중 오류 발생', 'error');
+    // @ts-ignore
+    showToast(err.data?.message || err.message || '상태 변경 중 오류 발생', 'error');
   }
 };
 
 const viewDetails = (service: WelfareService) => {
-  selectedWelfareService.value = { ...service };
+  selectedWelfareService.value = { ...service }; // 원본 수정을 방지하기 위해 복사
   editableIsExposed.value = service.is_exposed ?? false;
   editableAdminMemo.value = service.admin_memo || '';
 };
@@ -359,48 +350,33 @@ const saveDetails = async () => {
       is_exposed: editableIsExposed.value,
       admin_memo: editableAdminMemo.value,
     };
-    // Prevent sending other fields that shouldn't be updated here
-    // The backend should also enforce this, but good practice for frontend too.
-
-    const { data: response, error } = await useFetch(`/api/admin/welfare-services/${selectedWelfareService.value.id}`,
-    {
+    // @ts-ignore
+    const { data: response, error: updateError } = await useFetch(`/api/admin/welfare-services/${selectedWelfareService.value.id}`, {
       method: 'PUT',
       body: payload,
       headers: useRequestHeaders(['cookie']),
     });
 
-    if (error.value) throw error.value;
-
+    if (updateError.value) throw updateError.value;
+    // @ts-ignore
     if (response.value && response.value.success) {
-      // @ts-ignore
-      const index = welfareServices.value.findIndex(ws => ws.id === selectedWelfareService.value!.id);
-      if (index !== -1) {
-        // @ts-ignore
-        welfareServices.value[index].is_exposed = editableIsExposed.value;
-        // @ts-ignore
-        welfareServices.value[index].admin_memo = editableAdminMemo.value;
-        // @ts-ignore
-        welfareServices.value[index].updated_at = new Date().toISOString(); 
-      }
       showToast('서비스 정보가 성공적으로 저장되었습니다.', 'success');
       closeDetailsModal();
+      await refreshWelfareServices(); // 목록 데이터 새로고침
     } else {
       // @ts-ignore
-      showToast(response.value?.message || '저장 실패', 'error');
+      showToast(response.value?.message || '정보 저장 실패', 'error');
     }
   } catch (err: any) {
     console.error('Error saving details:', err);
-    showToast(err.data?.message || '저장 중 오류 발생', 'error');
+    // @ts-ignore
+    showToast(err.data?.message || err.message ||'정보 저장 중 오류 발생', 'error');
   }
 };
 
-watch([currentPage, searchQuery, filterIsExposed], () => {
-  fetchWelfareServices();
-}, { immediate: true });
-
-onMounted(() => {
-  // fetchWelfareServices();
-});
+// useFetch는 컴포넌트가 설정될 때 (setup 시) 자동으로 첫 번째 요청을 보냅니다.
+// queryParams가 변경될 때마다 자동으로 요청을 다시 보냅니다 (Nuxt 3.8+의 경우).
+// 따라서 별도의 onMounted나 immediate watch는 필요하지 않습니다.
 
 definePageMeta({
   layout: 'admin',
