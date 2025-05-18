@@ -135,13 +135,24 @@ export async function updateExhibition(id: number, data: Partial<Omit<Exhibition
   if (Object.keys(data).length === 0) {
     return { affectedRows: 0 };
   }
-  // Ensure boolean is_exposed is 0 or 1 if present
-  const dataToUpdate = { ...data };
-  if (data.is_exposed !== undefined) {
-    dataToUpdate.is_exposed = data.is_exposed ? 1 : 0;
+  const fieldsToUpdate = { ...data };
+  if (fieldsToUpdate.is_exposed !== undefined) {
+    fieldsToUpdate.is_exposed = fieldsToUpdate.is_exposed ? 1 : 0;
   }
-  const sql = 'UPDATE exhibitions SET ? WHERE id = ?';
-  return executeQuery<{ affectedRows: number }>(sql, [dataToUpdate, id]);
+  const fieldEntries = Object.entries(fieldsToUpdate).filter(([key, value]) => value !== undefined);
+
+  if (fieldEntries.length === 0) {
+    return { affectedRows: 0 };
+  }
+
+  const setClauses = fieldEntries.map(([key]) => `${key} = ?`).join(', ');
+  const values = fieldEntries.map(([, value]) => value);
+
+  const query = `UPDATE exhibitions SET ${setClauses} WHERE id = ?`;
+  values.push(id);
+
+  const result = await executeQuery<{ affectedRows: number }>(query, values);
+  return result;
 }
 
 export async function deleteExhibition(id: number): Promise<{ affectedRows: number }> {

@@ -87,5 +87,31 @@ export const festivalDAO = {
       console.error(`Error fetching festival by id ${id}:`, error);
       throw new Error('Failed to fetch festival by id');
     }
+  },
+
+  async updateFestival(id: number, data: Partial<Festival>): Promise<boolean> {
+    const fieldsToUpdate: Partial<Festival & { updated_at: Date }> = { ...data, updated_at: new Date() };
+
+    // Handle boolean to integer conversion for is_show
+    if (typeof fieldsToUpdate.is_show === 'boolean') {
+      // @ts-ignore
+      fieldsToUpdate.is_show = fieldsToUpdate.is_show ? 1 : 0;
+    }
+
+    const fieldEntries = Object.entries(fieldsToUpdate)
+      .filter(([_, value]) => value !== undefined);
+
+    if (fieldEntries.length === 0) {
+      return true; // No fields to update, consider it a success
+    }
+
+    const setClauses = fieldEntries.map(([key]) => `${key} = ?`).join(', ');
+    const values = fieldEntries.map(([, value]) => value);
+    values.push(id); // Add id for the WHERE clause
+
+    const query = `UPDATE festivals SET ${setClauses} WHERE id = ?`;
+
+    const result = await executeQuery<{ affectedRows: number }>(query, values);
+    return result.affectedRows > 0;
   }
 };
