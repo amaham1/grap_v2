@@ -1,58 +1,22 @@
-import mysql from 'mysql2/promise';
+import { executeQuery as executeQueryFromMysql } from './mysql';
 
-// .env 파일에서 환경 변수 읽기
-const config = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
-  port: parseInt(process.env.DB_PORT || '3306', 10),
-  waitForConnections: true,
-  connectionLimit: 10, // 동시에 유지할 수 있는 최대 연결 수
-  queueLimit: 0, // 연결 풀이 가득 찼을 때 대기열 제한 (0은 무제한)
-};
-
-let pool: mysql.Pool | null = null;
-
-function getPool(): mysql.Pool {
-  if (!pool) {
-    try {
-      pool = mysql.createPool(config);
-      console.log('MySQL Connection Pool created successfully.');
-    } catch (error) {
-      console.error('Failed to create MySQL Connection Pool:', error);
-      throw error; // 풀 생성 실패 시 에러 발생
-    }
-  }
-  return pool;
-}
-
-// 데이터베이스 쿼리 실행 함수
+/**
+ * server/utils/mysql.ts의 executeQuery를 재노출합니다.
+ * 점진적인 코드 수정을 위해 임시로 유지하며, 추후 모든 import를 './mysql'로 직접 변경하는 것을 권장합니다.
+ */
 export async function executeQuery<T>(query: string, params: any[] = []): Promise<T> {
-  const currentPool = getPool();
-  let connection;
-  try {
-    connection = await currentPool.getConnection();
-    const [results] = await connection.execute(query, params);
-    return results as T;
-  } catch (error) {
-    console.error('Database query error:', error);
-    throw new Error('An error occurred while executing the database query.');
-  } finally {
-    if (connection) {
-      connection.release(); // 사용한 연결을 풀에 반환
-    }
-  }
+  return executeQueryFromMysql<T>(query, params);
 }
 
-// 간단한 연결 테스트 함수 (선택 사항)
 export async function testConnection(): Promise<void> {
+  console.warn('db.ts testConnection is deprecated. Use mysql.ts if a similar function is needed.');
+  // 실제 연결 테스트가 필요하다면 mysql.ts의 연결 풀을 사용하는 로직으로 구현해야 합니다.
+  // 간단히 executeQueryFromMysql을 호출하여 테스트할 수도 있습니다.
   try {
-    const connection = await getPool().getConnection();
-    console.log('Successfully connected to the database.');
-    connection.release();
+    await executeQueryFromMysql('SELECT 1');
+    console.log('Successfully made a test query via db.ts (using mysql.ts pool).');
   } catch (error) {
-    console.error('Failed to connect to the database:', error);
+    console.error('Failed to make a test query via db.ts:', error);
     throw error;
   }
 }
