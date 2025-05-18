@@ -34,7 +34,7 @@
         </div>
         
         <NuxtLink 
-          :to="`/welfare-services/${item.id}`" 
+          :to="`/alljeju/welfare-services/${item.id}`" 
           class="text-sm font-medium text-indigo-600 hover:text-indigo-800"
         >
           자세히 보기

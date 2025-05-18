@@ -75,7 +75,7 @@
       <div class="p-6 bg-gray-50 border-t border-gray-200">
         <div class="flex justify-between">
           <NuxtLink 
-            to="/welfare-services" 
+            to="/alljeju/welfare-services" 
             class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
           >
             목록으로 돌아가기

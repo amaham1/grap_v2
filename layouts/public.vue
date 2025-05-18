@@ -9,16 +9,16 @@
           </NuxtLink>
           
           <nav class="hidden md:flex space-x-6">
-            <NuxtLink to="/" class="text-gray-700 hover:text-indigo-700 font-medium">
+            <NuxtLink to="/alljeju" class="text-gray-700 hover:text-indigo-700 font-medium">
               홈
             </NuxtLink>
-            <NuxtLink to="/welfare-services" class="text-gray-700 hover:text-indigo-700 font-medium">
+            <NuxtLink to="/alljeju/welfare-services" class="text-gray-700 hover:text-indigo-700 font-medium">
               복지 서비스
             </NuxtLink>
-            <NuxtLink to="/festivals" class="text-gray-700 hover:text-indigo-700 font-medium">
+            <NuxtLink to="/alljeju/festivals" class="text-gray-700 hover:text-indigo-700 font-medium">
               행사/축제
             </NuxtLink>
-            <NuxtLink to="/exhibitions" class="text-gray-700 hover:text-indigo-700 font-medium">
+            <NuxtLink to="/alljeju/exhibitions" class="text-gray-700 hover:text-indigo-700 font-medium">
               공연/전시
             </NuxtLink>
           </nav>
@@ -32,16 +32,16 @@
         
         <!-- 모바일 메뉴 -->
         <div v-if="isMobileMenuOpen" class="md:hidden mt-4 space-y-2">
-          <NuxtLink to="/" class="block py-2 text-gray-700 hover:text-indigo-700 font-medium">
+          <NuxtLink to="/alljeju" class="block py-2 text-gray-700 hover:text-indigo-700 font-medium">
             홈
           </NuxtLink>
-          <NuxtLink to="/welfare-services" class="block py-2 text-gray-700 hover:text-indigo-700 font-medium">
+          <NuxtLink to="/alljeju/welfare-services" class="block py-2 text-gray-700 hover:text-indigo-700 font-medium">
             복지 서비스
           </NuxtLink>
-          <NuxtLink to="/festivals" class="block py-2 text-gray-700 hover:text-indigo-700 font-medium">
+          <NuxtLink to="/alljeju/festivals" class="block py-2 text-gray-700 hover:text-indigo-700 font-medium">
             행사/축제
           </NuxtLink>
-          <NuxtLink to="/exhibitions" class="block py-2 text-gray-700 hover:text-indigo-700 font-medium">
+          <NuxtLink to="/alljeju/exhibitions" class="block py-2 text-gray-700 hover:text-indigo-700 font-medium">
             공연/전시
           </NuxtLink>
         </div>
@@ -66,16 +66,16 @@
             <h3 class="text-lg font-semibold mb-4">링크</h3>
             <ul class="space-y-2">
               <li>
-                <NuxtLink to="/" class="text-gray-300 hover:text-white">홈</NuxtLink>
+                <NuxtLink to="/alljeju" class="text-gray-300 hover:text-white">홈</NuxtLink>
               </li>
               <li>
-                <NuxtLink to="/welfare-services" class="text-gray-300 hover:text-white">복지 서비스</NuxtLink>
+                <NuxtLink to="/alljeju/welfare-services" class="text-gray-300 hover:text-white">복지 서비스</NuxtLink>
               </li>
               <li>
-                <NuxtLink to="/festivals" class="text-gray-300 hover:text-white">행사/축제</NuxtLink>
+                <NuxtLink to="/alljeju/festivals" class="text-gray-300 hover:text-white">행사/축제</NuxtLink>
               </li>
               <li>
-                <NuxtLink to="/exhibitions" class="text-gray-300 hover:text-white">공연/전시</NuxtLink>
+                <NuxtLink to="/alljeju/exhibitions" class="text-gray-300 hover:text-white">공연/전시</NuxtLink>
               </li>
             </ul>
           </div>
