@@ -65,12 +65,10 @@ const props = defineProps<{
 function getSummary(html: string): string {
   if (!html) return '';
   
-  // HTML 태그 제거 및 텍스트 추출
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = html;
-  const textContent = tempDiv.textContent || tempDiv.innerText || '';
+  // HTML 태그 제거 (정규식 사용 - SSR 안전함)
+  const textContent = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ');
   
-  // 앞 부분 100자 정도만 반환
+  // 앞 부분 120자 정도만 반환
   return textContent.trim().substring(0, 120) + (textContent.length > 120 ? '...' : '');
 }
 

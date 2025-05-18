@@ -79,6 +79,10 @@
 </template>
 
 <script setup lang="ts">
+import SearchFilter from '~/components/public/SearchFilter.vue';
+import CardFestival from '~/components/public/CardFestival.vue';
+import Pagination from '~/components/public/Pagination.vue';
+
 definePageMeta({
   layout: 'public'
 });

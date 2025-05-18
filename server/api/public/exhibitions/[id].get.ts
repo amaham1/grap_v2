@@ -32,15 +32,17 @@ export default defineEventHandler(async (event) => {
       });
     }
     
-    // 상세 정보 조회 (노출 상태가 활성화된 항목만)
+    // 상세 정보 조회 (임시로 노출 상태 필터(is_exposed=true) 제거하고 모든 데이터 표시함)
     const query = `
       SELECT 
         id, title, category_name, cover_image_url, start_date, end_date, 
         time_info, pay_info, location_name, organizer_info, tel_number, 
         status_info, division_name, fetched_at
       FROM exhibitions
-      WHERE id = ? AND is_exposed = true
+      WHERE id = ?
       LIMIT 1`;
+    
+    console.log(`[디버깅] 전시회 상세정보 조회 ID: ${id}`);
     
     const results = await executeQuery<ExhibitionDetail[]>(query, [id]);
     
@@ -61,6 +63,7 @@ export default defineEventHandler(async (event) => {
     }
     
     console.error('[공개 API 오류] 공연/전시 상세 조회 실패:', error.message);
+    console.error(error);
     
     throw createError({
       statusCode: 500,

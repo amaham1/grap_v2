@@ -109,6 +109,10 @@
 </template>
 
 <script setup lang="ts">
+import SearchFilter from '~/components/public/SearchFilter.vue';
+import CardExhibition from '~/components/public/CardExhibition.vue';
+import Pagination from '~/components/public/Pagination.vue';
+
 definePageMeta({
   layout: 'public'
 });

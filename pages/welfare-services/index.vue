@@ -66,6 +66,10 @@
 </template>
 
 <script setup lang="ts">
+import SearchFilter from '~/components/public/SearchFilter.vue';
+import CardWelfareService from '~/components/public/CardWelfareService.vue';
+import Pagination from '~/components/public/Pagination.vue';
+
 definePageMeta({
   layout: 'public'
 });

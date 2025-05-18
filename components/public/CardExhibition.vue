@@ -81,9 +81,12 @@ const props = defineProps<{
 
 // 이미지 로드 오류 처리
 function handleImageError(e: Event) {
-  const target = e.target as HTMLImageElement;
-  target.src = '/images/no-image.png'; // 기본 이미지 경로로 대체 (해당 이미지가 있다고 가정)
-  target.onerror = null; // 재귀적 오류 방지
+  // 클라이언트 사이드에서만 실행되도록 합니다.
+  if (process.client) {
+    const target = e.target as HTMLImageElement;
+    target.src = '/images/no-image.png'; // 기본 이미지 경로로 대체 (해당 이미지가 있다고 가정)
+    target.onerror = null; // 재귀적 오류 방지
+  }
 }
 
 // 전시 상태 (진행 중, 예정, 종료 등)
