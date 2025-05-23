@@ -1,11 +1,9 @@
 // server/utils/sanitize.ts
 // sanitize-html는 서버 측에서만 사용되어야 함
-let sanitizeHtml: any;
+import sanitizeHtml from 'sanitize-html';
 
-// 서버 측에서만 sanitize-html 모듈을 가져옴
-if (process.server) {
-  sanitizeHtml = require('sanitize-html');
-}
+// 서버 측에서만 사용하도록 확인
+const isServer = process.server === true;
 
 /**
  * HTML 문자열을 안전하게 정제합니다.
@@ -18,7 +16,7 @@ export function sanitizeHtmlContent(html: string | null | undefined): string {
   if (!html) return '';
 
   // 클라이언트 측에서는 정제 없이 그대로 반환
-  if (!process.server) {
+  if (!isServer) {
     console.warn('sanitizeHtmlContent는 서버 측에서만 사용해야 합니다.');
     return html;
   }
