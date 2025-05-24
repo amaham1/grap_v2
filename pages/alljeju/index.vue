@@ -171,6 +171,11 @@
 </template>
 
 <script setup lang="ts">
+// 컴포넌트 import
+import CardWelfareService from '~/components/public/CardWelfareService.vue';
+import CardExhibition from '~/components/public/CardExhibition.vue';
+import CardFestival from '~/components/public/CardFestival.vue';
+
 definePageMeta({
   layout: 'public'
 });
