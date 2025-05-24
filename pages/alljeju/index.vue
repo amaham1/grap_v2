@@ -52,25 +52,33 @@
           </NuxtLink>
         </div>
 
-        <div v-if="welfareServicesLoading" class="flex justify-center py-12">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <ClientOnly>
+          <div v-if="welfareServicesLoading" class="flex justify-center py-12">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
 
-        <div v-else-if="welfareServicesError" class="toss-card p-4 border-red-200 bg-red-50">
-          <div class="text-red-700 text-sm">복지 서비스 정보를 불러오는 중 오류가 발생했습니다.</div>
-        </div>
+          <div v-else-if="welfareServicesError" class="toss-card p-4 border-red-200 bg-red-50">
+            <div class="text-red-700 text-sm">복지 서비스 정보를 불러오는 중 오류가 발생했습니다.</div>
+          </div>
 
-        <div v-else-if="!welfareServices.length" class="text-center py-12">
-          <div class="text-gray-500">표시할 복지 서비스 정보가 없습니다.</div>
-        </div>
+          <div v-else-if="!welfareServices.length" class="text-center py-12">
+            <div class="text-gray-500">표시할 복지 서비스 정보가 없습니다.</div>
+          </div>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <CardWelfareService
-            v-for="service in welfareServices"
-            :key="service.id"
-            :item="service"
-          />
-        </div>
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <CardWelfareService
+              v-for="service in welfareServices"
+              :key="service.id"
+              :item="service"
+            />
+          </div>
+
+          <template #fallback>
+            <div class="flex justify-center py-12">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          </template>
+        </ClientOnly>
       </div>
     </section>
 
@@ -87,25 +95,33 @@
           </NuxtLink>
         </div>
 
-        <div v-if="exhibitionsLoading" class="flex justify-center py-12">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <ClientOnly>
+          <div v-if="exhibitionsLoading" class="flex justify-center py-12">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
 
-        <div v-else-if="exhibitionsError" class="toss-card p-4 border-red-200 bg-red-50">
-          <div class="text-red-700 text-sm">공연/전시 정보를 불러오는 중 오류가 발생했습니다.</div>
-        </div>
+          <div v-else-if="exhibitionsError" class="toss-card p-4 border-red-200 bg-red-50">
+            <div class="text-red-700 text-sm">공연/전시 정보를 불러오는 중 오류가 발생했습니다.</div>
+          </div>
 
-        <div v-else-if="!exhibitions.length" class="text-center py-12">
-          <div class="text-gray-500">표시할 공연/전시 정보가 없습니다.</div>
-        </div>
+          <div v-else-if="!exhibitions.length" class="text-center py-12">
+            <div class="text-gray-500">표시할 공연/전시 정보가 없습니다.</div>
+          </div>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <CardExhibition
-            v-for="exhibition in exhibitions"
-            :key="exhibition.id"
-            :item="exhibition"
-          />
-        </div>
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <CardExhibition
+              v-for="exhibition in exhibitions"
+              :key="exhibition.id"
+              :item="exhibition"
+            />
+          </div>
+
+          <template #fallback>
+            <div class="flex justify-center py-12">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          </template>
+        </ClientOnly>
       </div>
     </section>
 
@@ -122,25 +138,33 @@
           </NuxtLink>
         </div>
 
-        <div v-if="festivalsLoading" class="flex justify-center py-12">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <ClientOnly>
+          <div v-if="festivalsLoading" class="flex justify-center py-12">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
 
-        <div v-else-if="festivalsError" class="toss-card p-4 border-red-200 bg-red-50">
-          <div class="text-red-700 text-sm">행사/축제 정보를 불러오는 중 오류가 발생했습니다.</div>
-        </div>
+          <div v-else-if="festivalsError" class="toss-card p-4 border-red-200 bg-red-50">
+            <div class="text-red-700 text-sm">행사/축제 정보를 불러오는 중 오류가 발생했습니다.</div>
+          </div>
 
-        <div v-else-if="!festivals.length" class="text-center py-12">
-          <div class="text-gray-500">표시할 행사/축제 정보가 없습니다.</div>
-        </div>
+          <div v-else-if="!festivals.length" class="text-center py-12">
+            <div class="text-gray-500">표시할 행사/축제 정보가 없습니다.</div>
+          </div>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <CardFestival
-            v-for="festival in festivals"
-            :key="festival.id"
-            :item="festival"
-          />
-        </div>
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <CardFestival
+              v-for="festival in festivals"
+              :key="festival.id"
+              :item="festival"
+            />
+          </div>
+
+          <template #fallback>
+            <div class="flex justify-center py-12">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          </template>
+        </ClientOnly>
       </div>
     </section>
   </div>

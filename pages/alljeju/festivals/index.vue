@@ -44,28 +44,36 @@
     </SearchFilter>
 
     <!-- 로딩 상태 -->
-    <div v-if="loading" class="flex justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-    </div>
+    <ClientOnly>
+      <div v-if="loading" class="flex justify-center py-12">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
 
-    <!-- 에러 메시지 -->
-    <div v-else-if="error" class="toss-card p-4 border-red-200 bg-red-50 mb-6">
-      <div class="text-red-700 text-sm">행사/축제 정보를 불러오는 중 오류가 발생했습니다.</div>
-    </div>
+      <!-- 에러 메시지 -->
+      <div v-else-if="error" class="toss-card p-4 border-red-200 bg-red-50 mb-6">
+        <div class="text-red-700 text-sm">행사/축제 정보를 불러오는 중 오류가 발생했습니다.</div>
+      </div>
 
-    <!-- 결과 없음 -->
-    <div v-else-if="!festivals.length" class="text-center py-12">
-      <div class="text-gray-500">검색 조건에 맞는 행사/축제 정보가 없습니다.</div>
-    </div>
+      <!-- 결과 없음 -->
+      <div v-else-if="!festivals.length" class="text-center py-12">
+        <div class="text-gray-500">검색 조건에 맞는 행사/축제 정보가 없습니다.</div>
+      </div>
 
-    <!-- 행사/축제 목록 -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-      <CardFestival
-        v-for="festival in festivals"
-        :key="festival.id"
-        :item="festival"
-      />
-    </div>
+      <!-- 행사/축제 목록 -->
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <CardFestival
+          v-for="festival in festivals"
+          :key="festival.id"
+          :item="festival"
+        />
+      </div>
+
+      <template #fallback>
+        <div class="flex justify-center py-12">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </template>
+    </ClientOnly>
 
     <!-- 페이지네이션 -->
     <div v-if="pageCount > 1" class="mt-8">
