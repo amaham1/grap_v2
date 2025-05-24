@@ -150,18 +150,30 @@ function savePageState() {
 function restorePageState() {
   if (process.client) {
     const savedState = sessionStorage.getItem('welfare-services-state');
+    console.log('Restoring welfare-services state:', savedState);
     if (savedState) {
       try {
         const state = JSON.parse(savedState);
+        console.log('Parsed state:', state);
         // 5분 이내의 상태만 복원
         if (Date.now() - state.timestamp < 5 * 60 * 1000) {
+          console.log('Restoring to page:', state.page);
           page.value = state.page || 1;
           search.value = state.search || '';
           selectedLocation.value = state.selectedLocation || '';
+
+          // 상태 복원 후 데이터 다시 로드
+          nextTick(() => {
+            applyFilters();
+          });
+        } else {
+          console.log('State expired');
         }
       } catch (error) {
         console.warn('Failed to restore page state:', error);
       }
+    } else {
+      console.log('No saved state found');
     }
   }
 }
@@ -171,9 +183,13 @@ onMounted(() => {
   // 뒤로가기로 인한 접속인지 확인
   if (process.client) {
     const shouldRestore = sessionStorage.getItem('should-restore-welfare-state');
+    console.log('Should restore welfare state:', shouldRestore);
     if (shouldRestore === 'true') {
       sessionStorage.removeItem('should-restore-welfare-state');
-      restorePageState();
+      // 약간의 지연 후 상태 복원 (DOM이 완전히 로드된 후)
+      setTimeout(() => {
+        restorePageState();
+      }, 100);
     }
   }
 });
