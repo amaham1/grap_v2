@@ -196,7 +196,7 @@ const exhibition = computed(() => data.value?.item);
 // 이미지 로드 오류 처리
 function handleImageError(e: Event) {
   const target = e.target as HTMLImageElement;
-  target.src = '/images/no-image.png'; // 기본 이미지 경로로 대체 (해당 이미지가 있다고 가정)
+  target.src = '/images/no-image.svg'; // SVG 기본 이미지로 대체
   target.onerror = null; // 재귀적 오류 방지
 }
 
