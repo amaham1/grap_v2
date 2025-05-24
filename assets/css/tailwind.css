@@ -1,9 +1,9 @@
+/* 토스 스타일 커스텀 CSS */
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* 토스 스타일 커스텀 CSS */
-@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap');
 
 :root {
   --toss-blue: #3182f6;
