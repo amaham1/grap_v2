@@ -85,9 +85,7 @@
           <div>
             <h3 class="text-base font-semibold mb-3 text-gray-900">문의</h3>
             <div class="space-y-1">
-              <p class="text-sm text-gray-600">제주특별자치도</p>
-              <p class="text-sm text-gray-600">전화: 000-0000-0000</p>
-              <p class="text-sm text-gray-600">이메일: info@jejuinfo.kr</p>
+              <p class="text-sm text-gray-600">이메일: 82grap@gmail.com</p>
             </div>
           </div>
         </div>
