@@ -1,38 +1,38 @@
 <template>
   <div>
     <!-- 히어로 섹션 -->
-    <section class="py-16 lg:py-24 toss-gradient text-white">
-      <div class="max-w-6xl mx-auto px-4">
-        <div class="max-w-4xl mx-auto text-center">
-          <h1 class="text-4xl lg:text-5xl font-bold mb-6 leading-tight">
+    <section class="py-12 lg:py-16 toss-gradient text-white">
+      <div class="max-w-5xl mx-auto px-4">
+        <div class="max-w-3xl mx-auto text-center">
+          <h1 class="text-2xl lg:text-3xl font-bold mb-4">
             무엇을 도와드릴까요?
           </h1>
-          <p class="text-xl lg:text-2xl mb-12 text-blue-100 font-light">
+          <p class="text-base lg:text-lg mb-8 text-blue-100">
             제주도의 복지 서비스, 행사/축제, 공연/전시 정보를 쉽고 빠르게 찾아보세요.
           </p>
 
           <!-- 빠른 링크 버튼들 -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
             <NuxtLink
               to="/alljeju/welfare-services"
-              class="bg-white bg-opacity-10 backdrop-blur-sm border border-white border-opacity-20 text-white p-4 rounded-2xl hover:bg-opacity-20 smooth-transition text-center"
+              class="bg-white bg-opacity-10 backdrop-blur-sm border border-white border-opacity-20 text-white p-3 rounded-xl hover:bg-opacity-20 smooth-transition text-center"
             >
-              <div class="text-lg font-semibold">복지 서비스</div>
-              <div class="text-sm text-blue-100 mt-1">제주도 복지 서비스 정보</div>
+              <div class="text-sm font-medium">복지 서비스</div>
+              <div class="text-xs text-blue-100 mt-1">제주도 복지 서비스 정보</div>
             </NuxtLink>
             <NuxtLink
               to="/alljeju/festivals"
-              class="bg-white bg-opacity-10 backdrop-blur-sm border border-white border-opacity-20 text-white p-4 rounded-2xl hover:bg-opacity-20 smooth-transition text-center"
+              class="bg-white bg-opacity-10 backdrop-blur-sm border border-white border-opacity-20 text-white p-3 rounded-xl hover:bg-opacity-20 smooth-transition text-center"
             >
-              <div class="text-lg font-semibold">행사/축제</div>
-              <div class="text-sm text-blue-100 mt-1">제주도 행사 및 축제 정보</div>
+              <div class="text-sm font-medium">행사/축제</div>
+              <div class="text-xs text-blue-100 mt-1">제주도 행사 및 축제 정보</div>
             </NuxtLink>
             <NuxtLink
               to="/alljeju/exhibitions"
-              class="bg-white bg-opacity-10 backdrop-blur-sm border border-white border-opacity-20 text-white p-4 rounded-2xl hover:bg-opacity-20 smooth-transition text-center"
+              class="bg-white bg-opacity-10 backdrop-blur-sm border border-white border-opacity-20 text-white p-3 rounded-xl hover:bg-opacity-20 smooth-transition text-center"
             >
-              <div class="text-lg font-semibold">공연/전시</div>
-              <div class="text-sm text-blue-100 mt-1">제주도 공연 및 전시 정보</div>
+              <div class="text-sm font-medium">공연/전시</div>
+              <div class="text-xs text-blue-100 mt-1">제주도 공연 및 전시 정보</div>
             </NuxtLink>
           </div>
         </div>
@@ -40,31 +40,31 @@
     </section>
 
     <!-- 최신 복지 서비스 섹션 -->
-    <section class="py-16 bg-white">
-      <div class="max-w-6xl mx-auto px-4">
-        <div class="flex justify-between items-center mb-10">
-          <h2 class="text-3xl font-bold text-gray-900">최신 복지 서비스</h2>
-          <NuxtLink to="/alljeju/welfare-services" class="text-blue-600 hover:text-blue-700 font-medium smooth-transition flex items-center">
+    <section class="py-12 bg-white border-b border-gray-100">
+      <div class="max-w-5xl mx-auto px-4">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-xl font-bold text-gray-900">최신 복지 서비스</h2>
+          <NuxtLink to="/alljeju/welfare-services" class="text-sm text-blue-600 hover:text-blue-700 font-medium smooth-transition flex items-center">
             모두 보기
-            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
           </NuxtLink>
         </div>
 
-        <div v-if="welfareServicesLoading" class="flex justify-center py-16">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div v-if="welfareServicesLoading" class="flex justify-center py-12">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
 
-        <div v-else-if="welfareServicesError" class="toss-card p-6 border-red-200 bg-red-50">
-          <div class="text-red-700 font-medium">복지 서비스 정보를 불러오는 중 오류가 발생했습니다.</div>
+        <div v-else-if="welfareServicesError" class="toss-card p-4 border-red-200 bg-red-50">
+          <div class="text-red-700 text-sm">복지 서비스 정보를 불러오는 중 오류가 발생했습니다.</div>
         </div>
 
-        <div v-else-if="!welfareServices.length" class="text-center py-16">
-          <div class="text-gray-500 text-lg">표시할 복지 서비스 정보가 없습니다.</div>
+        <div v-else-if="!welfareServices.length" class="text-center py-12">
+          <div class="text-gray-500">표시할 복지 서비스 정보가 없습니다.</div>
         </div>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <CardWelfareService
             v-for="service in welfareServices"
             :key="service.id"
@@ -75,31 +75,31 @@
     </section>
 
     <!-- 진행 중인 공연/전시 섹션 -->
-    <section class="py-16 bg-gray-50">
-      <div class="max-w-6xl mx-auto px-4">
-        <div class="flex justify-between items-center mb-10">
-          <h2 class="text-3xl font-bold text-gray-900">진행 중인 공연/전시</h2>
-          <NuxtLink to="/alljeju/exhibitions" class="text-blue-600 hover:text-blue-700 font-medium smooth-transition flex items-center">
+    <section class="py-12 bg-gray-50 border-b border-gray-200">
+      <div class="max-w-5xl mx-auto px-4">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-xl font-bold text-gray-900">진행 중인 공연/전시</h2>
+          <NuxtLink to="/alljeju/exhibitions" class="text-sm text-blue-600 hover:text-blue-700 font-medium smooth-transition flex items-center">
             모두 보기
-            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
           </NuxtLink>
         </div>
 
-        <div v-if="exhibitionsLoading" class="flex justify-center py-16">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div v-if="exhibitionsLoading" class="flex justify-center py-12">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
 
-        <div v-else-if="exhibitionsError" class="toss-card p-6 border-red-200 bg-red-50">
-          <div class="text-red-700 font-medium">공연/전시 정보를 불러오는 중 오류가 발생했습니다.</div>
+        <div v-else-if="exhibitionsError" class="toss-card p-4 border-red-200 bg-red-50">
+          <div class="text-red-700 text-sm">공연/전시 정보를 불러오는 중 오류가 발생했습니다.</div>
         </div>
 
-        <div v-else-if="!exhibitions.length" class="text-center py-16">
-          <div class="text-gray-500 text-lg">표시할 공연/전시 정보가 없습니다.</div>
+        <div v-else-if="!exhibitions.length" class="text-center py-12">
+          <div class="text-gray-500">표시할 공연/전시 정보가 없습니다.</div>
         </div>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <CardExhibition
             v-for="exhibition in exhibitions"
             :key="exhibition.id"
@@ -110,31 +110,31 @@
     </section>
 
     <!-- 최신 행사/축제 섹션 -->
-    <section class="py-16 bg-white">
-      <div class="max-w-6xl mx-auto px-4">
-        <div class="flex justify-between items-center mb-10">
-          <h2 class="text-3xl font-bold text-gray-900">최신 행사/축제</h2>
-          <NuxtLink to="/alljeju/festivals" class="text-blue-600 hover:text-blue-700 font-medium smooth-transition flex items-center">
+    <section class="py-12 bg-white">
+      <div class="max-w-5xl mx-auto px-4">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-xl font-bold text-gray-900">최신 행사/축제</h2>
+          <NuxtLink to="/alljeju/festivals" class="text-sm text-blue-600 hover:text-blue-700 font-medium smooth-transition flex items-center">
             모두 보기
-            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
           </NuxtLink>
         </div>
 
-        <div v-if="festivalsLoading" class="flex justify-center py-16">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div v-if="festivalsLoading" class="flex justify-center py-12">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
 
-        <div v-else-if="festivalsError" class="toss-card p-6 border-red-200 bg-red-50">
-          <div class="text-red-700 font-medium">행사/축제 정보를 불러오는 중 오류가 발생했습니다.</div>
+        <div v-else-if="festivalsError" class="toss-card p-4 border-red-200 bg-red-50">
+          <div class="text-red-700 text-sm">행사/축제 정보를 불러오는 중 오류가 발생했습니다.</div>
         </div>
 
-        <div v-else-if="!festivals.length" class="text-center py-16">
-          <div class="text-gray-500 text-lg">표시할 행사/축제 정보가 없습니다.</div>
+        <div v-else-if="!festivals.length" class="text-center py-12">
+          <div class="text-gray-500">표시할 행사/축제 정보가 없습니다.</div>
         </div>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <CardFestival
             v-for="festival in festivals"
             :key="festival.id"

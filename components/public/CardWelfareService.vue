@@ -1,43 +1,43 @@
 <template>
-  <div class="toss-card p-6 smooth-transition hover:scale-[1.02]">
-    <h3 class="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
+  <div class="toss-card p-4 smooth-transition hover:scale-[1.01]">
+    <h3 class="text-base font-semibold text-gray-900 mb-2 line-clamp-2">
       {{ item.service_name }}
     </h3>
 
-    <div class="flex flex-wrap gap-2 mb-4">
+    <div class="flex flex-wrap gap-1 mb-3">
       <span
         v-if="item.is_all_location"
-        class="px-3 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-full"
+        class="px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-md"
       >
         전체 지역
       </span>
       <span
         v-if="item.is_jeju_location"
-        class="px-3 py-1 text-xs font-medium bg-green-50 text-green-700 rounded-full"
+        class="px-2 py-0.5 text-xs font-medium bg-green-50 text-green-700 rounded-md"
       >
         제주시
       </span>
       <span
         v-if="item.is_seogwipo_location"
-        class="px-3 py-1 text-xs font-medium bg-purple-50 text-purple-700 rounded-full"
+        class="px-2 py-0.5 text-xs font-medium bg-purple-50 text-purple-700 rounded-md"
       >
         서귀포시
       </span>
     </div>
 
-    <p class="text-gray-600 line-clamp-3 mb-6 leading-relaxed" v-html="getSummary(item.support_content_html)"></p>
+    <p class="text-sm text-gray-600 line-clamp-2 mb-4" v-html="getSummary(item.support_content_html)"></p>
 
     <div class="flex justify-between items-center">
-      <div class="text-sm text-gray-500">
+      <div class="text-xs text-gray-500">
         {{ formatDate(item.fetched_at) }}
       </div>
 
       <NuxtLink
         :to="`/alljeju/welfare-services/${item.id}`"
-        class="text-blue-600 hover:text-blue-700 font-medium smooth-transition flex items-center"
+        class="text-sm text-blue-600 hover:text-blue-700 font-medium smooth-transition flex items-center"
       >
         자세히 보기
-        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
         </svg>
       </NuxtLink>

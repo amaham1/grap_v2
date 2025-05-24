@@ -2,47 +2,47 @@
   <div class="min-h-screen flex flex-col bg-white">
     <!-- 헤더 -->
     <header class="bg-white border-b border-gray-100 sticky top-0 z-50">
-      <div class="max-w-6xl mx-auto px-4 py-4">
+      <div class="max-w-5xl mx-auto px-4 py-3">
         <div class="flex items-center justify-between">
           <NuxtLink to="/" class="flex items-center smooth-transition hover:opacity-80">
-            <h1 class="text-2xl font-bold text-blue-600">제주 지역정보</h1>
+            <h1 class="text-lg font-bold text-blue-600">제주 지역정보</h1>
           </NuxtLink>
 
-          <nav class="hidden md:flex space-x-8">
-            <NuxtLink to="/alljeju" class="text-gray-600 hover:text-blue-600 font-medium smooth-transition py-2">
+          <nav class="hidden md:flex space-x-6">
+            <NuxtLink to="/alljeju" class="text-sm text-gray-600 hover:text-blue-600 font-medium smooth-transition py-2">
               홈
             </NuxtLink>
-            <NuxtLink to="/alljeju/welfare-services" class="text-gray-600 hover:text-blue-600 font-medium smooth-transition py-2">
+            <NuxtLink to="/alljeju/welfare-services" class="text-sm text-gray-600 hover:text-blue-600 font-medium smooth-transition py-2">
               복지 서비스
             </NuxtLink>
-            <NuxtLink to="/alljeju/festivals" class="text-gray-600 hover:text-blue-600 font-medium smooth-transition py-2">
+            <NuxtLink to="/alljeju/festivals" class="text-sm text-gray-600 hover:text-blue-600 font-medium smooth-transition py-2">
               행사/축제
             </NuxtLink>
-            <NuxtLink to="/alljeju/exhibitions" class="text-gray-600 hover:text-blue-600 font-medium smooth-transition py-2">
+            <NuxtLink to="/alljeju/exhibitions" class="text-sm text-gray-600 hover:text-blue-600 font-medium smooth-transition py-2">
               공연/전시
             </NuxtLink>
           </nav>
 
           <button class="md:hidden p-2 rounded-lg hover:bg-gray-100 smooth-transition" @click="isMobileMenuOpen = !isMobileMenuOpen">
-            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
             </svg>
           </button>
         </div>
 
         <!-- 모바일 메뉴 -->
-        <div v-if="isMobileMenuOpen" class="md:hidden mt-4 pt-4 border-t border-gray-100">
+        <div v-if="isMobileMenuOpen" class="md:hidden mt-3 pt-3 border-t border-gray-100">
           <div class="space-y-1">
-            <NuxtLink to="/alljeju" class="block py-3 px-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg font-medium smooth-transition">
+            <NuxtLink to="/alljeju" class="block py-2 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg font-medium smooth-transition">
               홈
             </NuxtLink>
-            <NuxtLink to="/alljeju/welfare-services" class="block py-3 px-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg font-medium smooth-transition">
+            <NuxtLink to="/alljeju/welfare-services" class="block py-2 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg font-medium smooth-transition">
               복지 서비스
             </NuxtLink>
-            <NuxtLink to="/alljeju/festivals" class="block py-3 px-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg font-medium smooth-transition">
+            <NuxtLink to="/alljeju/festivals" class="block py-2 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg font-medium smooth-transition">
               행사/축제
             </NuxtLink>
-            <NuxtLink to="/alljeju/exhibitions" class="block py-3 px-2 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg font-medium smooth-transition">
+            <NuxtLink to="/alljeju/exhibitions" class="block py-2 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg font-medium smooth-transition">
               공연/전시
             </NuxtLink>
           </div>
@@ -57,43 +57,43 @@
 
     <!-- 푸터 -->
     <footer class="bg-gray-50 border-t border-gray-100">
-      <div class="max-w-6xl mx-auto px-4 py-12">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="max-w-5xl mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <h3 class="text-lg font-semibold mb-4 text-gray-900">제주 지역정보</h3>
-            <p class="text-gray-600 leading-relaxed">제주도의 복지 서비스, 행사/축제, 공연/전시 정보를 한눈에 볼 수 있는 서비스입니다.</p>
+            <h3 class="text-base font-semibold mb-3 text-gray-900">제주 지역정보</h3>
+            <p class="text-sm text-gray-600 leading-relaxed">제주도의 복지 서비스, 행사/축제, 공연/전시 정보를 한눈에 볼 수 있는 서비스입니다.</p>
           </div>
 
           <div>
-            <h3 class="text-lg font-semibold mb-4 text-gray-900">서비스</h3>
-            <ul class="space-y-3">
+            <h3 class="text-base font-semibold mb-3 text-gray-900">서비스</h3>
+            <ul class="space-y-2">
               <li>
-                <NuxtLink to="/alljeju" class="text-gray-600 hover:text-blue-600 smooth-transition">홈</NuxtLink>
+                <NuxtLink to="/alljeju" class="text-sm text-gray-600 hover:text-blue-600 smooth-transition">홈</NuxtLink>
               </li>
               <li>
-                <NuxtLink to="/alljeju/welfare-services" class="text-gray-600 hover:text-blue-600 smooth-transition">복지 서비스</NuxtLink>
+                <NuxtLink to="/alljeju/welfare-services" class="text-sm text-gray-600 hover:text-blue-600 smooth-transition">복지 서비스</NuxtLink>
               </li>
               <li>
-                <NuxtLink to="/alljeju/festivals" class="text-gray-600 hover:text-blue-600 smooth-transition">행사/축제</NuxtLink>
+                <NuxtLink to="/alljeju/festivals" class="text-sm text-gray-600 hover:text-blue-600 smooth-transition">행사/축제</NuxtLink>
               </li>
               <li>
-                <NuxtLink to="/alljeju/exhibitions" class="text-gray-600 hover:text-blue-600 smooth-transition">공연/전시</NuxtLink>
+                <NuxtLink to="/alljeju/exhibitions" class="text-sm text-gray-600 hover:text-blue-600 smooth-transition">공연/전시</NuxtLink>
               </li>
             </ul>
           </div>
 
           <div>
-            <h3 class="text-lg font-semibold mb-4 text-gray-900">문의</h3>
-            <div class="space-y-2">
-              <p class="text-gray-600">제주특별자치도</p>
-              <p class="text-gray-600">전화: 000-0000-0000</p>
-              <p class="text-gray-600">이메일: info@jejuinfo.kr</p>
+            <h3 class="text-base font-semibold mb-3 text-gray-900">문의</h3>
+            <div class="space-y-1">
+              <p class="text-sm text-gray-600">제주특별자치도</p>
+              <p class="text-sm text-gray-600">전화: 000-0000-0000</p>
+              <p class="text-sm text-gray-600">이메일: info@jejuinfo.kr</p>
             </div>
           </div>
         </div>
 
-        <div class="border-t border-gray-200 mt-8 pt-8 text-center">
-          <p class="text-gray-500">&copy; {{ new Date().getFullYear() }} 제주 지역정보. All rights reserved.</p>
+        <div class="border-t border-gray-200 mt-6 pt-6 text-center">
+          <p class="text-sm text-gray-500">&copy; {{ new Date().getFullYear() }} 제주 지역정보. All rights reserved.</p>
         </div>
       </div>
     </footer>

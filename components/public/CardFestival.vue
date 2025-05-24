@@ -1,39 +1,39 @@
 <template>
-  <div class="toss-card p-6 smooth-transition hover:scale-[1.02]">
-    <h3 class="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
+  <div class="toss-card p-4 smooth-transition hover:scale-[1.01]">
+    <h3 class="text-base font-semibold text-gray-900 mb-2 line-clamp-2">
       {{ item.title }}
     </h3>
 
-    <div class="flex flex-wrap gap-2 mb-4">
-      <span class="px-3 py-1 text-xs font-medium bg-purple-50 text-purple-700 rounded-full">
+    <div class="flex flex-wrap gap-1 mb-3">
+      <span class="px-2 py-0.5 text-xs font-medium bg-purple-50 text-purple-700 rounded-md">
         축제/행사
       </span>
-      <span class="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
+      <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded-md">
         {{ item.writer_name || '작성자 정보 없음' }}
       </span>
     </div>
 
-    <p class="text-gray-600 line-clamp-3 mb-4 leading-relaxed" v-html="getSummary(item.content_html)"></p>
+    <p class="text-sm text-gray-600 line-clamp-2 mb-3" v-html="getSummary(item.content_html)"></p>
 
     <!-- 첨부 파일이 있는 경우 -->
-    <div v-if="hasFiles" class="mb-4 flex items-center text-sm text-gray-500">
-      <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div v-if="hasFiles" class="mb-3 flex items-center text-xs text-gray-500">
+      <svg class="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
       </svg>
       <span>첨부 파일 {{ filesCount }}개</span>
     </div>
 
     <div class="flex justify-between items-center">
-      <div class="text-sm text-gray-500">
+      <div class="text-xs text-gray-500">
         {{ formatDate(item.written_date) }}
       </div>
 
       <NuxtLink
         :to="`/alljeju/festivals/${item.id}`"
-        class="text-blue-600 hover:text-blue-700 font-medium smooth-transition flex items-center"
+        class="text-sm text-blue-600 hover:text-blue-700 font-medium smooth-transition flex items-center"
       >
         자세히 보기
-        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
         </svg>
       </NuxtLink>
