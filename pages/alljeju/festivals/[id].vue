@@ -27,15 +27,15 @@
     <div v-else-if="festival">
       <!-- 뒤로 가기 버튼 -->
       <div class="mb-6">
-        <NuxtLink
-          to="/alljeju/festivals"
+        <button
+          @click="goBack"
           class="inline-flex items-center text-sm text-gray-600 hover:text-blue-600 smooth-transition"
         >
           <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
           </svg>
-          행사/축제 목록으로
-        </NuxtLink>
+          {{ backButtonText }}
+        </button>
       </div>
 
       <!-- 메인 콘텐츠 -->
@@ -118,15 +118,15 @@
 
       <!-- 하단 액션 -->
       <div class="mt-8 flex justify-center">
-        <NuxtLink
-          to="/alljeju/festivals"
+        <button
+          @click="goBack"
           class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium smooth-transition flex items-center"
         >
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
           </svg>
-          목록으로 돌아가기
-        </NuxtLink>
+          {{ backButtonText }}
+        </button>
       </div>
     </div>
   </div>
@@ -174,6 +174,43 @@ function formatDate(date: string | Date): string {
     month: 'long',
     day: 'numeric'
   });
+}
+
+// 뒤로가기 버튼 텍스트
+const backButtonText = computed(() => {
+  if (process.client) {
+    const referrer = document.referrer;
+    if (referrer.includes('/alljeju/festivals') && !referrer.includes('/alljeju/festivals/')) {
+      return '행사/축제 목록으로';
+    } else if (referrer.includes('/alljeju') && !referrer.includes('/alljeju/festivals')) {
+      return '이전 페이지로';
+    }
+  }
+  return '행사/축제 목록으로';
+});
+
+// 뒤로가기 기능
+function goBack() {
+  if (process.client) {
+    const referrer = document.referrer;
+
+    // 메인 페이지에서 직접 접속한 경우
+    if (referrer.includes('/alljeju') && !referrer.includes('/alljeju/festivals')) {
+      window.history.back();
+      return;
+    }
+
+    // 행사/축제 목록에서 접속한 경우
+    if (referrer.includes('/alljeju/festivals') && !referrer.includes('/alljeju/festivals/')) {
+      window.history.back();
+      return;
+    }
+
+    // 기본적으로 행사/축제 목록으로
+    navigateTo('/alljeju/festivals');
+  } else {
+    navigateTo('/alljeju/festivals');
+  }
 }
 </script>
 
