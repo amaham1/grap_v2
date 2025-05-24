@@ -200,21 +200,12 @@ function goBack() {
       return;
     }
 
-    // 행사/축제 목록에서 접속한 경우 - 쿼리 파라미터 유지
+    // 행사/축제 목록에서 접속한 경우 - 세션 스토리지에서 상태 복원
     if (referrer.includes('/alljeju/festivals') && !referrer.includes('/alljeju/festivals/')) {
-      try {
-        const referrerUrl = new URL(referrer);
-        const searchParams = referrerUrl.searchParams;
-
-        // 쿼리 파라미터가 있으면 유지
-        const queryString = searchParams.toString();
-        const targetUrl = queryString ? `/alljeju/festivals?${queryString}` : '/alljeju/festivals';
-
-        navigateTo(targetUrl);
-        return;
-      } catch (error) {
-        console.warn('Failed to parse referrer URL:', error);
-      }
+      // 세션 스토리지에 복원 플래그 설정
+      sessionStorage.setItem('should-restore-festivals-state', 'true');
+      navigateTo('/alljeju/festivals');
+      return;
     }
 
     // 기본적으로 행사/축제 목록으로

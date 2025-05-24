@@ -172,21 +172,12 @@ function goBack() {
       return;
     }
 
-    // 복지 서비스 목록에서 접속한 경우 - 쿼리 파라미터 유지
+    // 복지 서비스 목록에서 접속한 경우 - 세션 스토리지에서 상태 복원
     if (referrer.includes('/alljeju/welfare-services') && !referrer.includes('/alljeju/welfare-services/')) {
-      try {
-        const referrerUrl = new URL(referrer);
-        const searchParams = referrerUrl.searchParams;
-
-        // 쿼리 파라미터가 있으면 유지
-        const queryString = searchParams.toString();
-        const targetUrl = queryString ? `/alljeju/welfare-services?${queryString}` : '/alljeju/welfare-services';
-
-        navigateTo(targetUrl);
-        return;
-      } catch (error) {
-        console.warn('Failed to parse referrer URL:', error);
-      }
+      // 세션 스토리지에 복원 플래그 설정
+      sessionStorage.setItem('should-restore-welfare-state', 'true');
+      navigateTo('/alljeju/welfare-services');
+      return;
     }
 
     // 기본적으로 복지 서비스 목록으로

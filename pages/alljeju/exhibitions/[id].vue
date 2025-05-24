@@ -282,21 +282,12 @@ function goBack() {
       return;
     }
 
-    // 공연/전시 목록에서 접속한 경우 - 쿼리 파라미터 유지
+    // 공연/전시 목록에서 접속한 경우 - 세션 스토리지에서 상태 복원
     if (referrer.includes('/alljeju/exhibitions') && !referrer.includes('/alljeju/exhibitions/')) {
-      try {
-        const referrerUrl = new URL(referrer);
-        const searchParams = referrerUrl.searchParams;
-
-        // 쿼리 파라미터가 있으면 유지
-        const queryString = searchParams.toString();
-        const targetUrl = queryString ? `/alljeju/exhibitions?${queryString}` : '/alljeju/exhibitions';
-
-        navigateTo(targetUrl);
-        return;
-      } catch (error) {
-        console.warn('Failed to parse referrer URL:', error);
-      }
+      // 세션 스토리지에 복원 플래그 설정
+      sessionStorage.setItem('should-restore-exhibitions-state', 'true');
+      navigateTo('/alljeju/exhibitions');
+      return;
     }
 
     // 기본적으로 공연/전시 목록으로

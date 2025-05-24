@@ -158,6 +158,59 @@ function resetFilters() {
 // 페이지 변경
 function onPageChange(newPage: number) {
   page.value = newPage;
+  savePageState();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// 페이지 상태 저장
+function savePageState() {
+  if (process.client) {
+    const state = {
+      page: page.value,
+      search: search.value,
+      sortBy: sortBy.value,
+      sortOrder: sortOrder.value,
+      timestamp: Date.now()
+    };
+    sessionStorage.setItem('festivals-state', JSON.stringify(state));
+  }
+}
+
+// 페이지 상태 복원
+function restorePageState() {
+  if (process.client) {
+    const savedState = sessionStorage.getItem('festivals-state');
+    if (savedState) {
+      try {
+        const state = JSON.parse(savedState);
+        // 5분 이내의 상태만 복원
+        if (Date.now() - state.timestamp < 5 * 60 * 1000) {
+          page.value = state.page || 1;
+          search.value = state.search || '';
+          sortBy.value = state.sortBy || 'written_date';
+          sortOrder.value = state.sortOrder || 'desc';
+        }
+      } catch (error) {
+        console.warn('Failed to restore page state:', error);
+      }
+    }
+  }
+}
+
+// 컴포넌트 마운트 시 상태 복원
+onMounted(() => {
+  // 뒤로가기로 인한 접속인지 확인
+  if (process.client) {
+    const shouldRestore = sessionStorage.getItem('should-restore-festivals-state');
+    if (shouldRestore === 'true') {
+      sessionStorage.removeItem('should-restore-festivals-state');
+      restorePageState();
+    }
+  }
+});
+
+// 검색/필터 변경 시 상태 저장
+watch([search, sortBy, sortOrder], () => {
+  savePageState();
+});
 </script>
