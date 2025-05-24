@@ -28,7 +28,6 @@ export function usePageState(options: UsePageStateOptions) {
       const restored = tryRestoreFromStorage();
       if (restored) {
         wasRestoredOnInit = true;
-        console.log(`${key} 페이지: 초기화 시 상태 복원됨`, restored);
         return restored;
       }
     }
@@ -149,7 +148,6 @@ export function usePageState(options: UsePageStateOptions) {
     if (process.client) {
       const savedState = sessionStorage.getItem(`${key}-state`);
       if (savedState) {
-        console.log(`${key} 페이지: 저장된 상태 발견, 복원 시도`);
         return restoreState();
       }
     }

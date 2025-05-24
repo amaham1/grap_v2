@@ -159,13 +159,11 @@ function onPageChange(newPage: number) {
 onMounted(() => {
   // 초기화 시 이미 복원되었거나, 뒤로가기로 인한 접속인지 확인
   if (pageStateManager.wasInitiallyRestored()) {
-    console.log('복지 서비스 페이지: 초기화 시 상태가 복원되었습니다.');
     // 초기화 시 복원된 경우 데이터 다시 로드
     nextTick(() => {
       refresh();
     });
   } else if (pageStateManager.tryRestore()) {
-    console.log('복지 서비스 페이지: 뒤로가기로 인한 상태 복원');
     // 상태 복원 후 데이터 다시 로드
     nextTick(() => {
       refresh();

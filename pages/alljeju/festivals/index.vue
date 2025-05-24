@@ -144,21 +144,11 @@ const queryParams = computed(() => {
 const { data, pending: loading, error, refresh } = await useFetch('/api/public/festivals', {
   query: queryParams,
   watch: [queryParams],
-  onResponse({ request, response, options }) {
-    // API 요청 및 응답 로그
-    console.log('행사/축제 API 요청 파라미터:', request);
-    console.log('행사/축제 API 응답 데이터:', response._data);
-  },
-  onResponseError({ request, response, options }) {
-    // API 오류 로그
-    console.error('행사/축제 API 오류:', response._data);
-  }
 });
 
 // 결과 데이터
 const festivals = computed(() => {
   const items = data.value?.items || [];
-  console.log('행사/축제 데이터 항목 개수:', items.length);
   return items;
 });
 const pageCount = computed(() => data.value?.pagination?.pageCount || 0);
@@ -193,13 +183,11 @@ function onPageChange(newPage: number) {
 onMounted(() => {
   // 초기화 시 이미 복원되었거나, 뒤로가기로 인한 접속인지 확인
   if (pageStateManager.wasInitiallyRestored()) {
-    console.log('축제 페이지: 초기화 시 상태가 복원되었습니다.');
     // 초기화 시 복원된 경우 데이터 다시 로드
     nextTick(() => {
       refresh();
     });
   } else if (pageStateManager.tryRestore()) {
-    console.log('축제 페이지: 뒤로가기로 인한 상태 복원');
     // 상태 복원 후 데이터 다시 로드
     nextTick(() => {
       refresh();

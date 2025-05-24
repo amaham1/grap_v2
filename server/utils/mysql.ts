@@ -33,12 +33,7 @@ try {
         return next();
     }
   });
-  console.log('[DEBUG] mysql.ts: Pool object created:', pool ? 'OK' : 'Failed or Undefined');
-  if (!pool) {
-    console.error('[ERROR] mysql.ts: Pool object is undefined immediately after creation attempt.');
-  }
 } catch (error) {
-  console.error('[ERROR] mysql.ts: Error during mysql.createPool:', error);
   // 에러 발생 시 pool을 undefined로 명시적으로 두거나, 혹은 애플리케이션을 중단시키는 등의 처리를 고려할 수 있습니다.
   pool = undefined; 
 }
@@ -46,9 +41,7 @@ try {
 
 // 간단한 쿼리 실행 함수 예제
 export async function executeQuery<T>(sql: string, params?: any[]): Promise<T> {
-  console.log('[DEBUG] executeQuery in mysql.ts CALLED. SQL:', sql.substring(0, 100)); // SQL문 일부 로깅
   if (!pool) {
-    console.error('[ERROR] executeQuery: Pool is not initialized or undefined!');
     throw new Error('Database pool is not available.'); // 또는 적절한 에러 처리
   }
   const [rows] = await pool.execute(sql, params);

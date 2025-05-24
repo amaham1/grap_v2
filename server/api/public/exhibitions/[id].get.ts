@@ -42,8 +42,6 @@ export default defineEventHandler(async (event) => {
       WHERE id = ?
       LIMIT 1`;
     
-    console.log(`[디버깅] 전시회 상세정보 조회 ID: ${id}`);
-    
     const results = await executeQuery<ExhibitionDetail[]>(query, [id]);
     
     if (!results || results.length === 0) {
@@ -62,8 +60,6 @@ export default defineEventHandler(async (event) => {
       throw error; // 이미 생성된 오류는 그대로 반환
     }
     
-    console.error('[공개 API 오류] 공연/전시 상세 조회 실패:', error.message);
-    console.error(error);
     
     throw createError({
       statusCode: 500,

@@ -9,14 +9,11 @@ export async function executeQuery<T>(query: string, params: any[] = []): Promis
 }
 
 export async function testConnection(): Promise<void> {
-  console.warn('db.ts testConnection is deprecated. Use mysql.ts if a similar function is needed.');
   // 실제 연결 테스트가 필요하다면 mysql.ts의 연결 풀을 사용하는 로직으로 구현해야 합니다.
   // 간단히 executeQueryFromMysql을 호출하여 테스트할 수도 있습니다.
   try {
     await executeQueryFromMysql('SELECT 1');
-    console.log('Successfully made a test query via db.ts (using mysql.ts pool).');
   } catch (error) {
-    console.error('Failed to make a test query via db.ts:', error);
     throw error;
   }
 }

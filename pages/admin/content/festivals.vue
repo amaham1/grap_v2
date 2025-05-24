@@ -208,7 +208,6 @@ async function fetchFestivals() {
     currentPage.value = response.meta.page;
 
   } catch (error: any) {
-    console.error('Error fetching festivals:', error);
     festivals.value = [];
     totalItems.value = 0;
     // Nuxt/Nitro에서 오류 응답은 error.data에 포함될 수 있습니다.
@@ -242,14 +241,12 @@ async function toggleVisibility(festival: Festival) {
       await fetchFestivals(); // 데이터 일관성을 위해 목록 새로고침
     }
   } catch (error: any) {
-    console.error('Error toggling visibility:', error);
     toast.value = { message: error.data?.statusMessage || error.data?.message || '상태 변경 중 오류가 발생했습니다.', type: 'error' };
     await fetchFestivals(); // 데이터 일관성을 위해 목록 새로고침
   }
 }
 
 function viewDetails(festival: Festival) {
-  console.log('View details for festival:', festival.id);
   alert(`상세보기 기능은 아직 구현되지 않았습니다. 축제 ID: ${festival.id}`);
   // 실제 구현 시: await navigateTo(`/admin/content/festivals/${festival.id}`);
 }
