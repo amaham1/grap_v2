@@ -161,6 +161,16 @@ const backButtonText = computed(() => {
   return '복지 서비스 목록으로';
 });
 
+// 페이지 상태 관리 composable 사용
+const pageStateManager = usePageState({
+  key: 'welfare-services',
+  defaultState: {
+    page: 1,
+    search: '',
+    selectedLocation: ''
+  }
+});
+
 // 뒤로가기 기능
 function goBack() {
   if (process.client) {
@@ -172,15 +182,9 @@ function goBack() {
       return;
     }
 
-    // 복지 서비스 목록에서 접속한 경우 - 세션 스토리지에서 상태 복원
-    if (referrer.includes('/alljeju/welfare-services') && !referrer.includes('/alljeju/welfare-services/')) {
-      // 세션 스토리지에 복원 플래그 설정
-      sessionStorage.setItem('should-restore-welfare-state', 'true');
-      navigateTo('/alljeju/welfare-services');
-      return;
-    }
-
-    // 기본적으로 복지 서비스 목록으로
+    // 복지 서비스 목록에서 접속한 경우 또는 기본적으로 복지 서비스 목록으로
+    // 복원 플래그 설정
+    pageStateManager.prepareForReturn();
     navigateTo('/alljeju/welfare-services');
   } else {
     navigateTo('/alljeju/welfare-services');

@@ -189,6 +189,17 @@ const backButtonText = computed(() => {
   return '행사/축제 목록으로';
 });
 
+// 페이지 상태 관리 composable 사용
+const pageStateManager = usePageState({
+  key: 'festivals',
+  defaultState: {
+    page: 1,
+    search: '',
+    sortBy: 'written_date',
+    sortOrder: 'desc'
+  }
+});
+
 // 뒤로가기 기능
 function goBack() {
   if (process.client) {
@@ -200,15 +211,9 @@ function goBack() {
       return;
     }
 
-    // 행사/축제 목록에서 접속한 경우 - 세션 스토리지에서 상태 복원
-    if (referrer.includes('/alljeju/festivals') && !referrer.includes('/alljeju/festivals/')) {
-      // 세션 스토리지에 복원 플래그 설정
-      sessionStorage.setItem('should-restore-festivals-state', 'true');
-      navigateTo('/alljeju/festivals');
-      return;
-    }
-
-    // 기본적으로 행사/축제 목록으로
+    // 행사/축제 목록에서 접속한 경우 또는 기본적으로 행사/축제 목록으로
+    // 복원 플래그 설정
+    pageStateManager.prepareForReturn();
     navigateTo('/alljeju/festivals');
   } else {
     navigateTo('/alljeju/festivals');

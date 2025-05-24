@@ -95,11 +95,38 @@ definePageMeta({
   layout: 'public'
 });
 
-// 상태 관리
-const search = ref('');
-const sortBy = ref('written_date');
-const sortOrder = ref('desc');
-const page = ref(1);
+// 페이지 상태 관리 composable 사용
+const pageStateManager = usePageState({
+  key: 'festivals',
+  defaultState: {
+    page: 1,
+    search: '',
+    sortBy: 'written_date',
+    sortOrder: 'desc'
+  }
+});
+
+// 반응형 상태 참조
+const search = computed({
+  get: () => pageStateManager.state.value.search,
+  set: (value) => pageStateManager.updateSearch(value)
+});
+
+const sortBy = computed({
+  get: () => pageStateManager.state.value.sortBy,
+  set: (value) => pageStateManager.updateFilters({ sortBy: value })
+});
+
+const sortOrder = computed({
+  get: () => pageStateManager.state.value.sortOrder,
+  set: (value) => pageStateManager.updateFilters({ sortOrder: value })
+});
+
+const page = computed({
+  get: () => pageStateManager.state.value.page,
+  set: (value) => pageStateManager.updatePage(value)
+});
+
 const pageSize = ref(12);
 
 // API 호출을 위한 쿼리 매개변수
@@ -138,95 +165,45 @@ const pageCount = computed(() => data.value?.pagination?.pageCount || 0);
 
 // 검색 처리
 function onSearch(searchText: string) {
-  search.value = searchText;
-  page.value = 1; // 검색 시 첫 페이지로 이동
+  search.value = searchText; // computed setter가 자동으로 상태 저장
 }
 
 // 필터 적용
 function applyFilters() {
-  page.value = 1; // 필터 변경 시 첫 페이지로 이동
+  // 필터 변경은 computed setter에서 자동으로 처리됨
 }
 
 // 필터 초기화
 function resetFilters() {
-  search.value = '';
-  sortBy.value = 'written_date';
-  sortOrder.value = 'desc';
-  page.value = 1;
+  pageStateManager.saveState({
+    search: '',
+    sortBy: 'written_date',
+    sortOrder: 'desc',
+    page: 1
+  });
 }
 
 // 페이지 변경
 function onPageChange(newPage: number) {
-  page.value = newPage;
-  savePageState();
+  page.value = newPage; // computed setter가 자동으로 상태 저장
   window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// 페이지 상태 저장
-function savePageState() {
-  if (process.client) {
-    const state = {
-      page: page.value,
-      search: search.value,
-      sortBy: sortBy.value,
-      sortOrder: sortOrder.value,
-      timestamp: Date.now()
-    };
-    sessionStorage.setItem('festivals-state', JSON.stringify(state));
-  }
-}
-
-// 페이지 상태 복원
-function restorePageState() {
-  if (process.client) {
-    const savedState = sessionStorage.getItem('festivals-state');
-    console.log('Restoring festivals state:', savedState);
-    if (savedState) {
-      try {
-        const state = JSON.parse(savedState);
-        console.log('Parsed state:', state);
-        // 5분 이내의 상태만 복원
-        if (Date.now() - state.timestamp < 5 * 60 * 1000) {
-          console.log('Restoring to page:', state.page);
-          page.value = state.page || 1;
-          search.value = state.search || '';
-          sortBy.value = state.sortBy || 'written_date';
-          sortOrder.value = state.sortOrder || 'desc';
-
-          // 상태 복원 후 데이터 다시 로드
-          nextTick(() => {
-            applyFilters();
-          });
-        } else {
-          console.log('State expired');
-        }
-      } catch (error) {
-        console.warn('Failed to restore page state:', error);
-      }
-    } else {
-      console.log('No saved state found');
-    }
-  }
 }
 
 // 컴포넌트 마운트 시 상태 복원
 onMounted(() => {
-  // 뒤로가기로 인한 접속인지 확인
-  if (process.client) {
-    const shouldRestore = sessionStorage.getItem('should-restore-festivals-state');
-    console.log('Should restore festivals state:', shouldRestore);
-    if (shouldRestore === 'true') {
-      sessionStorage.removeItem('should-restore-festivals-state');
-      // 약간의 지연 후 상태 복원 (DOM이 완전히 로드된 후)
-      setTimeout(() => {
-        restorePageState();
-      }, 100);
-    }
+  // 초기화 시 이미 복원되었거나, 뒤로가기로 인한 접속인지 확인
+  if (pageStateManager.wasInitiallyRestored()) {
+    console.log('축제 페이지: 초기화 시 상태가 복원되었습니다.');
+    // 초기화 시 복원된 경우 데이터 다시 로드
+    nextTick(() => {
+      refresh();
+    });
+  } else if (pageStateManager.tryRestore()) {
+    console.log('축제 페이지: 뒤로가기로 인한 상태 복원');
+    // 상태 복원 후 데이터 다시 로드
+    nextTick(() => {
+      refresh();
+    });
   }
-});
-
-// 검색/필터 변경 시 상태 저장
-watch([search, sortBy, sortOrder], () => {
-  savePageState();
 });
 </script>
