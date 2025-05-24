@@ -9,13 +9,12 @@
         @error="handleImageError"
       />
     </div>
-    <div v-else class="h-32 bg-gray-100 flex items-center justify-center">
-      <div class="text-center">
-        <svg class="w-8 h-8 text-gray-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-        </svg>
-        <span class="text-gray-500 text-xs">이미지 없음</span>
-      </div>
+    <div v-else class="h-32 overflow-hidden">
+      <img
+        src="/images/no-image.svg"
+        alt="이미지 없음"
+        class="w-full h-full object-cover"
+      />
     </div>
 
     <div class="p-4">
@@ -92,9 +91,9 @@ const props = defineProps<{
 // 이미지 로드 오류 처리
 function handleImageError(e: Event) {
   // 클라이언트 사이드에서만 실행되도록 합니다.
-  if (process.client) {
+  if (import.meta.client) {
     const target = e.target as HTMLImageElement;
-    target.src = '/images/no-image.png'; // 기본 이미지 경로로 대체 (해당 이미지가 있다고 가정)
+    target.src = '/images/no-image.svg'; // SVG 기본 이미지로 대체
     target.onerror = null; // 재귀적 오류 방지
   }
 }

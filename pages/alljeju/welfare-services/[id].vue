@@ -14,7 +14,7 @@
         <div class="flex-1">
           <p class="text-red-700 font-medium mb-3">복지 서비스 정보를 불러오는 중 오류가 발생했습니다.</p>
           <button
-            @click="refresh"
+            @click="() => refresh()"
             class="px-4 py-2 bg-white text-red-700 rounded-lg hover:bg-red-50 border border-red-300 text-sm font-medium smooth-transition"
           >
             다시 시도
@@ -173,7 +173,7 @@ const pageStateManager = usePageState({
 
 // 뒤로가기 기능
 function goBack() {
-  if (process.client) {
+  if (import.meta.client) {
     const referrer = document.referrer;
 
     // 메인 페이지에서 직접 접속한 경우

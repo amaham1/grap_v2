@@ -4,15 +4,12 @@
     <section class="py-12 lg:py-16 toss-gradient text-white">
       <div class="max-w-5xl mx-auto px-4">
         <div class="max-w-3xl mx-auto text-center">
-          <h1 class="text-2xl lg:text-3xl font-bold mb-4">
-            무엇을 도와드릴까요?
-          </h1>
           <p class="text-base lg:text-lg mb-8 text-blue-100">
             제주도의 복지 서비스, 행사/축제, 공연/전시 정보를 쉽고 빠르게 찾아보세요.
           </p>
 
           <!-- 빠른 링크 버튼들 -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             <NuxtLink
               to="/alljeju/welfare-services"
               class="bg-white bg-opacity-10 backdrop-blur-sm border border-white border-opacity-20 text-white p-3 rounded-xl hover:bg-opacity-20 smooth-transition text-center"
@@ -33,6 +30,13 @@
             >
               <div class="text-sm font-medium">공연/전시</div>
               <div class="text-xs text-blue-100 mt-1">제주도 공연 및 전시 정보</div>
+            </NuxtLink>
+            <NuxtLink
+              to="/alljeju/gas-stations"
+              class="bg-white bg-opacity-10 backdrop-blur-sm border border-white border-opacity-20 text-white p-3 rounded-xl hover:bg-opacity-20 smooth-transition text-center"
+            >
+              <div class="text-sm font-medium">최저가 주유소</div>
+              <div class="text-xs text-blue-100 mt-1">제주도 주유소 가격 정보</div>
             </NuxtLink>
           </div>
         </div>

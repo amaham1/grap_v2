@@ -14,7 +14,7 @@
         <div class="flex-1">
           <p class="text-red-700 font-medium mb-3">행사/축제 정보를 불러오는 중 오류가 발생했습니다.</p>
           <button
-            @click="refresh"
+            @click="() => refresh()"
             class="px-4 py-2 bg-white text-red-700 rounded-lg hover:bg-red-50 border border-red-300 text-sm font-medium smooth-transition"
           >
             다시 시도
@@ -140,8 +140,20 @@ definePageMeta({
 const route = useRoute();
 const id = route.params.id;
 
+// 타입 정의
+interface FestivalDetail {
+  id: number;
+  title: string;
+  content_html: string;
+  source_url: string;
+  writer_name: string;
+  written_date: string;
+  files_info?: any;
+  fetched_at: string;
+}
+
 // 데이터 가져오기
-const { data, pending: loading, error, refresh } = await useFetch(`/api/public/festivals/${id}`);
+const { data, pending: loading, error, refresh } = await useFetch<{item: FestivalDetail}>(`/api/public/festivals/${id}`);
 
 // 행사/축제 정보
 const festival = computed(() => data.value?.item);
@@ -178,7 +190,7 @@ function formatDate(date: string | Date): string {
 
 // 뒤로가기 버튼 텍스트
 const backButtonText = computed(() => {
-  if (process.client) {
+  if (import.meta.client) {
     const referrer = document.referrer;
     if (referrer.includes('/alljeju/festivals') && !referrer.includes('/alljeju/festivals/')) {
       return '행사/축제 목록으로';
@@ -202,7 +214,7 @@ const pageStateManager = usePageState({
 
 // 뒤로가기 기능
 function goBack() {
-  if (process.client) {
+  if (import.meta.client) {
     const referrer = document.referrer;
 
     // 메인 페이지에서 직접 접속한 경우

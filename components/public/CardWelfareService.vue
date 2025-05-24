@@ -1,8 +1,19 @@
 <template>
-  <div class="toss-card p-4 smooth-transition hover:scale-[1.01]">
-    <h3 class="text-base font-semibold text-gray-900 mb-2 line-clamp-2">
-      {{ item.service_name }}
-    </h3>
+  <div class="toss-card overflow-hidden smooth-transition hover:scale-[1.01]">
+    <!-- 이미지 섹션 -->
+    <div class="h-32 overflow-hidden">
+      <img
+        src="/images/no-image.svg"
+        alt="이미지 없음"
+        class="w-full h-full object-cover"
+      />
+    </div>
+
+    <!-- 콘텐츠 섹션 -->
+    <div class="p-4">
+      <h3 class="text-base font-semibold text-gray-900 mb-2 line-clamp-2">
+        {{ item.service_name }}
+      </h3>
 
     <div class="flex flex-wrap gap-1 mb-3">
       <span
@@ -32,15 +43,16 @@
         {{ formatDate(item.fetched_at) }}
       </div>
 
-      <NuxtLink
-        :to="`/alljeju/welfare-services/${item.id}`"
-        class="text-sm text-blue-600 hover:text-blue-700 font-medium smooth-transition flex items-center"
-      >
-        자세히 보기
-        <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-        </svg>
-      </NuxtLink>
+        <NuxtLink
+          :to="`/alljeju/welfare-services/${item.id}`"
+          class="text-sm text-blue-600 hover:text-blue-700 font-medium smooth-transition flex items-center"
+        >
+          자세히 보기
+          <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </NuxtLink>
+      </div>
     </div>
   </div>
 </template>

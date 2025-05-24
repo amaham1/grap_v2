@@ -1,8 +1,27 @@
 <template>
-  <div class="toss-card p-4 smooth-transition hover:scale-[1.01]">
-    <h3 class="text-base font-semibold text-gray-900 mb-2 line-clamp-2">
-      {{ item.title }}
-    </h3>
+  <div class="toss-card overflow-hidden smooth-transition hover:scale-[1.01]">
+    <!-- 이미지 섹션 -->
+    <div v-if="firstImageUrl" class="h-32 overflow-hidden">
+      <img
+        :src="firstImageUrl"
+        :alt="item.title"
+        class="w-full h-full object-cover smooth-transition hover:scale-105"
+        @error="handleImageError"
+      />
+    </div>
+    <div v-else class="h-32 overflow-hidden">
+      <img
+        src="/images/no-image.svg"
+        alt="이미지 없음"
+        class="w-full h-full object-cover"
+      />
+    </div>
+
+    <!-- 콘텐츠 섹션 -->
+    <div class="p-4">
+      <h3 class="text-base font-semibold text-gray-900 mb-2 line-clamp-2">
+        {{ item.title }}
+      </h3>
 
     <div class="flex flex-wrap gap-1 mb-3">
       <span class="px-2 py-0.5 text-xs font-medium bg-purple-50 text-purple-700 rounded-md">
@@ -28,15 +47,16 @@
         {{ formatDate(item.written_date) }}
       </div>
 
-      <NuxtLink
-        :to="`/alljeju/festivals/${item.id}`"
-        class="text-sm text-blue-600 hover:text-blue-700 font-medium smooth-transition flex items-center"
-      >
-        자세히 보기
-        <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-        </svg>
-      </NuxtLink>
+        <NuxtLink
+          :to="`/alljeju/festivals/${item.id}`"
+          class="text-sm text-blue-600 hover:text-blue-700 font-medium smooth-transition flex items-center"
+        >
+          자세히 보기
+          <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </NuxtLink>
+      </div>
     </div>
   </div>
 </template>
@@ -49,7 +69,7 @@ interface FestivalItem {
   source_url: string;
   writer_name: string;
   written_date: Date | string;
-  files_info: any;
+  files_info?: any;
   fetched_at: Date | string;
 }
 
@@ -57,9 +77,47 @@ const props = defineProps<{
   item: FestivalItem;
 }>();
 
+// 이미지 로드 오류 처리
+function handleImageError(e: Event) {
+  if (import.meta.client) {
+    const target = e.target as HTMLImageElement;
+    target.src = '/images/no-image.svg';
+    target.onerror = null;
+  }
+}
+
+// 첫 번째 이미지 URL 추출
+const firstImageUrl = computed(() => {
+  if (!props.item?.files_info) return null;
+
+  let files = props.item.files_info;
+  if (typeof files === 'string') {
+    try {
+      files = JSON.parse(files);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  if (Array.isArray(files) && files.length > 0) {
+    // 이미지 파일 확장자를 가진 첫 번째 파일 찾기
+    const imageFile = files.find(file => {
+      if (typeof file === 'string') return /\.(jpg|jpeg|png|gif|webp)$/i.test(file);
+      if (file && file.url) return /\.(jpg|jpeg|png|gif|webp)$/i.test(file.url);
+      return false;
+    });
+
+    if (imageFile) {
+      return typeof imageFile === 'string' ? imageFile : imageFile.url;
+    }
+  }
+
+  return null;
+});
+
 // 첨부 파일 여부 및 개수 계산
 const hasFiles = computed(() => {
-  if (!props.item.files_info) return false;
+  if (!props.item?.files_info) return false;
 
   let files = props.item.files_info;
   if (typeof files === 'string') {
@@ -74,7 +132,7 @@ const hasFiles = computed(() => {
 });
 
 const filesCount = computed(() => {
-  if (!hasFiles.value) return 0;
+  if (!hasFiles.value || !props.item?.files_info) return 0;
 
   let files = props.item.files_info;
   if (typeof files === 'string') {
