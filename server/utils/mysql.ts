@@ -72,16 +72,20 @@ function initializePool() {
         database: config.dbDatabase || process.env.DB_DATABASE || 'mydatabase',
         port: parseInt(config.dbPort || process.env.DB_PORT || '3306'),
         waitForConnections: true,
-        connectionLimit: 5, // 직접 연결시에는 연결 수 제한
+        connectionLimit: 3, // 클라우드플레어에서는 더 적은 연결 수 사용
         queueLimit: 0,
-        acquireTimeout: 60000,
-        timeout: 60000,
+        acquireTimeout: 30000, // 30초로 단축
+        timeout: 30000, // 30초로 단축
         reconnect: true,
         charset: 'utf8mb4',
         bigNumberStrings: true,
         supportBigNumbers: true,
         dateStrings: false,
         ssl: false,
+        // 추가 연결 안정성 옵션
+        authPlugins: {
+          mysql_native_password: () => require('mysql2/lib/auth_plugins').mysql_native_password,
+        },
         typeCast: function (field, next) {
           if (field.type === 'VAR_STRING' || field.type === 'VARCHAR' || field.type === 'STRING' ||
               field.type === 'TEXT' || field.type === 'MEDIUMTEXT' || field.type === 'LONGTEXT' ||
