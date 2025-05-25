@@ -11,7 +11,17 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxt/image', '@nuxtjs/tailwindcss'],
   runtimeConfig: {
+    // 서버 사이드에서만 사용되는 환경 변수들
+    dbHost: process.env.DB_HOST,
+    dbUser: process.env.DB_USER,
+    dbPassword: process.env.DB_PASSWORD,
+    dbDatabase: process.env.DB_DATABASE,
+    dbPort: process.env.DB_PORT,
+    jwtSecretKey: process.env.JWT_SECRET_KEY,
+    jwtExpiresIn: process.env.JWT_EXPIRES_IN,
+
     public: {
+      // 클라이언트에서도 접근 가능한 환경 변수들
       kakaoMapApiKey: process.env.KAKAO_MAP_API_KEY || 'f7c0b5b7e8a4c5d6e7f8a9b0c1d2e3f4'
     }
   }
