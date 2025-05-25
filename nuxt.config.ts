@@ -17,6 +17,11 @@ export default defineNuxtConfig({
     dbPassword: process.env.DB_PASSWORD,
     dbDatabase: process.env.DB_DATABASE,
     dbPort: process.env.DB_PORT,
+
+    // Hyperdrive 설정
+    hyperdriveUrl: process.env.HYPERDRIVE_URL,
+
+    // JWT 설정
     jwtSecretKey: process.env.JWT_SECRET_KEY,
     jwtExpiresIn: process.env.JWT_EXPIRES_IN,
 

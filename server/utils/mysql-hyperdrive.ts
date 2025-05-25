@@ -23,7 +23,7 @@ function parseHyperdriveUrl(url: string) {
 // 풀 초기화 함수 (Hyperdrive 우선)
 function initializePool() {
   if (pool) return pool;
-
+  
   try {
     const config = useRuntimeConfig();
     let dbConfig: any;
@@ -32,7 +32,7 @@ function initializePool() {
     if (config.hyperdriveUrl) {
       console.log('Using Hyperdrive connection');
       const hyperdriveConfig = parseHyperdriveUrl(config.hyperdriveUrl);
-
+      
       if (hyperdriveConfig) {
         dbConfig = {
           ...hyperdriveConfig,
@@ -113,13 +113,12 @@ function initializePool() {
   }
 }
 
-
-// 간단한 쿼리 실행 함수 예제
+// 쿼리 실행 함수
 export async function executeQuery<T>(sql: string, params?: any[]): Promise<T> {
   const currentPool = initializePool();
-
+  
   if (!currentPool) {
-    throw new Error('Database pool is not available'); // 또는 적절한 에러 처리
+    throw new Error('Database pool is not available');
   }
 
   // boolean 값을 MySQL에서 사용할 수 있는 형태로 변환
@@ -143,7 +142,7 @@ export async function testDatabaseConnection(): Promise<{
 }> {
   try {
     const currentPool = initializePool();
-
+    
     if (!currentPool) {
       const config = useRuntimeConfig();
       return {
