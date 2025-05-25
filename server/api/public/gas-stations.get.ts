@@ -1,6 +1,7 @@
 // server/api/public/gas-stations.get.ts
 import { defineEventHandler, getQuery, createError } from 'h3';
 import { gasStationDAO } from '~/server/dao';
+import { testDatabaseConnection } from '~/server/utils/mysql';
 
 // Haversine 공식을 사용한 거리 계산 (km)
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -17,6 +18,19 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export default defineEventHandler(async (event) => {
   try {
+    // DB 연결 상태 확인
+    const dbStatus = await testDatabaseConnection();
+    console.log('[주유소 API] DB 연결 상태:', dbStatus);
+
+    if (!dbStatus.success) {
+      console.error('[주유소 API] DB 연결 실패:', dbStatus);
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Database connection failed',
+        data: dbStatus
+      });
+    }
+
     const query = getQuery(event);
 
     // 쿼리 파라미터 파싱

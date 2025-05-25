@@ -116,6 +116,10 @@ import AdBlock from '~/components/public/AdBlock.vue';
 const isMobileMenuOpen = ref(false);
 const route = useRoute();
 
+// DB 연결 확인
+const { checkConnectionOnMount } = useDbConnection();
+checkConnectionOnMount();
+
 // 최저가 주유소 페이지인지 확인
 const isGasStationsPage = computed(() => {
   return route.path.includes('/gas-stations');

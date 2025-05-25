@@ -1,6 +1,7 @@
 // server/api/public/welfare-services/index.get.ts
 import { defineEventHandler, getQuery, createError } from 'h3';
 import { executeQuery } from '~/server/utils/db';
+import { testDatabaseConnection } from '~/server/utils/mysql';
 import { sanitizeItemsHtmlFields } from '~/server/utils/sanitize';
 
 interface WelfareServicePublic {
@@ -17,6 +18,18 @@ interface WelfareServicePublic {
 
 export default defineEventHandler(async (event) => {
   try {
+    // DB 연결 상태 확인
+    const dbStatus = await testDatabaseConnection();
+    console.log('[복지 서비스 API] DB 연결 상태:', dbStatus);
+
+    if (!dbStatus.success) {
+      console.error('[복지 서비스 API] DB 연결 실패:', dbStatus);
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Database connection failed',
+        data: dbStatus
+      });
+    }
     // 디버긱 테스트: 전체 welfare_services 테이블 레코드 수 확인
     const totalCountQuery = 'SELECT COUNT(*) as total FROM welfare_services';
     const totalCountResult = await executeQuery<any[]>(totalCountQuery, []);

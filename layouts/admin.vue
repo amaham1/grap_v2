@@ -41,6 +41,10 @@
 </template>
 
 <script setup lang="ts">
+// DB 연결 확인
+const { checkConnectionOnMount } = useDbConnection();
+checkConnectionOnMount();
+
 // Admin layout specific logic can go here
 </script>
 

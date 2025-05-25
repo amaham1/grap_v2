@@ -59,4 +59,53 @@ export async function executeQuery<T>(sql: string, params?: any[]): Promise<T> {
   return rows as T;
 }
 
+// DB 연결 테스트 함수
+export async function testDatabaseConnection(): Promise<{
+  success: boolean;
+  message: string;
+  details?: any;
+  config?: any;
+}> {
+  try {
+    if (!pool) {
+      return {
+        success: false,
+        message: 'Database pool is not available',
+        details: 'Pool creation failed during initialization',
+        config: {
+          host: process.env.DB_HOST || 'localhost',
+          user: process.env.DB_USER || 'root',
+          database: process.env.DB_DATABASE || 'mydatabase',
+          // 비밀번호는 보안상 표시하지 않음
+        }
+      };
+    }
+
+    // 간단한 쿼리로 연결 테스트
+    const [rows] = await pool.execute('SELECT 1 as test');
+
+    return {
+      success: true,
+      message: 'Database connection successful',
+      details: rows,
+      config: {
+        host: process.env.DB_HOST || 'localhost',
+        user: process.env.DB_USER || 'root',
+        database: process.env.DB_DATABASE || 'mydatabase',
+      }
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Database connection failed',
+      details: error.message,
+      config: {
+        host: process.env.DB_HOST || 'localhost',
+        user: process.env.DB_USER || 'root',
+        database: process.env.DB_DATABASE || 'mydatabase',
+      }
+    };
+  }
+}
+
 export { pool };
