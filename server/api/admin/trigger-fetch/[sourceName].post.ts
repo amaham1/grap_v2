@@ -41,11 +41,15 @@ export default defineEventHandler(async (event) => {
         fetchPromise = $fetch('/api/cron/welfare-services', { method: 'GET' });
         resultMessage = `Welfare service data fetch triggered successfully via /api/cron/welfare-services.`;
         break;
+      case 'gas-stations':
+        fetchPromise = $fetch('/api/cron/gas-stations', { method: 'GET' });
+        resultMessage = `Gas station data fetch triggered successfully via /api/cron/gas-stations.`;
+        break;
       default:
         throw createError({
           statusCode: 400,
           statusMessage: 'Bad Request',
-          message: `Invalid source name: ${sourceNameParam}. Valid sources are festivals, exhibitions, welfare-services.`,
+          message: `Invalid source name: ${sourceNameParam}. Valid sources are festivals, exhibitions, welfare-services, gas-stations.`,
         });
     }
 
@@ -96,7 +100,7 @@ export default defineEventHandler(async (event) => {
             errorDetails = responseData;
         }
     }
-    
+
     try {
         if (connection) { // Ensure connection exists before logging
         await logDAO.createApiFetchLog(connection, {

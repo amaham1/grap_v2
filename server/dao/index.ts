@@ -4,11 +4,13 @@
 import * as festivalDAO from './festival-dao';
 import * as exhibitionDAO from './exhibition-dao';
 import * as welfareServiceDAO from './welfare-service-dao';
+import * as gasStationDAO from './gas-station-dao';
 import * as logDAO from './log-dao';
 
 export {
   festivalDAO,
   exhibitionDAO,
   welfareServiceDAO,
+  gasStationDAO,
   logDAO
 };
