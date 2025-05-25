@@ -27,90 +27,76 @@ export default defineEventHandler(async (event) => {
     const pageSize = parseInt(query.pageSize as string) || 10;
     const search = query.search as string || '';
     const location = query.location as string || '';
-    
+
     const offset = (page - 1) * pageSize;
-    
+
     // 기본 필터 - 임시로 노출 상태 필터 제거
     let whereClause = 'WHERE 1=1'; // 모든 데이터 표시
     const params: any[] = [];
-    
+
     console.log(`[디버긱] 임시로 노출 상태 필터(is_exposed=true) 제거하고 모든 데이터 표시함`);
-    
+
     // 디버긱 테스트: is_exposed=true 필터만 적용했을 때 레코드 수 확인
     const exposedCountQuery = `SELECT COUNT(*) as total FROM welfare_services ${whereClause}`;
     const exposedCountResult = await executeQuery<any[]>(exposedCountQuery, params);
     console.log(`[디버긱] is_exposed=true 조건 필터만 적용했을 때 레코드 수:`, exposedCountResult[0].total);
-    
+
     // 검색어 필터
     if (search) {
       whereClause += ' AND service_name LIKE ?';
       params.push(`%${search}%`);
     }
-    
+
     // 지역 필터
     if (location) {
       switch(location) {
         case 'all':
-          whereClause += ' AND is_all_location = true';
+          whereClause += ' AND is_all_location = ?';
+          params.push(true);
           break;
         case 'jeju':
-          whereClause += ' AND is_jeju_location = true';
+          whereClause += ' AND is_jeju_location = ?';
+          params.push(true);
           break;
         case 'seogwipo':
-          whereClause += ' AND is_seogwipo_location = true';
+          whereClause += ' AND is_seogwipo_location = ?';
+          params.push(true);
           break;
       }
     }
-    
+
     // 전체 레코드 수 조회 및 추가 디버긱 로그
     const countQuery = `SELECT COUNT(*) as total FROM welfare_services ${whereClause}`;
     const countResult = await executeQuery<any[]>(countQuery, params);
     const total = countResult[0].total;
-    
-    console.log(`[디버긱] 최종 SQL WHERE 절:`, whereClause);
-    console.log(`[디버긱] 최종 파라미터:`, params);
-    console.log(`[디버긱] 최종 조회될 레코드 수:`, total);
-    
-    // 데이터 조회
+
+
+
+    // 데이터 조회 (LIMIT과 OFFSET을 직접 쿼리에 포함)
+    // LIMIT과 OFFSET을 정수로 확실히 변환
+    const limitValue = parseInt(pageSize.toString(), 10);
+    const offsetValue = parseInt(offset.toString(), 10);
+
     const dataQuery = `
-      SELECT 
-        id, service_name, is_all_location, is_jeju_location, is_seogwipo_location, 
+      SELECT
+        id, service_name, is_all_location, is_jeju_location, is_seogwipo_location,
         support_target_html, support_content_html, application_info_html, fetched_at
       FROM welfare_services
       ${whereClause}
       ORDER BY service_name ASC
-      LIMIT ? OFFSET ?`;
-    
-    const items = await executeQuery<WelfareServicePublic[]>(dataQuery, [...params, pageSize, offset]);
-    console.log(`[디버긱] 실제 조회된 항목 수:`, items.length);
-    
-    // 디버긱 테스트: 테이블 스키마 확인
-    if (items.length === 0) {
-      const schemaQuery = "DESCRIBE welfare_services";
-      try {
-        const schemaResult = await executeQuery<any[]>(schemaQuery, []);
-        console.log(`[디버긱] welfare_services 테이블 스키마:`, schemaResult);
-      } catch (e) {
-        console.error(`[디버긱] 테이블 스키마 조회 오류:`, e);
-      }
-      
-      // 샘플 데이터 확인
-      const sampleQuery = "SELECT * FROM welfare_services LIMIT 1";
-      try {
-        const sampleResult = await executeQuery<any[]>(sampleQuery, []);
-        console.log(`[디버긱] welfare_services 샘플 데이터:`, sampleResult);
-      } catch (e) {
-        console.error(`[디버긱] 샘플 데이터 조회 오류:`, e);
-      }
-    }
-    
+      LIMIT ${limitValue} OFFSET ${offsetValue}`;
+
+
+
+    const items = await executeQuery<WelfareServicePublic[]>(dataQuery, params);
+
     // HTML 필드 새니타이징
     const sanitizedItems = sanitizeItemsHtmlFields(items, [
-      'support_target_html', 
-      'support_content_html', 
+      'support_target_html',
+      'support_content_html',
       'application_info_html'
     ]);
-    
+
     // 응답 반환
     return {
       items: sanitizedItems,
@@ -123,7 +109,7 @@ export default defineEventHandler(async (event) => {
     };
   } catch (error: any) {
     console.error('[공개 API 오류] 복지 서비스 목록 조회 실패:', error.message);
-    
+
     throw createError({
       statusCode: 500,
       message: '복지 서비스 목록을 불러오는 중 오류가 발생했습니다.'

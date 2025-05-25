@@ -25,12 +25,12 @@ export interface WelfareService {
  */
 export async function upsertWelfareService(connection: mysql.Connection, service: WelfareService): Promise<{ id: number, isNew: boolean }> {
   const now = new Date();
-  
+
   // 이미 존재하는지 확인
   const checkQuery = 'SELECT id FROM welfare_services WHERE original_api_id = ?';
   const existingResult = await connection.query(checkQuery, [service.original_api_id]);
   const existingRows = existingResult[0] as any[];
-  
+
   if (existingRows.length > 0) {
     // 업데이트
     const id = existingRows[0].id;
@@ -46,7 +46,7 @@ export async function upsertWelfareService(connection: mysql.Connection, service
         api_raw_data = ?,
         updated_at = ?
       WHERE id = ?`;
-    
+
     await connection.execute(updateQuery, [
       service.service_name,
       service.is_all_location,
@@ -59,17 +59,17 @@ export async function upsertWelfareService(connection: mysql.Connection, service
       now,
       id
     ]);
-    
+
     return { id, isNew: false };
   } else {
     // 삽입
     const insertQuery = `
       INSERT INTO welfare_services (
         original_api_id, service_name, is_all_location, is_jeju_location, is_seogwipo_location,
-        support_target_html, support_content_html, application_info_html, 
+        support_target_html, support_content_html, application_info_html,
         api_raw_data, is_exposed, fetched_at, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    
+
     const result = await connection.execute(insertQuery, [
       service.original_api_id,
       service.service_name,
@@ -85,7 +85,7 @@ export async function upsertWelfareService(connection: mysql.Connection, service
       now,
       now
     ]);
-    
+
     const insertId = (result[0] as any).insertId;
     return { id: insertId, isNew: true };
   }
@@ -114,7 +114,7 @@ export async function batchUpsertWelfareServices(
 
     const existingApiIdsInChunk = new Set<string>();
     const apiIdsToCheckInChunk = chunk.map(s => s.original_api_id);
-    
+
     if (apiIdsToCheckInChunk.length > 0) {
       const [rows] = await connection.query<mysql.RowDataPacket[]>(
         `SELECT original_api_id FROM welfare_services WHERE original_api_id IN (?)`,
@@ -167,9 +167,9 @@ export async function batchUpsertWelfareServices(
       await connection.execute(query, values);
     } catch (error) {
       console.error(`[DAO_Welfare] Error executing batch upsert for chunk ${Math.floor(i / CHUNK_SIZE_WELFARE) + 1}:`, error);
-      throw error; 
+      throw error;
     }
-    
+
     let newItemsInChunk = 0;
     let updatedItemsInChunk = 0;
 
@@ -187,7 +187,7 @@ export async function batchUpsertWelfareServices(
 
     console.log(`[DAO_Welfare] Chunk ${Math.floor(i / CHUNK_SIZE_WELFARE) + 1} processed. New: ${newItemsInChunk}, Updated: ${updatedItemsInChunk}`);
   }
- 
+
   return {
     processedCount: totalProcessedCount,
     newItemsCount: totalNewItemsCount,
@@ -204,50 +204,53 @@ export async function getWelfareServices(
   filters: { search?: string, location?: string, isExposed?: boolean } = {}
 ): Promise<{ items: WelfareService[], total: number }> {
   const offset = (page - 1) * pageSize;
-  
+
   let whereClause = '';
   const params: any[] = [];
-  
+
   if (filters.search) {
     whereClause = 'WHERE service_name LIKE ?';
     params.push(`%${filters.search}%`);
   }
-  
+
   if (filters.location) {
     let locationClause = '';
     switch (filters.location.toLowerCase()) {
       case 'all':
-        locationClause = 'is_all_location = 1';
+        locationClause = 'is_all_location = ?';
+        params.push(true);
         break;
       case 'jeju':
-        locationClause = 'is_jeju_location = 1';
+        locationClause = 'is_jeju_location = ?';
+        params.push(true);
         break;
       case 'seogwipo':
-        locationClause = 'is_seogwipo_location = 1';
+        locationClause = 'is_seogwipo_location = ?';
+        params.push(true);
         break;
     }
-    
+
     if (locationClause) {
       whereClause = whereClause ? `${whereClause} AND ${locationClause}` : `WHERE ${locationClause}`;
     }
   }
-  
+
   if (filters.isExposed !== undefined) {
     whereClause = whereClause ? `${whereClause} AND is_exposed = ?` : 'WHERE is_exposed = ?';
     params.push(filters.isExposed);
   }
-  
+
   const countQuery = `SELECT COUNT(*) as total FROM welfare_services ${whereClause}`;
   const countResult = await executeQuery<any[]>(countQuery, params);
-  
+
   const query = `
     SELECT * FROM welfare_services
     ${whereClause}
     ORDER BY service_name ASC
     LIMIT ? OFFSET ?`;
-  
+
   const items = await executeQuery<WelfareService[]>(query, [...params, pageSize, offset]);
-  
+
   return {
     items,
     total: countResult[0].total
@@ -260,7 +263,7 @@ export async function getWelfareServices(
 export async function getWelfareServiceById(id: number): Promise<WelfareService | null> {
   const query = 'SELECT * FROM welfare_services WHERE id = ?';
   const results = await executeQuery<WelfareService[]>(query, [id]);
-  
+
   return results.length > 0 ? results[0] : null;
 }
 
@@ -270,7 +273,7 @@ export async function getWelfareServiceById(id: number): Promise<WelfareService 
 export async function updateWelfareServiceExposure(id: number, isExposed: boolean): Promise<boolean> {
   const query = 'UPDATE welfare_services SET is_exposed = ?, updated_at = ? WHERE id = ?';
   const result = await executeQuery<any>(query, [isExposed, new Date(), id]);
-  
+
   return (result as any).affectedRows > 0;
 }
 
@@ -280,6 +283,6 @@ export async function updateWelfareServiceExposure(id: number, isExposed: boolea
 export async function updateWelfareServiceAdminMemo(id: number, adminMemo: string): Promise<boolean> {
   const query = 'UPDATE welfare_services SET admin_memo = ?, updated_at = ? WHERE id = ?';
   const result = await executeQuery<any>(query, [adminMemo, new Date(), id]);
-  
+
   return (result as any).affectedRows > 0;
 }

@@ -503,6 +503,10 @@ export async function getGasStationsWithPrices(
     ${whereClause}`;
   const countResult = await executeQuery<any[]>(countQuery, params);
 
+  // LIMIT과 OFFSET을 정수로 확실히 변환
+  const limitValue = parseInt(pageSize.toString(), 10);
+  const offsetValue = parseInt(offset.toString(), 10);
+
   const query = `
     SELECT
       gs.*,
@@ -520,9 +524,9 @@ export async function getGasStationsWithPrices(
       )
     ${whereClause}
     ORDER BY gs.station_name ASC
-    LIMIT ? OFFSET ?`;
+    LIMIT ${limitValue} OFFSET ${offsetValue}`;
 
-  const items = await executeQuery<any[]>(query, [...params, pageSize, offset]);
+  const items = await executeQuery<any[]>(query, params);
 
   // 데이터 구조 정리
   const gasStations: GasStationWithPrices[] = items.map(item => ({

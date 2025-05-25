@@ -16,10 +16,12 @@ try {
     queueLimit: 0, // 0이면 무제한
     charset: 'utf8mb4',    // MySQL 연결 문자셋을 utf8mb4로 설정
     bigNumberStrings: true, // LONGLONG 또는 BIGINT를 문자열로 반환합니다.하도록 설정
+    supportBigNumbers: true, // 큰 숫자 지원
+    dateStrings: false, // 날짜를 문자열로 반환하지 않음
     typeCast: function (field, next) {
       // VAR_STRING, VARCHAR, STRING, TEXT, BLOB 등의 타입들은 UTF-8로 변환
-      if (field.type === 'VAR_STRING' || field.type === 'VARCHAR' || field.type === 'STRING' || 
-          field.type === 'TEXT' || field.type === 'MEDIUMTEXT' || field.type === 'LONGTEXT' || 
+      if (field.type === 'VAR_STRING' || field.type === 'VARCHAR' || field.type === 'STRING' ||
+          field.type === 'TEXT' || field.type === 'MEDIUMTEXT' || field.type === 'LONGTEXT' ||
           field.type === 'BLOB' || field.type === 'MEDIUMBLOB' || field.type === 'LONGBLOB') {
         const fieldBuffer = field.buffer();
         // fieldBuffer가 null이 아닐 때만 toString('utf8')을 호출합니다.
@@ -35,7 +37,7 @@ try {
   });
 } catch (error) {
   // 에러 발생 시 pool을 undefined로 명시적으로 두거나, 혹은 애플리케이션을 중단시키는 등의 처리를 고려할 수 있습니다.
-  pool = undefined; 
+  pool = undefined;
 }
 
 
@@ -44,7 +46,16 @@ export async function executeQuery<T>(sql: string, params?: any[]): Promise<T> {
   if (!pool) {
     throw new Error('Database pool is not available.'); // 또는 적절한 에러 처리
   }
-  const [rows] = await pool.execute(sql, params);
+
+  // boolean 값을 MySQL에서 사용할 수 있는 형태로 변환
+  const processedParams = params?.map(param => {
+    if (typeof param === 'boolean') {
+      return param ? 1 : 0;
+    }
+    return param;
+  });
+
+  const [rows] = await pool.execute(sql, processedParams);
   return rows as T;
 }
 

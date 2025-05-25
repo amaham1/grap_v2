@@ -67,7 +67,7 @@ export async function getWelfareServices(options: GetWelfareServicesOptions): Pr
     params.push(`%${categoryName}%`);
     countParams.push(`%${categoryName}%`);
   }
-  
+
   if (conditions.length > 0) {
     query += ' WHERE ' + conditions.join(' AND ');
     countQuery += ' WHERE ' + conditions.join(' AND ');
@@ -116,7 +116,7 @@ export async function createWelfareService(data: Partial<WelfareService>): Promi
 
 export async function updateWelfareService(id: number, data: Partial<WelfareService>): Promise<boolean> {
   const fieldsToUpdate: Partial<WelfareService & { updated_at: Date }> = { ...data, updated_at: new Date() };
-  
+
   // Handle boolean to integer conversion for is_exposed
   if (typeof fieldsToUpdate.is_exposed === 'boolean') {
     // @ts-ignore
