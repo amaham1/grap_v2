@@ -1,5 +1,5 @@
 import { defineEventHandler, getRouterParam } from 'h3';
-import { deleteExhibition, getExhibitionById } from '~/server/utils/dao/exhibition-dao';
+import { deleteExhibition, getExhibitionById } from '~/server/dao/supabase/exhibition-dao';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
 
     const result = await deleteExhibition(id);
 
-    if (result && result.affectedRows > 0) {
+    if (result && result.data) {
       return {
         statusCode: 200, // Or 204 No Content, but 200 with a message is also fine
         statusMessage: 'Exhibition deleted successfully',

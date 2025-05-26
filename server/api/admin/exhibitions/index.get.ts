@@ -1,27 +1,27 @@
 import { defineEventHandler, getQuery } from 'h3';
-import { getExhibitions, getExhibitionsCount, GetExhibitionsParams } from '~/server/utils/dao/exhibition-dao';
+import { getExhibitions, getExhibitionsCount, GetExhibitionsOptions } from '~/server/dao/supabase/exhibition-dao';
 
 export default defineEventHandler(async (event) => {
   try {
-    const query = getQuery(event) as GetExhibitionsParams;
+    const query = getQuery(event) as GetExhibitionsOptions;
 
     // Convert query params to appropriate types
     const page = query.page ? parseInt(String(query.page), 10) : 1;
     const limit = query.limit ? parseInt(String(query.limit), 10) : 10;
-    const params: GetExhibitionsParams = {
+    const params: GetExhibitionsOptions = {
       ...query,
       page,
       limit,
       isExposed: query.isExposed !== undefined ? String(query.isExposed) : undefined,
     };
 
-    const exhibitions = await getExhibitions(params);
+    const exhibitionsResult = await getExhibitions(params);
     const total = await getExhibitionsCount(params);
 
     return {
       statusCode: 200,
       statusMessage: 'Success',
-      data: exhibitions,
+      data: exhibitionsResult.data || [],
       meta: {
         total,
         page,

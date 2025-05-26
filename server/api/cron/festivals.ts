@@ -2,7 +2,7 @@
 import { defineEventHandler } from 'h3';
 
 
-import { festivalDAO, logDAO } from '~/server/dao';
+import { festivalDAO, logDAO } from '~/server/dao/supabase';
 
 const MAX_RETRIES = 2; // 최대 재시도 횟수
 const SOURCE_NAME = 'festivals'; // 데이터 소스명
@@ -42,15 +42,15 @@ export default defineEventHandler(async (event) => {
         while (hasMorePages) {
           console.log(`[${new Date().toISOString()}] Fetching page ${currentPage} from ${API_URL}`);
           const apiUrlWithPage = `${API_URL}?page=${currentPage}&pageSize=${PAGE_SIZE}`;
-          
+
           // $fetch를 사용하여 API 호출
           const response = await $fetch(apiUrlWithPage, { method: 'GET' });
-          
+
           // 이 API는 JSON 응답을 반환합니다
           if (response && response.items && Array.isArray(response.items)) {
             console.log(`[${new Date().toISOString()}] Received ${response.items.length} items from page ${currentPage}`);
             allRawDataItems.push(...response.items);
-            
+
             // 더 많은 페이지가 있는지 확인
             // totalCount가 응답에 포함되어 있지 않은 경우, 페이지당 항목 수보다 적게 받으면 마지막 페이지로 간주
             hasMorePages = response.items.length >= PAGE_SIZE;
@@ -59,11 +59,11 @@ export default defineEventHandler(async (event) => {
             console.log(`[${new Date().toISOString()}] No items received or invalid format from page ${currentPage}`);
             hasMorePages = false;
           }
-          
+
           // 테스트 시에는 첫 페이지만 가져오도록 제한할 수 있습니다
           // hasMorePages = false; // 테스트용: 첫 페이지만 가져옴
         }
-        
+
         console.log(`[${new Date().toISOString()}] Fetched total ${allRawDataItems.length} items from external API.`);
 
         // 2. 가져온 데이터를 DB 스키마에 맞게 매핑
@@ -84,19 +84,19 @@ export default defineEventHandler(async (event) => {
 
             // 3. DAO를 사용하여 DB에 데이터 저장/업데이트 (upsert)
             const result = await festivalDAO.upsertFestival(connection, festivalData);
-            
+
             // 신규 또는 업데이트 항목 카운트
             if (result.isNew) {
               newItemsCount++;
             } else {
               updatedItemsCount++;
             }
-            
+
             processedCount++;
           } catch (itemError: any) {
             console.error(`[${new Date().toISOString()}] Error processing item:`, itemError.message);
             // 개별 항목 처리 오류는 로그를 남기고 계속 진행
-            await logDAO.createSystemErrorLog(connection, { 
+            await logDAO.createSystemErrorLog(connection, {
               error_timestamp: new Date(),
               error_code: 'ITEM_PROCESSING_ERROR',
               message: `Error processing festival item: ${itemError.message}`,
@@ -115,7 +115,7 @@ export default defineEventHandler(async (event) => {
 
       } catch (error: any) {
         console.error(`[${new Date().toISOString()}] Error during fetch attempt ${attempt} for ${SOURCE_NAME}:`, error.message);
-        
+
         // 시스템 오류 로그 기록
         await logDAO.createSystemErrorLog(connection, {
           error_timestamp: new Date(),
@@ -129,7 +129,7 @@ export default defineEventHandler(async (event) => {
 
         if (attempt > MAX_RETRIES) {
           console.error(`[${new Date().toISOString()}] All ${attempt} retries failed for ${SOURCE_NAME}.`);
-          
+
           // API 수집 로그 (최종 실패)
           await logDAO.createApiFetchLog(connection, {
             source_name: SOURCE_NAME,
@@ -140,10 +140,10 @@ export default defineEventHandler(async (event) => {
             error_message: `Failed after ${attempt} attempts. Last error: ${error.message}`,
             error_details: error.stack
           });
-          
+
           throw new Error(`Failed to fetch ${SOURCE_NAME} data after ${attempt} attempts. Last error: ${error.message}`);
         }
-        
+
         // 재시도 전 잠시 대기
         await new Promise(resolve => setTimeout(resolve, 5000)); // 5초 대기
       }
@@ -154,7 +154,7 @@ export default defineEventHandler(async (event) => {
       console.log(`[${new Date().toISOString()}] Transaction committed for ${SOURCE_NAME}.`);
     } else {
       // success가 false이면 (모든 재시도 실패 등), 이미 rollback 되었거나 여기서 rollback
-      if (connection) { 
+      if (connection) {
         console.warn(`[${new Date().toISOString()}] Job finished without success for ${SOURCE_NAME}, attempting rollback if not already done.`);
         await connection.rollback(); // 실패 시 롤백 (재시도 루프 내에서 이미 롤백되지 않았다면)
       }
@@ -170,9 +170,9 @@ export default defineEventHandler(async (event) => {
       new_items: newItemsCount,
       updated_items: updatedItemsCount
     });
-    
+
     console.log(`[${new Date().toISOString()}] ${SOURCE_NAME} cron job finished successfully. Processed: ${processedCount} (New: ${newItemsCount}, Updated: ${updatedItemsCount})`);
-    
+
     return {
       status: 'success',
       source: SOURCE_NAME,
@@ -188,7 +188,7 @@ export default defineEventHandler(async (event) => {
     if (connection) {
       try {
         // 이 시점에서 이미 롤백이 시도되었을 수 있으나, 한번 더 시도 (예: 연결 설정 직후 에러)
-        await connection.rollback(); 
+        await connection.rollback();
         console.log(`[${new Date().toISOString()}] Transaction rolled back for ${SOURCE_NAME} due to critical error.`);
       } catch (rollbackError: any) {
         console.error(`[${new Date().toISOString()}] Error during critical error rollback for ${SOURCE_NAME}:`, rollbackError.message);

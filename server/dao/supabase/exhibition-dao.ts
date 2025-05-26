@@ -67,6 +67,34 @@ export async function getExhibitions(options: GetExhibitionsOptions = {}) {
 }
 
 /**
+ * 전시/공연 총 개수 조회
+ */
+export async function getExhibitionsCount(options: GetExhibitionsOptions = {}) {
+  const {
+    searchTerm = '',
+    isExposed = '',
+    categoryName = '',
+    startDate = '',
+    endDate = ''
+  } = options
+
+  const filters: Record<string, any> = {}
+
+  // 필터 조건 설정
+  if (isExposed === 'true') filters.is_exposed = true
+  if (isExposed === 'false') filters.is_exposed = false
+  if (categoryName) filters.category_name = categoryName
+  if (searchTerm) filters.title = `%${searchTerm}%`
+
+  const result = await executeSupabaseQuery<Exhibition>('exhibitions', 'select', {
+    select: 'id',
+    filters
+  })
+
+  return result.count || 0
+}
+
+/**
  * 공개된 전시/공연 목록 조회 (공개 API용)
  */
 export async function getPublicExhibitions(options: GetExhibitionsOptions = {}) {
@@ -99,7 +127,7 @@ export async function getExhibitionById(id: number) {
   const result = await executeSupabaseQuery<Exhibition>('exhibitions', 'select', {
     filters: { id }
   })
-  
+
   return result.data?.[0] || null
 }
 
@@ -111,7 +139,7 @@ export async function getPublicExhibitionById(id: number) {
     select: 'id, title, category_name, cover_image_url, start_date, end_date, time_info, pay_info, location_name, organizer_info, tel_number, status_info, division_name, fetched_at',
     filters: { id, is_exposed: true }
   })
-  
+
   return result.data?.[0] || null
 }
 
@@ -122,7 +150,7 @@ export async function getExhibitionByOriginalApiId(original_api_id: string) {
   const result = await executeSupabaseQuery<Exhibition>('exhibitions', 'select', {
     filters: { original_api_id }
   })
-  
+
   return result.data?.[0] || null
 }
 
@@ -153,6 +181,21 @@ export async function batchUpsertExhibitions(exhibitions: Exhibition[]) {
 }
 
 /**
+ * 전시/공연 정보 업데이트
+ */
+export async function updateExhibition(id: number, updateData: Partial<Exhibition>) {
+  const data = {
+    ...updateData,
+    updated_at: new Date().toISOString()
+  }
+
+  return await executeSupabaseQuery('exhibitions', 'update', {
+    data,
+    filters: { id }
+  })
+}
+
+/**
  * 전시/공연 노출 상태 업데이트
  */
 export async function updateExhibitionExposure(id: number, isExposed: boolean, adminMemo?: string) {
@@ -160,7 +203,7 @@ export async function updateExhibitionExposure(id: number, isExposed: boolean, a
     is_exposed: isExposed,
     updated_at: new Date().toISOString()
   }
-  
+
   if (adminMemo !== undefined) {
     data.admin_memo = adminMemo
   }
@@ -184,10 +227,10 @@ export async function deleteExhibition(id: number) {
  * 카테고리별 전시/공연 개수 조회
  */
 export async function getExhibitionCountByCategory() {
-  // Supabase에서는 집계 함수를 직접 지원하지 않으므로 
+  // Supabase에서는 집계 함수를 직접 지원하지 않으므로
   // 별도의 RPC 함수를 만들거나 클라이언트에서 처리해야 합니다.
   // 여기서는 기본 구현을 제공합니다.
-  
+
   const result = await executeSupabaseQuery<Exhibition>('exhibitions', 'select', {
     select: 'category_name',
     filters: { is_exposed: true }

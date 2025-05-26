@@ -1,5 +1,5 @@
 import { defineEventHandler } from 'h3';
-import { testDatabaseConnection } from '~/server/utils/mysql';
+
 
 export default defineEventHandler(async (event) => {
   try {

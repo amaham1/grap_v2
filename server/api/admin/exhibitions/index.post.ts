@@ -1,5 +1,5 @@
 import { defineEventHandler, readBody } from 'h3';
-import { createExhibition, Exhibition } from '~/server/utils/dao/exhibition-dao';
+import { upsertExhibition, getExhibitionById, Exhibition } from '~/server/dao/supabase/exhibition-dao';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -20,10 +20,10 @@ export default defineEventHandler(async (event) => {
       // fetched_at should be provided in the body, typically as new Date().toISOString()
     };
 
-    const result = await createExhibition(exhibitionData);
+    const result = await upsertExhibition(exhibitionData);
 
-    if (result && result.insertId) {
-      const newExhibition = await getExhibitionById(result.insertId); // Assuming getExhibitionById exists
+    if (result && result.data && result.data.length > 0) {
+      const newExhibition = result.data[0];
       return {
         statusCode: 201,
         statusMessage: 'Exhibition created successfully',
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     } else {
       throw createError({
         statusCode: 500,
-        statusMessage: 'Failed to create exhibition: No insertId returned',
+        statusMessage: 'Failed to create exhibition: No data returned',
       });
     }
 
@@ -50,14 +50,4 @@ export default defineEventHandler(async (event) => {
   }
 });
 
-// Need to import getExhibitionById if used in the response, or adjust response.
-// For now, let's assume it will be added to the DAO or we simplify the response.
-// Adding a placeholder for getExhibitionById to avoid immediate linting errors if not present.
-// Ideally, this would be imported from the DAO.
-async function getExhibitionById(id: number): Promise<Exhibition | null> {
-  // This is a placeholder. Actual implementation is in exhibition-dao.ts
-  // and should be imported from there.
-  // For now, to make this file self-contained for the tool:
-  const { getExhibitionById: getActualExhibitionById } = await import('~/server/utils/dao/exhibition-dao');
-  return getActualExhibitionById(id);
-}
+

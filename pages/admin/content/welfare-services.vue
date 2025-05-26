@@ -150,7 +150,7 @@
           <p><strong>대상:</strong> <span v-html="selectedWelfareService.support_target_html || 'N/A'"></span></p>
           <p><strong>서비스 내용:</strong></p>
           <pre class="bg-gray-100 p-3 rounded-md text-xs whitespace-pre-wrap">{{ selectedWelfareService.service_content || 'N/A' }}</pre>
-          <p><strong>신청 링크:</strong> 
+          <p><strong>신청 링크:</strong>
             <a v-if="selectedWelfareService.application_link" :href="selectedWelfareService.application_link" target="_blank" class="text-indigo-600 hover:underline">[링크 바로가기]</a>
             <span v-else>N/A</span>
           </p>
@@ -182,7 +182,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import type { WelfareService as ServerWelfareService } from '~/server/utils/dao/welfare-service-dao';
+import type { WelfareService as ServerWelfareService } from '~/server/dao/supabase/welfare-service-dao';
 
 interface WelfareService extends ServerWelfareService {}
 
@@ -274,7 +274,7 @@ const visiblePageNumbers = computed(() => {
   } else if (currentPage.value + halfRange >= totalPages.value) {
     start = totalPages.value - PAGINATION_RANGE_DISPLAY + 1;
   }
-  
+
   const pages = [];
   for (let i = start; i <= end; i++) {
     pages.push(i);

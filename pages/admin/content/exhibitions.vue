@@ -3,8 +3,8 @@
     <h2 class="text-2xl font-semibold mb-6">전시 관리</h2>
 
     <!-- Toast Message -->
-    <div v-if="toast" 
-         :class="toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'" 
+    <div v-if="toast"
+         :class="toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'"
          class="fixed top-20 right-5 text-white p-4 rounded-lg shadow-lg z-50 flex items-center justify-between min-w-[300px]">
       <span>{{ toast.message }}</span>
       <button @click="dismissToast" class="ml-4 text-xl font-semibold">&times;</button>
@@ -14,31 +14,31 @@
     <div class="mb-6 p-4 bg-white rounded-lg shadow">
       <h3 class="text-lg font-semibold mb-3">검색 및 필터</h3>
       <div class="flex flex-col md:flex-row gap-4 items-center">
-        <input 
-          type="text" 
-          v-model="searchQuery" 
+        <input
+          type="text"
+          v-model="searchQuery"
           @keyup.enter="handleSearch"
-          placeholder="전시명 검색..." 
+          placeholder="전시명 검색..."
           class="p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 flex-grow md:w-auto"
         >
-        <select 
-          v-model="filterIsExposed" 
-          @change="handleFilterChange" 
+        <select
+          v-model="filterIsExposed"
+          @change="handleFilterChange"
           class="p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 md:w-auto"
         >
           <option value="">노출 상태 (전체)</option>
           <option value="true">노출</option>
           <option value="false">숨김</option>
         </select>
-         <input 
-          type="text" 
-          v-model="filterCategoryName" 
+         <input
+          type="text"
+          v-model="filterCategoryName"
           @keyup.enter="handleSearch"
-          placeholder="카테고리명 검색..." 
+          placeholder="카테고리명 검색..."
           class="p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 md:w-auto"
         >
-        <button 
-          @click="handleSearch" 
+        <button
+          @click="handleSearch"
           class="w-full md:w-auto px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
           검색
@@ -90,8 +90,8 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ exhibition.fetched_at ? new Date(exhibition.fetched_at).toLocaleDateString() : 'N/A' }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
               <button @click="viewDetails(exhibition)" class="text-indigo-600 hover:text-indigo-800 transition-colors duration-150">상세</button>
-              <button @click="toggleVisibility(exhibition)" 
-                      :class="exhibition.is_exposed ? 'text-yellow-600 hover:text-yellow-800' : 'text-green-600 hover:text-green-800'" 
+              <button @click="toggleVisibility(exhibition)"
+                      :class="exhibition.is_exposed ? 'text-yellow-600 hover:text-yellow-800' : 'text-green-600 hover:text-green-800'"
                       class="transition-colors duration-150">
                 {{ exhibition.is_exposed ? '숨김' : '노출' }}
               </button>
@@ -109,32 +109,32 @@
       <nav>
         <ul class="inline-flex items-center -space-x-px">
           <li>
-            <button @click="changePage(1)" :disabled="currentPage === 1" 
+            <button @click="changePage(1)" :disabled="currentPage === 1"
                     class="px-3 py-2 ml-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
               &laquo;&laquo;
             </button>
           </li>
           <li>
-            <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1" 
+            <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1"
                     class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
               &laquo;
             </button>
           </li>
           <li v-for="pageNumber in visiblePageNumbers" :key="pageNumber">
-            <button @click="changePage(pageNumber)" 
-                    :class="{'z-10 px-3 py-2 leading-tight text-indigo-600 border border-indigo-300 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-700': currentPage === pageNumber, 
+            <button @click="changePage(pageNumber)"
+                    :class="{'z-10 px-3 py-2 leading-tight text-indigo-600 border border-indigo-300 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-700': currentPage === pageNumber,
                              'px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700': currentPage !== pageNumber}">
               {{ pageNumber }}
             </button>
           </li>
           <li>
-            <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages || totalPages === 0" 
+            <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages || totalPages === 0"
                     class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
               &raquo;
             </button>
           </li>
           <li>
-            <button @click="changePage(totalPages)" :disabled="currentPage === totalPages || totalPages === 0" 
+            <button @click="changePage(totalPages)" :disabled="currentPage === totalPages || totalPages === 0"
                     class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
               &raquo;&raquo;
             </button>
@@ -155,7 +155,7 @@
           <p><strong>API Original ID:</strong> {{ selectedExhibition.original_api_id || 'N/A' }}</p>
           <p><strong>제목:</strong> {{ selectedExhibition.title }}</p>
           <p><strong>카테고리:</strong> {{ selectedExhibition.category_name || 'N/A' }}</p>
-          <p><strong>커버 이미지:</strong> 
+          <p><strong>커버 이미지:</strong>
             <a v-if="selectedExhibition.cover_image_url" :href="selectedExhibition.cover_image_url" target="_blank" class="text-indigo-600 hover:underline">[이미지 링크]</a>
             <img v-if="selectedExhibition.cover_image_url" :src="selectedExhibition.cover_image_url" alt="Cover Image" class="mt-1 max-w-xs max-h-48 object-contain border rounded">
             <span v-else>N/A</span>
@@ -169,7 +169,7 @@
           <p><strong>연락처:</strong> {{ selectedExhibition.tel_number || 'N/A' }}</p>
           <p><strong>상태 정보:</strong> {{ selectedExhibition.status_info || 'N/A' }}</p>
           <p><strong>구분:</strong> {{ selectedExhibition.division_name || 'N/A' }}</p>
-          <p><strong>노출 여부:</strong> 
+          <p><strong>노출 여부:</strong>
             <label class="inline-flex items-center">
               <input type="checkbox" v-model="editableIsExposed" class="form-checkbox h-5 w-5 text-indigo-600">
               <span class="ml-2">{{ editableIsExposed ? '노출' : '숨김' }}</span>
@@ -195,7 +195,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import type { Exhibition as ServerExhibition } from '~/server/utils/dao/exhibition-dao'; // Import server type for reference
+import type { Exhibition as ServerExhibition } from '~/server/dao/supabase/exhibition-dao'; // Import server type for reference
 
 // Frontend type, can be same as server or adapted
 interface Exhibition extends ServerExhibition {}
@@ -211,7 +211,7 @@ const searchQuery = ref('');
 const filterIsExposed = ref(''); // '', 'true', 'false'
 const filterCategoryName = ref('');
 const currentPage = ref(1);
-const itemsPerPage = ref(10); 
+const itemsPerPage = ref(10);
 const totalItems = ref(0);
 const selectedExhibition = ref<Exhibition | null>(null);
 const editableAdminMemo = ref('');
@@ -234,7 +234,7 @@ const visiblePageNumbers = computed(() => {
   if (end - start + 1 < maxVisiblePages) {
     start = Math.max(1, end - maxVisiblePages + 1);
   }
-  
+
   const pages = [];
   for (let i = start; i <= end; i++) {
     pages.push(i);
@@ -262,9 +262,9 @@ async function fetchExhibitions() {
     // @ts-ignore Nuxt $fetch handles response type
     const response = await $fetch(`/api/admin/exhibitions?${params.toString()}`, {
       method: 'GET',
-      headers: { 'Accept': 'application/json' }, 
+      headers: { 'Accept': 'application/json' },
     });
-    
+
     if (response.data && response.meta) {
       exhibitions.value = response.data as Exhibition[];
       totalItems.value = response.meta.total;
@@ -296,7 +296,7 @@ async function toggleVisibility(exhibition: Exhibition) {
       method: 'PUT',
       body: { is_exposed: newStatus },
     });
-    
+
     if (response.data) {
       const index = exhibitions.value.findIndex(f => f.id === exhibition.id);
       if (index !== -1) {

@@ -1,5 +1,5 @@
 import { defineEventHandler, getRouterParam, createError } from 'h3';
-import * as logDAO from '~/server/dao/log-dao';
+import { logDAO } from '~/server/dao/supabase';
 
 
 export default defineEventHandler(async (event) => {

@@ -17,6 +17,26 @@ const importMappings = [
     to: ""
   },
   {
+    from: "import { testDatabaseConnection } from '~/server/utils/mysql';",
+    to: ""
+  },
+  {
+    from: "import * as logDAO from '~/server/dao/log-dao';",
+    to: "import { logDAO } from '~/server/dao/supabase';"
+  },
+  {
+    from: "import * as exhibitionDAO from '~/server/utils/dao/exhibition-dao';",
+    to: "import { exhibitionDAO } from '~/server/dao/supabase';"
+  },
+  {
+    from: "import * as festivalDAO from '~/server/utils/dao/festival-dao';",
+    to: "import { festivalDAO } from '~/server/dao/supabase';"
+  },
+  {
+    from: "import * as welfareServiceDAO from '~/server/utils/dao/welfare-service-dao';",
+    to: "import { welfareServiceDAO } from '~/server/dao/supabase';"
+  },
+  {
     from: "import { festivalDAO, exhibitionDAO, welfareServiceDAO, gasStationDAO, logDAO } from '~/server/dao';",
     to: "import { festivalDAO, exhibitionDAO, welfareServiceDAO, gasStationDAO, logDAO } from '~/server/dao/supabase';"
   },
@@ -80,11 +100,11 @@ function updateFile(filePath: string) {
 function walkDirectory(dir: string) {
   try {
     const files = fs.readdirSync(dir)
-    
+
     for (const file of files) {
       const filePath = path.join(dir, file)
       const stat = fs.statSync(filePath)
-      
+
       if (stat.isDirectory()) {
         walkDirectory(filePath)
       } else if (file.endsWith('.ts') && !file.endsWith('.d.ts')) {

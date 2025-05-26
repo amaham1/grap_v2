@@ -1,21 +1,21 @@
 import { defineEventHandler, readBody, setResponseStatus } from 'h3';
-import { createWelfareService, WelfareService } from '~/server/utils/dao/welfare-service-dao';
+import { upsertWelfareService, getWelfareServiceById, WelfareService } from '~/server/dao/supabase/welfare-service-dao';
 
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody<Partial<WelfareService>>(event);
 
     // Basic validation (can be expanded)
-    if (!body.title) {
+    if (!body.service_name) {
       setResponseStatus(event, 400);
       return {
         success: false,
-        message: '제목은 필수 항목입니다.',
+        message: '서비스명은 필수 항목입니다.',
       };
     }
 
-    const result = await createWelfareService(body);
-    const newWelfareService = await getWelfareServiceById(result.id); // Fetch the created item to return it
+    const result = await upsertWelfareService(body as WelfareService);
+    const newWelfareService = result.data?.[0] || null;
 
     setResponseStatus(event, 201); // Created
     return {
@@ -34,5 +34,4 @@ export default defineEventHandler(async (event) => {
   }
 });
 
-// Helper function (consider moving to DAO or a shared utility if used elsewhere)
-import { getWelfareServiceById } from '~/server/utils/dao/welfare-service-dao';
+

@@ -1,5 +1,5 @@
 import { checkEnvironmentVariables, checkRuntimeConfig } from '~/server/utils/env-check';
-import { testDatabaseConnection } from '~/server/utils/mysql';
+
 
 export default defineEventHandler(async (event) => {
   try {

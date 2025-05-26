@@ -1,5 +1,5 @@
 import { defineEventHandler, getRouterParam, readBody } from 'h3';
-import { updateExhibition, getExhibitionById, Exhibition } from '~/server/utils/dao/exhibition-dao';
+import { updateExhibition, getExhibitionById, Exhibition } from '~/server/dao/supabase/exhibition-dao';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
 
     const result = await updateExhibition(id, body);
 
-    if (result && result.affectedRows > 0) {
+    if (result && result.data) {
       const updatedExhibition = await getExhibitionById(id);
       return {
         statusCode: 200,

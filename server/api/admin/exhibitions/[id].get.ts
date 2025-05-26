@@ -1,5 +1,5 @@
 import { defineEventHandler, getRouterParam } from 'h3';
-import { getExhibitionById } from '~/server/utils/dao/exhibition-dao';
+import { getExhibitionById } from '~/server/dao/supabase/exhibition-dao';
 
 export default defineEventHandler(async (event) => {
   try {

@@ -90,7 +90,7 @@ export async function getGasStationById(id: number) {
   const result = await executeSupabaseQuery<GasStation>('gas_stations', 'select', {
     filters: { id }
   })
-  
+
   return result.data?.[0] || null
 }
 
@@ -101,7 +101,7 @@ export async function getGasStationByOpinetId(opinet_id: string) {
   const result = await executeSupabaseQuery<GasStation>('gas_stations', 'select', {
     filters: { opinet_id }
   })
-  
+
   return result.data?.[0] || null
 }
 
@@ -139,7 +139,7 @@ export async function updateGasStationExposure(id: number, isExposed: boolean, a
     is_exposed: isExposed,
     updated_at: new Date().toISOString()
   }
-  
+
   if (adminMemo !== undefined) {
     data.admin_memo = adminMemo
   }
@@ -199,7 +199,7 @@ export async function getGasStationsByLocation(
   // Supabase에서는 PostGIS 확장을 사용하여 지리적 쿼리를 수행할 수 있습니다.
   // 여기서는 간단한 구현을 위해 기본 쿼리를 사용합니다.
   // 실제 운영에서는 PostGIS의 ST_DWithin 함수를 사용하는 것이 좋습니다.
-  
+
   const result = await executeSupabaseQuery<GasStation>('gas_stations', 'select', {
     select: 'id, opinet_id, station_name, brand_code, brand_name, address, phone, latitude, longitude, is_exposed',
     filters: { is_exposed: true },
@@ -211,14 +211,14 @@ export async function getGasStationsByLocation(
   // 클라이언트 사이드에서 거리 계산 (실제로는 PostGIS 사용 권장)
   const filteredStations = result.data.filter(station => {
     if (!station.latitude || !station.longitude) return false
-    
+
     const distance = calculateDistance(
       latitude,
       longitude,
       station.latitude,
       station.longitude
     )
-    
+
     return distance <= radius
   })
 
@@ -232,9 +232,9 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   const R = 6371 // 지구의 반지름 (km)
   const dLat = (lat2 - lat1) * Math.PI / 180
   const dLon = (lon2 - lon1) * Math.PI / 180
-  const a = 
+  const a =
     Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon/2) * Math.sin(dLon/2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
   return R * c
@@ -247,4 +247,35 @@ export async function getGasStationBrands() {
   return await executeSupabaseQuery('gas_station_brands', 'select', {
     orderBy: { column: 'brand_name', ascending: true }
   })
+}
+
+/**
+ * 주유소와 가격 정보를 함께 조회 (기존 MySQL DAO 호환성)
+ */
+export async function getGasStationsWithPrices(options: GetGasStationsOptions = {}) {
+  // 주유소 목록 조회
+  const stationsResult = await getGasStations(options)
+
+  if (stationsResult.error || !stationsResult.data) {
+    return stationsResult
+  }
+
+  // 각 주유소의 최신 가격 정보 조회
+  const stationsWithPrices = await Promise.all(
+    stationsResult.data.map(async (station) => {
+      const pricesResult = await getGasPrices(station.opinet_id, 1)
+      const latestPrice = pricesResult.data?.[0] || null
+
+      return {
+        ...station,
+        latest_price: latestPrice
+      }
+    })
+  )
+
+  return {
+    data: stationsWithPrices,
+    error: null,
+    count: stationsResult.count
+  }
 }

@@ -3,7 +3,7 @@ import { defineEventHandler } from 'h3';
 
 import xml2js from 'xml2js';
 
-import { exhibitionDAO, logDAO } from '~/server/dao';
+import { exhibitionDAO, logDAO } from '~/server/dao/supabase';
 
 const MAX_RETRIES = 1; // 최대 재시도 횟수
 const SOURCE_NAME = 'exhibitions'; // 데이터 소스명
@@ -43,13 +43,13 @@ export default defineEventHandler(async (event) => {
         while (hasMorePages) {
           console.log(`[${new Date().toISOString()}] Fetching page ${currentPage} from ${API_URL}`);
           const apiUrlWithPage = `${API_URL}?page=${currentPage}&pageSize=${PAGE_SIZE}`;
-          
+
           // $fetch를 사용하여 API 호출 (응답은 기본적으로 문자열)
           const rawResponse = await $fetch(apiUrlWithPage, { method: 'GET' });
           // Log the raw response to inspect its content before parsing
           console.log(`[${new Date().toISOString()}] Raw XML response from ${apiUrlWithPage}:\n`, rawResponse);
 
-          let jsonData: any; 
+          let jsonData: any;
           try {
             // XML 문자열을 JS 객체로 변환 (XML 파싱 전용)
             const parser = new xml2js.Parser({ explicitArray: false, mergeAttrs: true });
@@ -65,8 +65,8 @@ export default defineEventHandler(async (event) => {
               request_method: 'GET',
               resolved_status: false
             });
-            hasMorePages = false; 
-            throw parseError; 
+            hasMorePages = false;
+            throw parseError;
           }
 
           // XML 파싱 성공. 이제 API 응답 코드 확인.
@@ -83,14 +83,14 @@ export default defineEventHandler(async (event) => {
           const itemsContainer = apiData.items;
           const items = itemsContainer && itemsContainer.item ? itemsContainer.item : [];
           // totalCount는 이 API 응답에 없으므로, items.length를 기반으로 페이지네이션 결정
-          
-          const itemsArray = Array.isArray(items) ? items : (items ? [items] : []); 
-          
+
+          const itemsArray = Array.isArray(items) ? items : (items ? [items] : []);
+
           console.log(`[${new Date().toISOString()}] Received ${itemsArray.length} items from page ${currentPage}.`);
-          
+
           if (itemsArray.length > 0) {
             allRawDataItems.push(...itemsArray);
-            
+
             // totalCount가 없으므로, 현재 받아온 아이템 수가 PAGE_SIZE와 같거나 크면 다음 페이지가 있다고 가정
             hasMorePages = itemsArray.length >= PAGE_SIZE;
             if (hasMorePages) {
@@ -99,11 +99,11 @@ export default defineEventHandler(async (event) => {
           } else {
             hasMorePages = false;
           }
-          
+
           // 테스트 시에는 첫 페이지만 가져오도록 제한할 수 있습니다
-          // hasMorePages = false; 
+          // hasMorePages = false;
         }
-        
+
         console.log(`[${new Date().toISOString()}] Fetched total ${allRawDataItems.length} items from external API.`);
 
         // 2. DB 스키마에 맞게 데이터 매핑
@@ -156,13 +156,13 @@ export default defineEventHandler(async (event) => {
         } else {
           console.log(`[${new Date().toISOString()}] No items to batch upsert.`);
         }
-        
+
         success = true;
         console.log(`[${new Date().toISOString()}] ${SOURCE_NAME} data processing successful for attempt ${attempt}.`);
 
       } catch (error: any) {
         console.error(`[${new Date().toISOString()}] Error during fetch attempt ${attempt} for ${SOURCE_NAME}:`, error.message);
-        
+
         // 시스템 오류 로그 기록
         await logDAO.createSystemErrorLog(connection, {
           error_timestamp: new Date(),
@@ -176,7 +176,7 @@ export default defineEventHandler(async (event) => {
 
         if (attempt > MAX_RETRIES) {
           console.error(`[${new Date().toISOString()}] All ${attempt} retries failed for ${SOURCE_NAME}.`);
-          
+
           // API 수집 로그 (최종 실패)
           await logDAO.createApiFetchLog(connection, {
             source_name: SOURCE_NAME,
@@ -187,10 +187,10 @@ export default defineEventHandler(async (event) => {
             error_message: `Failed after ${attempt} attempts. Last error: ${error.message}`,
             error_details: error.stack
           });
-          
+
           throw new Error(`Failed to fetch ${SOURCE_NAME} data after ${attempt} attempts. Last error: ${error.message}`);
         }
-        
+
         // 재시도 전 잠시 대기
         await new Promise(resolve => setTimeout(resolve, 5000)); // 5초 대기
       }
@@ -218,9 +218,9 @@ export default defineEventHandler(async (event) => {
       new_items: newItemsCount,
       updated_items: updatedItemsCount
     });
-    
+
     console.log(`[${new Date().toISOString()}] ${SOURCE_NAME} cron job finished successfully. Processed: ${processedCount} (New: ${newItemsCount}, Updated: ${updatedItemsCount})`);
-    
+
     return {
       status: 'success',
       source: SOURCE_NAME,
