@@ -1,4 +1,5 @@
 
+import { supabase } from '~/server/utils/supabase';
 
 export default defineEventHandler(async (event) => {
   const results = {
@@ -145,7 +146,7 @@ export default defineEventHandler(async (event) => {
     // 간단한 TCP 연결 테스트
     const net = await import('net');
     const socket = new net.Socket();
-    
+
     const connectPromise = new Promise((resolve, reject) => {
       socket.setTimeout(5000);
       socket.on('connect', () => {
@@ -186,15 +187,15 @@ export default defineEventHandler(async (event) => {
 
   // 권장사항 생성
   const recommendations = [];
-  
+
   if (results.tests.find(t => t.name === 'Environment Variables' && t.status === 'failed')) {
     recommendations.push('환경 변수 설정을 확인하세요.');
   }
-  
+
   if (results.tests.find(t => t.name === 'Network Connectivity' && t.status === 'failed')) {
     recommendations.push('네트워크 연결을 확인하세요. 방화벽이나 보안 그룹 설정을 점검해보세요.');
   }
-  
+
   if (results.tests.find(t => t.name === 'Basic MySQL Connection' && t.status === 'failed')) {
     const mysqlTest = results.tests.find(t => t.name === 'Basic MySQL Connection');
     if (mysqlTest.details.code === 'ER_ACCESS_DENIED_ERROR') {

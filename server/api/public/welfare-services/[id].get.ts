@@ -1,6 +1,6 @@
 // server/api/public/welfare-services/[id].get.ts
 import { defineEventHandler, createError } from 'h3';
-
+import { welfareServiceDAO } from '~/server/dao/supabase';
 import { sanitizeObjectHtmlFields } from '~/server/utils/sanitize';
 
 interface WelfareServiceDetail {
@@ -27,18 +27,10 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // 상세 정보 조회 (노출 상태가 활성화된 항목만)
-    const query = `
-      SELECT
-        id, service_name, is_all_location, is_jeju_location, is_seogwipo_location,
-        support_target_html, support_content_html, application_info_html, fetched_at
-      FROM welfare_services
-      WHERE id = ? AND is_exposed = ?
-      LIMIT 1`;
+    // Supabase DAO를 사용하여 공개 복지 서비스 상세 정보 조회
+    const result = await welfareServiceDAO.getPublicWelfareServiceById(id);
 
-    const results = await executeQuery<WelfareServiceDetail[]>(query, [id, true]);
-
-    if (!results || results.length === 0) {
+    if (!result) {
       throw createError({
         statusCode: 404,
         message: '요청하신 복지 서비스를 찾을 수 없습니다.'
@@ -46,7 +38,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // HTML 필드 새니타이징
-    const sanitizedItem = sanitizeObjectHtmlFields(results[0], [
+    const sanitizedItem = sanitizeObjectHtmlFields(result, [
       'support_target_html',
       'support_content_html',
       'application_info_html'

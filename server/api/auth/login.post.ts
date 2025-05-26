@@ -34,9 +34,12 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const users = await executeQuery<User[]>(      'SELECT id, email, password, role FROM users WHERE email = ?',
-      [email]
-    );
+    const result = await executeSupabaseQuery<User>('users', 'select', {
+      select: 'id, email, password, role',
+      filters: { email }
+    });
+
+    const users = result.data || [];
 
     if (!users || users.length === 0) {
       throw createError({

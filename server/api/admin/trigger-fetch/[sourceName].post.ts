@@ -3,7 +3,6 @@ import { logDAO } from '~/server/dao/supabase';
 
 
 export default defineEventHandler(async (event) => {
-  let connection: any | null = null;
   const sourceNameParam = getRouterParam(event, 'sourceName');
   const startTime = new Date();
 
@@ -18,13 +17,6 @@ export default defineEventHandler(async (event) => {
   const sourceName = sourceNameParam.toLowerCase(); // Normalize to lowercase
 
   try {
-    connection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
-    });
-    await connection.beginTransaction(); // Start transaction
     let resultMessage = '';
     let fetchPromise;
 
@@ -59,7 +51,7 @@ export default defineEventHandler(async (event) => {
     await fetchPromise;
 
     // Log successful manual trigger
-    await logDAO.createApiFetchLog(connection, {
+    await logDAO.createApiFetchLog({
         source_name: sourceName,
         fetch_timestamp: startTime,
         status: 'SUCCESS',
@@ -67,7 +59,6 @@ export default defineEventHandler(async (event) => {
         error_message: `Manual fetch triggered successfully for ${sourceName}.`,
         // processed_items, new_items, updated_items can be set if known
     });
-    await connection.commit(); // Commit transaction
 
     return {
       message: resultMessage,
@@ -102,8 +93,7 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        if (connection) { // Ensure connection exists before logging
-        await logDAO.createApiFetchLog(connection, {
+        await logDAO.createApiFetchLog({
             source_name: sourceName,
             fetch_timestamp: startTime,
             status: 'FAILURE',
@@ -111,11 +101,6 @@ export default defineEventHandler(async (event) => {
             error_message: `Error triggering manual fetch for ${sourceName}: ${errorMessage}`,
             error_details: errorDetails,
         });
-        await connection.rollback(); // Rollback transaction on error after logging
-    } else {
-        // Fallback console log if DB connection failed before logging could happen
-        console.error(`DB connection not available to log MANUAL_FETCH_ERROR for ${sourceName}: ${errorMessage}`);
-    }
     } catch (logError: any) {
         console.error(`Failed to write to logDAO:`, logError);
         // Optionally, append logDAO error to the main error message/details
@@ -126,9 +111,5 @@ export default defineEventHandler(async (event) => {
         statusMessage: error.statusMessage || (statusCode === 500 ? 'Internal Server Error' : 'Error'),
         message: errorMessage,
     });
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 });

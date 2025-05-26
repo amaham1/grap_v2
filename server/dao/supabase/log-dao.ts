@@ -15,6 +15,30 @@ export interface ApiLog {
   created_at?: string
 }
 
+export interface ApiFetchLog {
+  id?: number
+  source_name: string
+  fetch_timestamp: Date | string
+  status: 'SUCCESS' | 'FAILURE'
+  retry_count?: number
+  error_message?: string
+  error_details?: string
+  processed_items?: number
+  new_items?: number
+  updated_items?: number
+  created_at?: string
+}
+
+export interface SystemErrorLog {
+  id?: number
+  error_type: string
+  error_message: string
+  error_details?: string
+  stack_trace?: string
+  context?: any
+  created_at?: string
+}
+
 export interface GetApiLogsOptions {
   page?: number
   limit?: number
@@ -64,7 +88,7 @@ export async function getApiLogById(id: number) {
   const result = await executeSupabaseQuery<ApiLog>('api_logs', 'select', {
     filters: { id }
   })
-  
+
   return result.data?.[0] || null
 }
 
@@ -74,11 +98,11 @@ export async function getApiLogById(id: number) {
 export async function createApiLog(logData: Omit<ApiLog, 'id' | 'created_at'>) {
   const data = {
     ...logData,
-    request_data: typeof logData.request_data === 'string' 
-      ? JSON.parse(logData.request_data) 
+    request_data: typeof logData.request_data === 'string'
+      ? JSON.parse(logData.request_data)
       : logData.request_data,
-    response_data: typeof logData.response_data === 'string' 
-      ? JSON.parse(logData.response_data) 
+    response_data: typeof logData.response_data === 'string'
+      ? JSON.parse(logData.response_data)
       : logData.response_data,
     created_at: new Date().toISOString()
   }
@@ -92,11 +116,11 @@ export async function createApiLog(logData: Omit<ApiLog, 'id' | 'created_at'>) {
 export async function batchCreateApiLogs(logs: Omit<ApiLog, 'id' | 'created_at'>[]) {
   const data = logs.map(log => ({
     ...log,
-    request_data: typeof log.request_data === 'string' 
-      ? JSON.parse(log.request_data) 
+    request_data: typeof log.request_data === 'string'
+      ? JSON.parse(log.request_data)
       : log.request_data,
-    response_data: typeof log.response_data === 'string' 
-      ? JSON.parse(log.response_data) 
+    response_data: typeof log.response_data === 'string'
+      ? JSON.parse(log.response_data)
       : log.response_data,
     created_at: new Date().toISOString()
   }))
@@ -115,7 +139,7 @@ export async function deleteOldLogs(daysToKeep: number = 30) {
   // Supabase에서는 날짜 비교를 위해 RPC 함수를 사용하거나
   // 클라이언트에서 처리해야 할 수 있습니다.
   // 여기서는 기본적인 구현을 제공합니다.
-  
+
   const oldLogs = await executeSupabaseQuery<ApiLog>('api_logs', 'select', {
     select: 'id',
     filters: {},
@@ -136,7 +160,7 @@ export async function deleteOldLogs(daysToKeep: number = 30) {
   }
 
   // 배치 삭제
-  const deletePromises = logsToDelete.map(log => 
+  const deletePromises = logsToDelete.map(log =>
     executeSupabaseQuery('api_logs', 'delete', {
       filters: { id: log.id }
     })
@@ -184,14 +208,14 @@ export async function getEndpointStats(days: number = 7) {
         error_requests: 0
       }
     }
-    
+
     acc[key].total_requests++
     if (log.status_code >= 200 && log.status_code < 400) {
       acc[key].success_requests++
     } else {
       acc[key].error_requests++
     }
-    
+
     return acc
   }, {} as Record<string, any>)
 
@@ -271,4 +295,34 @@ export async function getHourlyStats(days: number = 1) {
   }))
 
   return { data: statsList, error: null }
+}
+
+/**
+ * API 페치 로그 생성
+ */
+export async function createApiFetchLog(logData: Omit<ApiFetchLog, 'id' | 'created_at'>) {
+  const data = {
+    ...logData,
+    fetch_timestamp: typeof logData.fetch_timestamp === 'string'
+      ? logData.fetch_timestamp
+      : logData.fetch_timestamp.toISOString(),
+    created_at: new Date().toISOString()
+  }
+
+  return await executeSupabaseQuery('api_fetch_logs', 'insert', { data })
+}
+
+/**
+ * 시스템 에러 로그 생성
+ */
+export async function createSystemErrorLog(logData: Omit<SystemErrorLog, 'id' | 'created_at'>) {
+  const data = {
+    ...logData,
+    context: typeof logData.context === 'string'
+      ? JSON.parse(logData.context)
+      : logData.context,
+    created_at: new Date().toISOString()
+  }
+
+  return await executeSupabaseQuery('system_error_logs', 'insert', { data })
 }

@@ -279,3 +279,54 @@ export async function getGasStationsWithPrices(options: GetGasStationsOptions = 
     count: stationsResult.count
   }
 }
+
+/**
+ * 모든 주유소의 노출 상태 업데이트
+ */
+export async function updateAllGasStationsExposure(isExposed: boolean) {
+  // Supabase에서는 조건부 업데이트를 위해 먼저 조회 후 업데이트
+  const result = await executeSupabaseQuery('gas_stations', 'select', {
+    select: 'id',
+    filters: { is_exposed: !isExposed }
+  })
+
+  if (result.data && result.data.length > 0) {
+    const ids = result.data.map(item => item.id)
+    // 배치 업데이트는 Supabase에서 직접 지원하지 않으므로 개별 업데이트
+    const updatePromises = ids.map(id =>
+      executeSupabaseQuery('gas_stations', 'update', {
+        data: { is_exposed: isExposed, updated_at: new Date().toISOString() },
+        filters: { id }
+      })
+    )
+
+    return await Promise.all(updatePromises)
+  }
+
+  return []
+}
+
+/**
+ * 주유소 총 개수 조회
+ */
+export async function getGasStationsCount(options: GetGasStationsOptions = {}) {
+  const {
+    searchTerm = '',
+    isExposed = '',
+    fuelType = ''
+  } = options
+
+  const filters: Record<string, any> = {}
+
+  // 필터 조건 설정
+  if (isExposed === 'true') filters.is_exposed = true
+  if (isExposed === 'false') filters.is_exposed = false
+  if (searchTerm) filters.station_name = `%${searchTerm}%`
+
+  const result = await executeSupabaseQuery<GasStation>('gas_stations', 'select', {
+    select: 'id',
+    filters
+  })
+
+  return result.count || 0
+}

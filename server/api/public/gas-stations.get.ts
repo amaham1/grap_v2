@@ -18,18 +18,6 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export default defineEventHandler(async (event) => {
   try {
-    // DB 연결 상태 확인
-    const dbStatus = await testDatabaseConnection();
-    console.log('[주유소 API] DB 연결 상태:', dbStatus);
-
-    if (!dbStatus.success) {
-      console.error('[주유소 API] DB 연결 실패:', dbStatus);
-      throw createError({
-        statusCode: 500,
-        statusMessage: 'Database connection failed',
-        data: dbStatus
-      });
-    }
 
     const query = getQuery(event);
 
@@ -71,27 +59,35 @@ export default defineEventHandler(async (event) => {
     const isLocationBased = !isNaN(userLat) && !isNaN(userLng);
     const fetchPageSize = isLocationBased ? 500 : pageSize; // 위치 기반 검색 시 더 많이 가져옴
 
-    const result = await gasStationDAO.getGasStationsWithPrices(
-      isLocationBased ? 1 : page,
-      fetchPageSize,
-      searchQuery,
-      brandCode,
-      stationType
-    );
+    const result = await gasStationDAO.getGasStationsWithPrices({
+      page: isLocationBased ? 1 : page,
+      limit: fetchPageSize,
+      searchTerm: searchQuery,
+      brandCode: brandCode,
+      stationType: stationType
+    });
 
-    console.log(`[API] 데이터베이스에서 ${result.items.length}개 주유소 조회됨`);
+    if (result.error || !result.data) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Database Error',
+        message: 'Failed to fetch gas stations data'
+      });
+    }
+
+    console.log(`[API] 데이터베이스에서 ${result.data.length}개 주유소 조회됨`);
 
     // 좌표가 있는 주유소 개수 확인
-    const stationsWithCoords = result.items.filter(station =>
+    const stationsWithCoords = result.data.filter(station =>
       station.latitude && station.longitude
     );
-    console.log(`[API] 좌표가 있는 주유소: ${stationsWithCoords.length}개 / ${result.items.length}개`);
+    console.log(`[API] 좌표가 있는 주유소: ${stationsWithCoords.length}개 / ${result.data.length}개`);
 
-    let filteredItems = result.items;
+    let filteredItems = result.data;
 
     // 위치 기반 필터링
     if (isLocationBased) {
-      filteredItems = result.items
+      filteredItems = result.data
         .map(station => {
           if (station.latitude && station.longitude) {
             const distance = calculateDistance(userLat, userLng, station.latitude, station.longitude);
@@ -105,15 +101,15 @@ export default defineEventHandler(async (event) => {
     // 연료 타입 필터링
     if (fuelType && filteredItems.length > 0) {
       filteredItems = filteredItems.filter(station => {
-        if (!station.current_prices) return false;
+        if (!station.latest_price) return false;
 
         switch (fuelType) {
           case 'gasoline':
-            return station.current_prices.gasoline_price > 0;
+            return station.latest_price.gasoline_price > 0;
           case 'diesel':
-            return station.current_prices.diesel_price > 0;
+            return station.latest_price.diesel_price > 0;
           case 'lpg':
-            return station.current_prices.lpg_price > 0;
+            return station.latest_price.lpg_price > 0;
           default:
             return true;
         }
@@ -125,18 +121,18 @@ export default defineEventHandler(async (event) => {
     if (fuelType && filteredItems.length > 0) {
       const pricesWithStations = filteredItems
         .map(station => {
-          if (!station.current_prices) return null;
+          if (!station.latest_price) return null;
 
           let price = 0;
           switch (fuelType) {
             case 'gasoline':
-              price = station.current_prices.gasoline_price;
+              price = station.latest_price.gasoline_price;
               break;
             case 'diesel':
-              price = station.current_prices.diesel_price;
+              price = station.latest_price.diesel_price;
               break;
             case 'lpg':
-              price = station.current_prices.lpg_price;
+              price = station.latest_price.lpg_price;
               break;
           }
 
@@ -164,16 +160,16 @@ export default defineEventHandler(async (event) => {
             bValue = b.station_name;
             break;
           case 'gasoline':
-            aValue = a.current_prices?.gasoline_price || 999999;
-            bValue = b.current_prices?.gasoline_price || 999999;
+            aValue = a.latest_price?.gasoline_price || 999999;
+            bValue = b.latest_price?.gasoline_price || 999999;
             break;
           case 'diesel':
-            aValue = a.current_prices?.diesel_price || 999999;
-            bValue = b.current_prices?.diesel_price || 999999;
+            aValue = a.latest_price?.diesel_price || 999999;
+            bValue = b.latest_price?.diesel_price || 999999;
             break;
           case 'lpg':
-            aValue = a.current_prices?.lpg_price || 999999;
-            bValue = b.current_prices?.lpg_price || 999999;
+            aValue = a.latest_price?.lpg_price || 999999;
+            bValue = b.latest_price?.lpg_price || 999999;
             break;
           case 'distance':
             aValue = (a as any).distance || 999999;
@@ -201,7 +197,7 @@ export default defineEventHandler(async (event) => {
       const endIndex = startIndex + pageSize;
       paginatedItems = filteredItems.slice(startIndex, endIndex);
     } else {
-      totalItems = result.total;
+      totalItems = result.count || 0;
     }
 
     // 응답 데이터 구성
@@ -227,12 +223,12 @@ export default defineEventHandler(async (event) => {
           longitude: station.longitude
         },
         distance: (station as any).distance || null, // 거리 정보 추가
-        prices: station.current_prices ? {
-          gasoline: station.current_prices.gasoline_price,
-          premium_gasoline: station.current_prices.premium_gasoline_price,
-          diesel: station.current_prices.diesel_price,
-          lpg: station.current_prices.lpg_price,
-          updated_at: station.current_prices.price_date
+        prices: station.latest_price ? {
+          gasoline: station.latest_price.gasoline_price,
+          premium_gasoline: station.latest_price.premium_gasoline_price,
+          diesel: station.latest_price.diesel_price,
+          lpg: station.latest_price.lpg_price,
+          updated_at: station.latest_price.price_date
         } : null,
         is_lowest_price: lowestPriceStations.includes(station.opinet_id) // 최저가 여부
       })),
