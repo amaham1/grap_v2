@@ -1,7 +1,7 @@
 // server/api/cron/festivals.ts
 import { defineEventHandler } from 'h3';
-import mysql from 'mysql2/promise';
-import { executeQuery } from '~/server/utils/db';
+
+
 import { festivalDAO, logDAO } from '~/server/dao';
 
 const MAX_RETRIES = 2; // 최대 재시도 횟수
@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   let newItemsCount = 0;
   let updatedItemsCount = 0;
   const startTime = new Date();
-  let connection: mysql.Connection | null = null;
+  let connection: any | null = null;
 
   console.log(`[${new Date().toISOString()}] Starting ${SOURCE_NAME} data fetch cron job.`);
 

@@ -1,0 +1,13 @@
+# Cloudflare Pages 리다이렉트 설정
+
+# SPA 라우팅을 위한 fallback
+/*    /index.html   200
+
+# API 라우트는 제외
+/api/*  /api/:splat  200
+
+# 관리자 페이지 리다이렉트
+/admin  /alljeju/admin  301
+
+# 구 URL 리다이렉트 (필요시)
+# /old-path  /new-path  301

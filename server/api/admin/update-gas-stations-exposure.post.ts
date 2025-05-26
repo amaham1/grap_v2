@@ -1,6 +1,6 @@
 // server/api/admin/update-gas-stations-exposure.post.ts
 import { defineEventHandler } from 'h3';
-import { executeQuery } from '~/server/utils/db';
+
 
 export default defineEventHandler(async (event) => {
   try {

@@ -1,9 +1,9 @@
 import { defineEventHandler, getRouterParam, createError } from 'h3';
 import * as logDAO from '~/server/dao/log-dao';
-import mysql from 'mysql2/promise';
+
 
 export default defineEventHandler(async (event) => {
-  let connection: mysql.Connection | null = null;
+  let connection: any | null = null;
   const sourceNameParam = getRouterParam(event, 'sourceName');
   const startTime = new Date();
 

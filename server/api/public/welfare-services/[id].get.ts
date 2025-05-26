@@ -1,6 +1,6 @@
 // server/api/public/welfare-services/[id].get.ts
 import { defineEventHandler, createError } from 'h3';
-import { executeQuery } from '~/server/utils/db';
+
 import { sanitizeObjectHtmlFields } from '~/server/utils/sanitize';
 
 interface WelfareServiceDetail {

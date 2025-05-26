@@ -1,6 +1,6 @@
 // server/api/public/welfare-services/index.get.ts
 import { defineEventHandler, getQuery, createError } from 'h3';
-import { executeQuery } from '~/server/utils/db';
+
 import { testDatabaseConnection } from '~/server/utils/mysql';
 import { sanitizeItemsHtmlFields } from '~/server/utils/sanitize';
 

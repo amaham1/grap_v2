@@ -1,6 +1,6 @@
 // server/api/public/gas-stations.get.ts
 import { defineEventHandler, getQuery, createError } from 'h3';
-import { gasStationDAO } from '~/server/dao';
+import { gasStationDAO } from '~/server/dao/supabase';
 import { testDatabaseConnection } from '~/server/utils/mysql';
 
 // Haversine 공식을 사용한 거리 계산 (km)

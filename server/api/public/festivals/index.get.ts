@@ -1,6 +1,6 @@
 // server/api/public/festivals/index.get.ts
 import { defineEventHandler, getQuery, createError } from 'h3';
-import { executeQuery } from '~/server/utils/db';
+
 import { sanitizeItemsHtmlFields } from '~/server/utils/sanitize';
 
 interface FestivalPublic {

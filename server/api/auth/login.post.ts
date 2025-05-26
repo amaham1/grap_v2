@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody, createError, setCookie } from 'h3';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { executeQuery } from '~/server/utils/db'; // DB 유틸리티
+ // DB 유틸리티
 
 // User 인터페이스 정의
 interface User {

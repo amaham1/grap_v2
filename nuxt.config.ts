@@ -21,13 +21,21 @@ export default defineNuxtConfig({
     // Hyperdrive 설정
     hyperdriveUrl: process.env.HYPERDRIVE_URL,
 
+    // Supabase 설정 (서버 사이드)
+    supabaseUrl: process.env.SUPABASE_URL,
+    supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+
     // JWT 설정
     jwtSecretKey: process.env.JWT_SECRET_KEY,
     jwtExpiresIn: process.env.JWT_EXPIRES_IN,
 
     public: {
       // 클라이언트에서도 접근 가능한 환경 변수들
-      kakaoMapApiKey: process.env.KAKAO_MAP_API_KEY || 'f7c0b5b7e8a4c5d6e7f8a9b0c1d2e3f4'
+      kakaoMapApiKey: process.env.KAKAO_MAP_API_KEY || 'f7c0b5b7e8a4c5d6e7f8a9b0c1d2e3f4',
+
+      // Supabase 설정 (클라이언트 사이드)
+      supabaseUrl: process.env.SUPABASE_URL,
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY
     }
   }
 })

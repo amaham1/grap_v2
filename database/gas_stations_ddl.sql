@@ -1,3 +1,4 @@
+-- MySQL DDL (기존)
 -- 주유소 기본 정보 테이블
 CREATE TABLE gas_stations (
     id INT AUTO_INCREMENT PRIMARY KEY,
