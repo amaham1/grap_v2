@@ -1,24 +1,28 @@
 import { defineEventHandler, getQuery, setResponseStatus } from 'h3';
-import { festivalDAO } from '~/server/utils/dao/festival-dao';
+import { festivalDAO } from '~/server/dao/supabase';
 
 export default defineEventHandler(async (event) => {
   const queryParams = getQuery(event);
-  
+
   const page = parseInt(queryParams.page as string) || 1;
   const limit = parseInt(queryParams.limit as string) || 10;
-  const searchQuery = queryParams.searchQuery as string || '';
-  const filterStatus = queryParams.filterStatus as 'true' | 'false' | '' || '';
+  const searchTerm = queryParams.searchQuery as string || '';
+  const isExposed = queryParams.filterStatus as 'true' | 'false' | '' || '';
 
   try {
-    const { data, total } = await festivalDAO.getFestivals({
+    const result = await festivalDAO.getFestivals({
       page,
       limit,
-      searchQuery,
-      filterStatus,
+      searchTerm,
+      isExposed,
     });
-    return { 
-      success: true, 
-      data,
+    const total = await festivalDAO.getFestivalsCount({
+      searchTerm,
+      isExposed,
+    });
+    return {
+      success: true,
+      data: result.data || [],
       meta: {
         page,
         limit,

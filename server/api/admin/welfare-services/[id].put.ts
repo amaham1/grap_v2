@@ -1,5 +1,5 @@
 import { defineEventHandler, readBody, setResponseStatus } from 'h3';
-import { updateWelfareService, getWelfareServiceById, WelfareService } from '~/server/utils/dao/welfare-service-dao';
+import { updateWelfareService, getWelfareServiceById, WelfareService } from '~/server/dao/supabase/welfare-service-dao';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -29,9 +29,9 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    const success = await updateWelfareService(idAsNumber, body);
+    const result = await updateWelfareService(idAsNumber, body);
 
-    if (!success) {
+    if (!result || !result.data) {
       // This might happen if the record to update wasn't found, or no rows were affected.
       // Check if the item actually exists first.
       const existingService = await getWelfareServiceById(idAsNumber);

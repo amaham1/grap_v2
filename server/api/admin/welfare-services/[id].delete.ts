@@ -1,5 +1,5 @@
 import { defineEventHandler, setResponseStatus } from 'h3';
-import { deleteWelfareService, getWelfareServiceById } from '~/server/utils/dao/welfare-service-dao';
+import { deleteWelfareService, getWelfareServiceById } from '~/server/dao/supabase/welfare-service-dao';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
 
     if (result.affectedRows === 0) {
       // This case should ideally be caught by the check above, but as a fallback:
-      setResponseStatus(event, 404); 
+      setResponseStatus(event, 404);
       return {
         success: false,
         message: '복지서비스 삭제에 실패했거나 해당 서비스가 존재하지 않습니다.',

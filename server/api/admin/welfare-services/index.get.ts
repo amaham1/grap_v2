@@ -1,5 +1,5 @@
 import { defineEventHandler, getQuery, setResponseStatus } from 'h3';
-import { getWelfareServices, GetWelfareServicesOptions } from '~/server/utils/dao/welfare-service-dao';
+import { getWelfareServices, GetWelfareServicesOptions } from '~/server/dao/supabase/welfare-service-dao';
 
 export default defineEventHandler(async (event) => {
   try {

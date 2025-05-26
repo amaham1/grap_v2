@@ -1,5 +1,5 @@
 import { defineEventHandler, getRouterParams, setResponseStatus } from 'h3';
-import { festivalDAO } from '~/server/utils/dao/festival-dao';
+import { festivalDAO } from '~/server/dao/supabase';
 
 export default defineEventHandler(async (event) => {
   const params = getRouterParams(event);
@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const festival = await festivalDAO.getFestivalById(id);
+    const festival = await festivalDAO.getFestivalById(parseInt(id));
     if (!festival) {
       throw createError({
         statusCode: 404,
@@ -21,9 +21,10 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const success = await festivalDAO.toggleFestivalVisibility(id, festival.is_show);
-    if (success) {
-      return { success: true, message: '축제 노출 상태가 변경되었습니다.', newIsShow: !festival.is_show };
+    const newExposureState = !festival.is_exposed;
+    const result = await festivalDAO.updateFestivalExposure(parseInt(id), newExposureState);
+    if (result && result.data) {
+      return { success: true, message: '축제 노출 상태가 변경되었습니다.', newIsExposed: newExposureState };
     } else {
       throw createError({
         statusCode: 500,
@@ -33,7 +34,7 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error(`API Error POST /api/admin/festivals/${id}/toggle:`, error);
     // 이미 createError로 감싸진 오류가 아니라면 새로 생성합니다.
-    if (error.statusCode) throw error; 
+    if (error.statusCode) throw error;
     throw createError({
       statusCode: 500,
       statusMessage: '축제 노출 상태 변경 중 오류가 발생했습니다.',

@@ -98,7 +98,7 @@ export async function getWelfareServiceById(id: number) {
   const result = await executeSupabaseQuery<WelfareService>('welfare_services', 'select', {
     filters: { id }
   })
-  
+
   return result.data?.[0] || null
 }
 
@@ -110,7 +110,7 @@ export async function getPublicWelfareServiceById(id: number) {
     select: 'id, service_name, is_all_location, is_jeju_location, is_seogwipo_location, support_target_html, support_content_html, application_info_html, fetched_at',
     filters: { id, is_exposed: true }
   })
-  
+
   return result.data?.[0] || null
 }
 
@@ -121,7 +121,7 @@ export async function getWelfareServiceByOriginalApiId(original_api_id: string) 
   const result = await executeSupabaseQuery<WelfareService>('welfare_services', 'select', {
     filters: { original_api_id }
   })
-  
+
   return result.data?.[0] || null
 }
 
@@ -131,8 +131,8 @@ export async function getWelfareServiceByOriginalApiId(original_api_id: string) 
 export async function upsertWelfareService(service: WelfareService) {
   const data = {
     ...service,
-    api_raw_data: typeof service.api_raw_data === 'string' 
-      ? JSON.parse(service.api_raw_data) 
+    api_raw_data: typeof service.api_raw_data === 'string'
+      ? JSON.parse(service.api_raw_data)
       : service.api_raw_data,
     fetched_at: service.fetched_at || new Date().toISOString(),
     updated_at: new Date().toISOString()
@@ -147,14 +147,29 @@ export async function upsertWelfareService(service: WelfareService) {
 export async function batchUpsertWelfareServices(services: WelfareService[]) {
   const data = services.map(service => ({
     ...service,
-    api_raw_data: typeof service.api_raw_data === 'string' 
-      ? JSON.parse(service.api_raw_data) 
+    api_raw_data: typeof service.api_raw_data === 'string'
+      ? JSON.parse(service.api_raw_data)
       : service.api_raw_data,
     fetched_at: service.fetched_at || new Date().toISOString(),
     updated_at: new Date().toISOString()
   }))
 
   return await batchUpsert('welfare_services', data)
+}
+
+/**
+ * 복지 서비스 정보 업데이트
+ */
+export async function updateWelfareService(id: number, updateData: Partial<WelfareService>) {
+  const data = {
+    ...updateData,
+    updated_at: new Date().toISOString()
+  }
+
+  return await executeSupabaseQuery('welfare_services', 'update', {
+    data,
+    filters: { id }
+  })
 }
 
 /**
@@ -165,7 +180,7 @@ export async function updateWelfareServiceExposure(id: number, isExposed: boolea
     is_exposed: isExposed,
     updated_at: new Date().toISOString()
   }
-  
+
   if (adminMemo !== undefined) {
     data.admin_memo = adminMemo
   }
@@ -225,7 +240,7 @@ export async function searchWelfareServices(searchTerm: string, limit: number = 
   // 서비스명 검색
   const nameResult = await executeSupabaseQuery<WelfareService>('welfare_services', 'select', {
     select: 'id, service_name, is_all_location, is_jeju_location, is_seogwipo_location, support_target_html, support_content_html, fetched_at',
-    filters: { 
+    filters: {
       is_exposed: true,
       service_name: `%${searchTerm}%`
     },
@@ -236,7 +251,7 @@ export async function searchWelfareServices(searchTerm: string, limit: number = 
   // 지원 대상 검색
   const targetResult = await executeSupabaseQuery<WelfareService>('welfare_services', 'select', {
     select: 'id, service_name, is_all_location, is_jeju_location, is_seogwipo_location, support_target_html, support_content_html, fetched_at',
-    filters: { 
+    filters: {
       is_exposed: true,
       support_target_html: `%${searchTerm}%`
     },
@@ -247,7 +262,7 @@ export async function searchWelfareServices(searchTerm: string, limit: number = 
   // 지원 내용 검색
   const contentResult = await executeSupabaseQuery<WelfareService>('welfare_services', 'select', {
     select: 'id, service_name, is_all_location, is_jeju_location, is_seogwipo_location, support_target_html, support_content_html, fetched_at',
-    filters: { 
+    filters: {
       is_exposed: true,
       support_content_html: `%${searchTerm}%`
     },
@@ -262,13 +277,13 @@ export async function searchWelfareServices(searchTerm: string, limit: number = 
     ...(contentResult.data || [])
   ]
 
-  const uniqueResults = allResults.filter((service, index, self) => 
+  const uniqueResults = allResults.filter((service, index, self) =>
     index === self.findIndex(s => s.id === service.id)
   ).slice(0, limit)
 
-  return { 
-    data: uniqueResults, 
-    error: nameResult.error || targetResult.error || contentResult.error 
+  return {
+    data: uniqueResults,
+    error: nameResult.error || targetResult.error || contentResult.error
   }
 }
 

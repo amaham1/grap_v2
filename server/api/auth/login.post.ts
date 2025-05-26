@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody, createError, setCookie } from 'h3';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
- // DB 유틸리티
+import { executeSupabaseQuery } from '~/server/utils/supabase';
 
 // User 인터페이스 정의
 interface User {

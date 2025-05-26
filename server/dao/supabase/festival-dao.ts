@@ -59,6 +59,32 @@ export async function getFestivals(options: GetFestivalsOptions = {}) {
 }
 
 /**
+ * 축제 총 개수 조회
+ */
+export async function getFestivalsCount(options: GetFestivalsOptions = {}) {
+  const {
+    searchTerm = '',
+    isExposed = '',
+    writerName = ''
+  } = options
+
+  const filters: Record<string, any> = {}
+
+  // 필터 조건 설정
+  if (isExposed === 'true') filters.is_exposed = true
+  if (isExposed === 'false') filters.is_exposed = false
+  if (writerName) filters.writer_name = `%${writerName}%`
+  if (searchTerm) filters.title = `%${searchTerm}%`
+
+  const result = await executeSupabaseQuery<Festival>('festivals', 'select', {
+    select: 'id',
+    filters
+  })
+
+  return result.count || 0
+}
+
+/**
  * 공개된 축제 목록 조회 (공개 API용)
  */
 export async function getPublicFestivals(options: GetFestivalsOptions = {}) {
@@ -89,7 +115,7 @@ export async function getFestivalById(id: number) {
   const result = await executeSupabaseQuery<Festival>('festivals', 'select', {
     filters: { id }
   })
-  
+
   return result.data?.[0] || null
 }
 
@@ -101,7 +127,7 @@ export async function getPublicFestivalById(id: number) {
     select: 'id, title, content_html, source_url, writer_name, written_date, files_info, fetched_at',
     filters: { id, is_exposed: true }
   })
-  
+
   return result.data?.[0] || null
 }
 
@@ -112,7 +138,7 @@ export async function getFestivalByOriginalApiId(original_api_id: string) {
   const result = await executeSupabaseQuery<Festival>('festivals', 'select', {
     filters: { original_api_id }
   })
-  
+
   return result.data?.[0] || null
 }
 
@@ -123,11 +149,11 @@ export async function upsertFestival(festival: Festival) {
   const data = {
     ...festival,
     // JSON 데이터는 Supabase에서 자동으로 처리됩니다
-    files_info: typeof festival.files_info === 'string' 
-      ? JSON.parse(festival.files_info) 
+    files_info: typeof festival.files_info === 'string'
+      ? JSON.parse(festival.files_info)
       : festival.files_info,
-    api_raw_data: typeof festival.api_raw_data === 'string' 
-      ? JSON.parse(festival.api_raw_data) 
+    api_raw_data: typeof festival.api_raw_data === 'string'
+      ? JSON.parse(festival.api_raw_data)
       : festival.api_raw_data,
     fetched_at: festival.fetched_at || new Date().toISOString(),
     updated_at: new Date().toISOString()
@@ -142,11 +168,11 @@ export async function upsertFestival(festival: Festival) {
 export async function batchUpsertFestivals(festivals: Festival[]) {
   const data = festivals.map(festival => ({
     ...festival,
-    files_info: typeof festival.files_info === 'string' 
-      ? JSON.parse(festival.files_info) 
+    files_info: typeof festival.files_info === 'string'
+      ? JSON.parse(festival.files_info)
       : festival.files_info,
-    api_raw_data: typeof festival.api_raw_data === 'string' 
-      ? JSON.parse(festival.api_raw_data) 
+    api_raw_data: typeof festival.api_raw_data === 'string'
+      ? JSON.parse(festival.api_raw_data)
       : festival.api_raw_data,
     fetched_at: festival.fetched_at || new Date().toISOString(),
     updated_at: new Date().toISOString()
@@ -163,7 +189,7 @@ export async function updateFestivalExposure(id: number, isExposed: boolean, adm
     is_exposed: isExposed,
     updated_at: new Date().toISOString()
   }
-  
+
   if (adminMemo !== undefined) {
     data.admin_memo = adminMemo
   }
@@ -227,10 +253,10 @@ export async function getFestivalCountByWriter() {
 export async function searchFestivals(searchTerm: string, limit: number = 20) {
   // Supabase에서는 전문 검색을 위해 별도의 설정이 필요할 수 있습니다.
   // 여기서는 기본적인 LIKE 검색을 사용합니다.
-  
+
   const titleResult = await executeSupabaseQuery<Festival>('festivals', 'select', {
     select: 'id, title, content_html, writer_name, written_date, fetched_at',
-    filters: { 
+    filters: {
       is_exposed: true,
       title: `%${searchTerm}%`
     },
@@ -240,7 +266,7 @@ export async function searchFestivals(searchTerm: string, limit: number = 20) {
 
   const contentResult = await executeSupabaseQuery<Festival>('festivals', 'select', {
     select: 'id, title, content_html, writer_name, written_date, fetched_at',
-    filters: { 
+    filters: {
       is_exposed: true,
       content_html: `%${searchTerm}%`
     },
@@ -254,12 +280,12 @@ export async function searchFestivals(searchTerm: string, limit: number = 20) {
     ...(contentResult.data || [])
   ]
 
-  const uniqueResults = allResults.filter((festival, index, self) => 
+  const uniqueResults = allResults.filter((festival, index, self) =>
     index === self.findIndex(f => f.id === festival.id)
   ).slice(0, limit)
 
-  return { 
-    data: uniqueResults, 
-    error: titleResult.error || contentResult.error 
+  return {
+    data: uniqueResults,
+    error: titleResult.error || contentResult.error
   }
 }
