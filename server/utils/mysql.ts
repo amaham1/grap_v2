@@ -82,10 +82,6 @@ function initializePool() {
         supportBigNumbers: true,
         dateStrings: false,
         ssl: false,
-        // 추가 연결 안정성 옵션
-        authPlugins: {
-          mysql_native_password: () => require('mysql2/lib/auth_plugins').mysql_native_password,
-        },
         typeCast: function (field, next) {
           if (field.type === 'VAR_STRING' || field.type === 'VARCHAR' || field.type === 'STRING' ||
               field.type === 'TEXT' || field.type === 'MEDIUMTEXT' || field.type === 'LONGTEXT' ||
