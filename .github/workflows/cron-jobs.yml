@@ -1,0 +1,102 @@
+name: Scheduled Data Fetch
+
+on:
+  schedule:
+    # 주유소 데이터 - 매일 새벽 2시 (KST) = 17시 (UTC) 전날
+    - cron: '0 17 * * *'
+    # 전시회, 축제, 복지서비스 데이터 - 매일 아침 9시 (KST) = 0시 (UTC)
+    - cron: '0 0 * * *'
+  
+  # 수동 실행 가능
+  workflow_dispatch:
+    inputs:
+      job_type:
+        description: 'Job type to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - gas-stations
+        - exhibitions
+        - festivals
+        - welfare-services
+
+jobs:
+  # 새벽 2시 실행 - 주유소 데이터
+  gas-stations-job:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 17 * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.job_type == 'all' || github.event.inputs.job_type == 'gas-stations'))
+    steps:
+      - name: Trigger Gas Stations Data Fetch
+        run: |
+          echo "Triggering gas stations data fetch at $(date)"
+          curl -X GET "${{ secrets.SITE_URL }}/api/cron/gas-stations" \
+            -H "User-Agent: GitHub-Actions-Cron" \
+            -H "X-Cron-Source: github-actions" \
+            --fail --silent --show-error || echo "Request failed"
+
+  # 아침 9시 실행 - 전시회, 축제, 복지서비스 데이터
+  content-jobs:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 0 * * *' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.job_type == 'all' || github.event.inputs.job_type == 'exhibitions' || github.event.inputs.job_type == 'festivals' || github.event.inputs.job_type == 'welfare-services'))
+    strategy:
+      matrix:
+        endpoint: [exhibitions-new, festivals, welfare-services-new]
+    steps:
+      - name: Trigger ${{ matrix.endpoint }} Data Fetch
+        run: |
+          echo "Triggering ${{ matrix.endpoint }} data fetch at $(date)"
+          curl -X GET "${{ secrets.SITE_URL }}/api/cron/${{ matrix.endpoint }}" \
+            -H "User-Agent: GitHub-Actions-Cron" \
+            -H "X-Cron-Source: github-actions" \
+            --fail --silent --show-error || echo "Request failed"
+
+  # 수동 실행 시 개별 작업
+  manual-gas-stations:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job_type == 'gas-stations'
+    steps:
+      - name: Trigger Gas Stations Data Fetch
+        run: |
+          echo "Manually triggering gas stations data fetch at $(date)"
+          curl -X GET "${{ secrets.SITE_URL }}/api/cron/gas-stations" \
+            -H "User-Agent: GitHub-Actions-Manual" \
+            -H "X-Cron-Source: github-actions-manual" \
+            --fail --silent --show-error || echo "Request failed"
+
+  manual-exhibitions:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job_type == 'exhibitions'
+    steps:
+      - name: Trigger Exhibitions Data Fetch
+        run: |
+          echo "Manually triggering exhibitions data fetch at $(date)"
+          curl -X GET "${{ secrets.SITE_URL }}/api/cron/exhibitions-new" \
+            -H "User-Agent: GitHub-Actions-Manual" \
+            -H "X-Cron-Source: github-actions-manual" \
+            --fail --silent --show-error || echo "Request failed"
+
+  manual-festivals:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job_type == 'festivals'
+    steps:
+      - name: Trigger Festivals Data Fetch
+        run: |
+          echo "Manually triggering festivals data fetch at $(date)"
+          curl -X GET "${{ secrets.SITE_URL }}/api/cron/festivals" \
+            -H "User-Agent: GitHub-Actions-Manual" \
+            -H "X-Cron-Source: github-actions-manual" \
+            --fail --silent --show-error || echo "Request failed"
+
+  manual-welfare-services:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job_type == 'welfare-services'
+    steps:
+      - name: Trigger Welfare Services Data Fetch
+        run: |
+          echo "Manually triggering welfare services data fetch at $(date)"
+          curl -X GET "${{ secrets.SITE_URL }}/api/cron/welfare-services-new" \
+            -H "User-Agent: GitHub-Actions-Manual" \
+            -H "X-Cron-Source: github-actions-manual" \
+            --fail --silent --show-error || echo "Request failed"

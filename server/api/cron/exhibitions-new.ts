@@ -1,5 +1,5 @@
 // server/api/cron/exhibitions.ts - Supabase DAO 사용
-import { defineEventHandler } from 'h3';
+import { defineEventHandler, getHeader, createError } from 'h3';
 import { exhibitionDAO, logDAO } from '~/server/dao/supabase';
 
 const MAX_RETRIES = 2;
@@ -7,12 +7,27 @@ const SOURCE_NAME = 'exhibitions';
 const API_URL = 'https://www.jeju.go.kr/api/jejutoseoul/exhibition';
 
 export default defineEventHandler(async (event) => {
+  // 보안 검증: GitHub Actions 또는 관리자만 접근 가능
+  const userAgent = getHeader(event, 'user-agent') || '';
+  const cronSource = getHeader(event, 'x-cron-source') || '';
+
+  const isValidCronRequest = userAgent.includes('GitHub-Actions') || cronSource === 'github-actions' || cronSource === 'github-actions-manual';
+
+  if (!isValidCronRequest) {
+    console.log(`[${new Date().toISOString()}] Unauthorized cron request blocked. User-Agent: ${userAgent}`);
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Forbidden',
+      message: 'This endpoint is only accessible via scheduled cron jobs.'
+    });
+  }
+
   let attempt = 0;
   let success = false;
   let processedCount = 0;
   const startTime = new Date();
 
-  console.log(`[${new Date().toISOString()}] Starting ${SOURCE_NAME} data fetch cron job.`);
+  console.log(`[${new Date().toISOString()}] Starting ${SOURCE_NAME} data fetch cron job. Source: ${cronSource}`);
 
   try {
     while (attempt <= MAX_RETRIES && !success) {
@@ -130,7 +145,7 @@ export default defineEventHandler(async (event) => {
 
   } catch (error: any) {
     console.error(`[${new Date().toISOString()}] Critical error in ${SOURCE_NAME} cron job:`, error.message);
-    
+
     if (!success) {
         try {
             await logDAO.createApiFetchLog({
@@ -146,7 +161,7 @@ export default defineEventHandler(async (event) => {
             console.error(`[${new Date().toISOString()}] Failed to write final failure log for ${SOURCE_NAME}:`, logError.message);
         }
     }
-    
+
     return {
       status: 'failure',
       source: SOURCE_NAME,
