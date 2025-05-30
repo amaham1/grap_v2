@@ -34,15 +34,28 @@ export default defineEventHandler(async (event) => {
       isExposed: 'true'
     });
 
-    const stationsWithPrices = stationsWithPricesResult.data?.filter(station => 
-      station.latest_price && (
-        station.latest_price.gasoline_price > 0 ||
-        station.latest_price.diesel_price > 0 ||
-        station.latest_price.lpg_price > 0
-      )
-    ) || [];
+    const stationsWithPrices = stationsWithPricesResult.data?.filter(station => {
+      const hasPrice = station.latest_price && (
+        (station.latest_price.gasoline_price && station.latest_price.gasoline_price > 0) ||
+        (station.latest_price.diesel_price && station.latest_price.diesel_price > 0) ||
+        (station.latest_price.lpg_price && station.latest_price.lpg_price > 0)
+      );
+      console.log(`[DEBUG] ${station.station_name} - hasPrice: ${hasPrice}`);
+      return hasPrice;
+    }) || [];
 
     console.log(`[DEBUG] 가격 정보가 있는 주유소 (샘플 10개 중): ${stationsWithPrices.length}개`);
+
+    // 각 주유소의 가격 정보 상세 확인
+    stationsWithPricesResult.data?.forEach((station, index) => {
+      console.log(`[DEBUG] 주유소 ${index + 1}: ${station.station_name}`);
+      console.log(`[DEBUG] - latest_price 존재: ${!!station.latest_price}`);
+      if (station.latest_price) {
+        console.log(`[DEBUG] - 휘발유: ${station.latest_price.gasoline_price}`);
+        console.log(`[DEBUG] - 경유: ${station.latest_price.diesel_price}`);
+        console.log(`[DEBUG] - LPG: ${station.latest_price.lpg_price}`);
+      }
+    });
 
     // 5. 샘플 데이터 출력
     const sampleStation = stationsWithPricesResult.data?.[0];
