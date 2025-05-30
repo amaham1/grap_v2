@@ -143,10 +143,13 @@
       @current-view-search="handleCurrentViewSearch" />
 
     <!-- 하단 광고 블록 -->
-    <div class="fixed bottom-0 left-0 right-0 w-full h-[50px] bg-gray-200 border-t border-gray-300 flex items-center justify-center z-50">
-      <div class="text-center text-gray-500 text-sm">
-        <span>광고 - 100% x 50px</span>
-      </div>
+    <div class="fixed bottom-0 left-0 right-0 w-full h-[50px] bg-white border-t border-gray-300 flex items-center justify-center z-50 px-2">
+      <GoogleAdsense
+        format="horizontal"
+        width="100%"
+        height="50px"
+        full-width-responsive="true"
+        container-class="w-full h-full flex items-center justify-center" />
     </div>
   </div>
 </template>
@@ -155,6 +158,7 @@
 import type { GasStation } from '~/types/gasStation';
 import { updateTopLowestPriceStations, fuelTypes, formatPrice, getStationPrice } from '~/utils/gasStationUtils';
 import GasStationMapContainer from '~/components/GasStation/MapContainer.vue';
+import GoogleAdsense from '~/components/public/GoogleAdsense.vue';
 
 definePageMeta({
   layout: 'public'

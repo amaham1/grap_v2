@@ -1,7 +1,16 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   app: {
-    baseURL: '/'
+    baseURL: '/',
+    head: {
+      script: [
+        {
+          async: true,
+          src: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6491895061878011',
+          crossorigin: 'anonymous'
+        }
+      ]
+    }
   },
   css: ['~/assets/css/tailwind.css'],
   alias: {

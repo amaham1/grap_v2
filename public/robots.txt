@@ -1,2 +1,11 @@
 User-Agent: *
+Disallow: /admin/
+Disallow: /api/
+Allow: /api/public/
+
+# Google AdSense
+User-Agent: Mediapartners-Google
 Disallow:
+
+# Sitemap
+Sitemap: https://your-site.pages.dev/sitemap.xml
