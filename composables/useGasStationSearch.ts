@@ -11,7 +11,7 @@ export const useGasStationSearch = () => {
 
     try {
       const queryParams = new URLSearchParams();
-      
+
       if (params.lat !== undefined) queryParams.append('lat', params.lat.toString());
       if (params.lng !== undefined) queryParams.append('lng', params.lng.toString());
       if (params.radius !== undefined) queryParams.append('radius', params.radius.toString());
@@ -20,9 +20,19 @@ export const useGasStationSearch = () => {
       if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
       if (params.fuel) queryParams.append('fuel', params.fuel);
 
-      const response = await $fetch<GasStationSearchResponse>(`/api/public/gas-stations?${queryParams.toString()}`);
+      const url = `/api/public/gas-stations?${queryParams.toString()}`;
+      console.log(`[SEARCH] API 호출: ${url}`);
+
+      const response = await $fetch<GasStationSearchResponse>(url);
 
       if (response.success) {
+        console.log(`[SEARCH] 검색 성공: ${response.items.length}개 주유소 반환`);
+        console.log(`[SEARCH] 통계:`, response.stats);
+
+        // 가격 정보가 있는 주유소 개수 확인
+        const stationsWithPrices = response.items.filter(station => station.prices);
+        console.log(`[SEARCH] 가격 정보가 있는 주유소: ${stationsWithPrices.length}개 / ${response.items.length}개`);
+
         searchStats.value = response.stats;
         return response.items;
       } else {

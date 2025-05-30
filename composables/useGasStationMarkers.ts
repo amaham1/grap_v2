@@ -68,6 +68,13 @@ export const useGasStationMarkers = (map: Ref<any>) => {
   // 주유소 마커 생성
   const createGasStationMarker = (station: GasStation, selectedFuel: string): any => {
     if (!map.value || !station.location?.latitude || !station.location?.longitude) {
+      console.log(`[DEBUG] 마커 생성 불가 - 지도 또는 좌표 없음: ${station.name}`);
+      return null;
+    }
+
+    // 가격 정보가 없는 주유소는 마커 생성하지 않음
+    if (!station.prices) {
+      console.log(`[DEBUG] 마커 생성 불가 - 가격 정보 없음: ${station.name}`);
       return null;
     }
 
@@ -181,8 +188,8 @@ export const useGasStationMarkers = (map: Ref<any>) => {
     let markersSkipped = 0;
 
     stations.forEach((station, index) => {
-      // 좌표가 있는 주유소만 마커 생성
-      if (station.location?.latitude && station.location?.longitude) {
+      // 좌표와 가격 정보가 있는 주유소만 마커 생성
+      if (station.location?.latitude && station.location?.longitude && station.prices) {
         console.log(`[DEBUG] 마커 생성 중 ${index + 1}/${stations.length}: ${station.name} (${station.location.latitude}, ${station.location.longitude})`);
 
         try {
@@ -191,13 +198,19 @@ export const useGasStationMarkers = (map: Ref<any>) => {
             // 마커를 배열에 저장 (나중에 제거하기 위해)
             currentMarkers.value.push(marker);
             markersCreated++;
+          } else {
+            console.log(`[DEBUG] 마커 생성 실패 (null 반환): ${station.name}`);
+            markersSkipped++;
           }
         } catch (error) {
           console.error(`[ERROR] 마커 생성 실패: ${station.name}`, error);
           markersSkipped++;
         }
       } else {
-        console.log(`[DEBUG] 좌표 없음으로 스킵: ${station.name} (lat: ${station.location?.latitude}, lng: ${station.location?.longitude})`);
+        const reason = !station.location?.latitude || !station.location?.longitude
+          ? '좌표 없음'
+          : '가격 정보 없음';
+        console.log(`[DEBUG] ${reason}으로 스킵: ${station.name} (lat: ${station.location?.latitude}, lng: ${station.location?.longitude}, prices: ${!!station.prices})`);
         markersSkipped++;
       }
     });

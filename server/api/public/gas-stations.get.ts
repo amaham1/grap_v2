@@ -98,7 +98,7 @@ export default defineEventHandler(async (event) => {
         .filter(station => station !== null && station.distance <= radius) as any[];
     }
 
-    // 연료 타입 필터링
+    // 연료 타입 필터링 (가격 정보가 있는 주유소만)
     if (fuelType && filteredItems.length > 0) {
       filteredItems = filteredItems.filter(station => {
         if (!station.latest_price) return false;
@@ -113,6 +113,16 @@ export default defineEventHandler(async (event) => {
           default:
             return true;
         }
+      });
+    } else if (filteredItems.length > 0) {
+      // 연료 타입이 선택되지 않은 경우에도 가격 정보가 있는 주유소만 필터링
+      filteredItems = filteredItems.filter(station => {
+        if (!station.latest_price) return false;
+
+        // 적어도 하나의 연료 가격이 있어야 함
+        return station.latest_price.gasoline_price > 0 ||
+               station.latest_price.diesel_price > 0 ||
+               station.latest_price.lpg_price > 0;
       });
     }
 
