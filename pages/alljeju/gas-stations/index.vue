@@ -142,6 +142,66 @@
       :is-searching="isSearching"
       @current-view-search="handleCurrentViewSearch" />
 
+    <!-- 🔧 [DEBUG] 디버그 패널 -->
+    <div v-if="showDebugPanel" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-lg shadow-2xl border border-gray-300 w-96 max-h-96 overflow-hidden">
+      <div class="flex items-center justify-between p-3 border-b border-gray-200 bg-gray-50">
+        <h3 class="text-sm font-semibold text-gray-700">🔧 디버그 정보</h3>
+        <button
+          @click="toggleDebugPanel"
+          class="p-1 text-gray-500 hover:text-gray-700 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-3 overflow-y-auto max-h-80 text-xs">
+        <!-- 환경 정보 -->
+        <div class="mb-3">
+          <h4 class="font-semibold text-gray-700 mb-1">🌐 환경</h4>
+          <p class="text-gray-600">{{ debugInfo.environment || '정보 없음' }}</p>
+        </div>
+
+        <!-- 마지막 검색 정보 -->
+        <div class="mb-3">
+          <h4 class="font-semibold text-gray-700 mb-1">🔍 마지막 검색</h4>
+          <p class="text-gray-600">{{ debugInfo.lastSearchTime || '검색 없음' }}</p>
+          <div v-if="debugInfo.lastSearchResults.stationsFound !== undefined" class="mt-1">
+            <span class="text-green-600 font-medium">{{ debugInfo.lastSearchResults.stationsFound }}개 발견</span>
+            <span class="text-gray-500 ml-2">반경 {{ debugInfo.lastSearchResults.searchRadius }}km</span>
+          </div>
+        </div>
+
+        <!-- API 호출 횟수 -->
+        <div class="mb-3">
+          <h4 class="font-semibold text-gray-700 mb-1">📊 통계</h4>
+          <p class="text-gray-600">API 호출: {{ debugInfo.apiCallCount }}회</p>
+        </div>
+
+        <!-- 에러 로그 -->
+        <div v-if="debugInfo.errors.length > 0" class="mb-3">
+          <h4 class="font-semibold text-red-700 mb-1">❌ 에러 로그</h4>
+          <div class="space-y-1 max-h-20 overflow-y-auto">
+            <p v-for="error in debugInfo.errors" :key="error" class="text-red-600 text-xs">{{ error }}</p>
+          </div>
+        </div>
+
+        <!-- 빠른 액션 버튼들 -->
+        <div class="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200">
+          <button @click="window.debugGasStations?.compareEnvironment()" class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">환경 비교</button>
+          <button @click="window.debugGasStations?.logCurrentState()" class="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">상태 확인</button>
+          <button @click="window.debugGasStations?.forceSearch()" class="px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600">강제 검색</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🔧 [DEBUG] 디버그 패널 토글 버튼 (화면 우하단) -->
+    <button
+      @click="toggleDebugPanel"
+      class="fixed bottom-16 right-4 z-40 w-12 h-12 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors flex items-center justify-center">
+      <span class="text-lg">🔧</span>
+    </button>
+
     <!-- 하단 광고 블록 -->
     <div class="fixed bottom-0 left-0 right-0 w-full h-[50px] bg-white border-t border-gray-300 flex items-center justify-center z-50 px-2">
       <GoogleAdsense
@@ -194,6 +254,54 @@ const isInitialLoad = ref(true); // 최초 로드 여부
 const isSearchPanelCollapsed = ref(true); // 검색 패널 접힌 상태
 const isTopListPanelCollapsed = ref(true); // TOP10 패널 접힌 상태
 
+// 🔧 [DEBUG] 디버깅 정보 상태
+const debugInfo = ref({
+  environment: '',
+  lastSearchTime: '',
+  lastSearchParams: {},
+  lastSearchResults: {},
+  apiCallCount: 0,
+  errors: [] as string[]
+});
+
+const showDebugPanel = ref(false); // 디버그 패널 표시 여부
+
+// 🔧 [DEBUG] 디버깅 정보 업데이트 함수들
+const updateDebugInfo = (type: string, data: any) => {
+  const timestamp = new Date().toISOString();
+
+  switch (type) {
+    case 'environment':
+      debugInfo.value.environment = `${window.location.hostname} (${timestamp})`;
+      break;
+    case 'search-start':
+      debugInfo.value.lastSearchTime = timestamp;
+      debugInfo.value.lastSearchParams = data;
+      debugInfo.value.apiCallCount++;
+      break;
+    case 'search-result':
+      debugInfo.value.lastSearchResults = data;
+      break;
+    case 'error':
+      debugInfo.value.errors.push(`${timestamp}: ${data}`);
+      if (debugInfo.value.errors.length > 10) {
+        debugInfo.value.errors = debugInfo.value.errors.slice(-10); // 최근 10개만 유지
+      }
+      break;
+  }
+
+  // 강제로 콘솔에도 출력 (프로덕션에서도 보이도록)
+  if (typeof console !== 'undefined') {
+    console.log(`🔧 [DEBUG-UPDATE] ${type}:`, data);
+  }
+};
+
+// 디버그 패널 토글
+const toggleDebugPanel = () => {
+  showDebugPanel.value = !showDebugPanel.value;
+  updateDebugInfo('environment', { host: window.location.hostname });
+};
+
 // 이벤트 핸들러
 const handleGetCurrentLocation = async () => {
   try {
@@ -215,12 +323,15 @@ const handleNearbySearch = async () => {
 
   try {
     // 🔍 [PAGE-DEBUG] 주변 검색 시작
-    console.log(`🔍 [PAGE-NEARBY-DEBUG] 주변 검색 시작:`, {
+    const searchParams = {
       userLocation: userLocation.value,
       searchRadius: searchRadius.value,
       selectedFuel: selectedFuel.value,
       timestamp: new Date().toISOString()
-    });
+    };
+
+    console.log(`🔍 [PAGE-NEARBY-DEBUG] 주변 검색 시작:`, searchParams);
+    updateDebugInfo('search-start', searchParams);
 
     clearMarkers();
 
@@ -232,13 +343,16 @@ const handleNearbySearch = async () => {
     );
 
     // 🎯 [PAGE-RESULT-DEBUG] 검색 결과 분석
-    console.log(`🎯 [PAGE-NEARBY-RESULT-DEBUG] 주변 검색 결과:`, {
+    const searchResults = {
       stationsFound: stations.length,
       searchRadius: searchRadius.value,
       selectedFuel: selectedFuel.value,
       hasUserLocation: !!userLocation.value,
       userLocation: userLocation.value
-    });
+    };
+
+    console.log(`🎯 [PAGE-NEARBY-RESULT-DEBUG] 주변 검색 결과:`, searchResults);
+    updateDebugInfo('search-result', searchResults);
 
     addGasStationMarkers(stations, selectedFuel.value);
 
@@ -253,7 +367,9 @@ const handleNearbySearch = async () => {
     // 최저가 TOP10 목록 업데이트
     topLowestPriceStations.value = updateTopLowestPriceStations(stations, selectedFuel.value);
   } catch (error) {
-    console.error('❌ [PAGE-ERROR] 주유소 검색 중 오류:', error);
+    const errorMessage = `주유소 검색 중 오류: ${error}`;
+    console.error('❌ [PAGE-ERROR]', errorMessage);
+    updateDebugInfo('error', errorMessage);
     alert('주유소 검색 중 오류가 발생했습니다.');
   }
 };
@@ -347,7 +463,7 @@ const initializeApp = async () => {
 
       // 현재 상태 정보 출력
       logCurrentState: () => {
-        console.log(`🔍 [CURRENT-STATE-DEBUG] 현재 상태:`, {
+        const state = {
           userLocation: userLocation.value,
           searchRadius: searchRadius.value,
           selectedFuel: selectedFuel.value,
@@ -356,7 +472,9 @@ const initializeApp = async () => {
           searchStats: searchStats.value,
           topStationsCount: topLowestPriceStations.value.length,
           markersCount: currentMarkers.value.length
-        });
+        };
+        console.log(`🔍 [CURRENT-STATE-DEBUG] 현재 상태:`, state);
+        updateDebugInfo('current-state', state);
       },
 
       // 강제 재검색
@@ -370,15 +488,24 @@ const initializeApp = async () => {
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         const isProduction = window.location.hostname === 'grap.co.kr';
 
-        console.log(`🔄 [ENV-COMPARE-DEBUG] 환경 비교:`, {
+        const envInfo = {
           currentHost: window.location.hostname,
           isLocal,
           isProduction,
           protocol: window.location.protocol,
           port: window.location.port,
           userAgent: navigator.userAgent.substring(0, 100) + '...'
-        });
-      }
+        };
+
+        console.log(`🔄 [ENV-COMPARE-DEBUG] 환경 비교:`, envInfo);
+        updateDebugInfo('environment', envInfo);
+      },
+
+      // 디버그 패널 표시/숨김
+      toggleDebug: () => toggleDebugPanel(),
+
+      // 디버그 정보 가져오기
+      getDebugInfo: () => debugInfo.value
     };
 
     // 최초 로드시 자동으로 현재 위치 가져오기
@@ -430,6 +557,8 @@ declare global {
       logCurrentState: () => void;
       forceSearch: () => void;
       compareEnvironment: () => void;
+      toggleDebug: () => void;
+      getDebugInfo: () => any;
     };
   }
 }

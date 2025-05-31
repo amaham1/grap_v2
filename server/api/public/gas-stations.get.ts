@@ -38,8 +38,15 @@ export default defineEventHandler(async (event) => {
     // 연료 필터
     const fuelType = query.fuel as string; // gasoline, diesel, lpg
 
-    // 🔍 [DEBUG] 환경 및 요청 정보 로깅
-    console.log('🌍 [ENV-DEBUG] 환경 정보:', {
+    // 🔍 [DEBUG] 환경 및 요청 정보 로깅 (강제 출력)
+    const debugLog = (...args: any[]) => {
+      // 프로덕션에서도 강제로 출력
+      if (typeof console !== 'undefined') {
+        console.log(...args);
+      }
+    };
+
+    debugLog('🌍 [ENV-DEBUG] 환경 정보:', {
       nodeEnv: process.env.NODE_ENV,
       supabaseUrl: process.env.SUPABASE_URL?.substring(0, 30) + '...',
       timestamp: new Date().toISOString(),
@@ -48,7 +55,7 @@ export default defineEventHandler(async (event) => {
       origin: event.node.req.headers.origin
     });
 
-    console.log('📍 [PARAMS-DEBUG] API 요청 파라미터:', {
+    debugLog('📍 [PARAMS-DEBUG] API 요청 파라미터:', {
       page,
       pageSize,
       searchQuery,
