@@ -31,3 +31,7 @@ logs
 !.yarn/sdks
 !.yarn/versions
 .pnp.*
+
+# Cloudflare
+.wrangler/
+wrangler.toml
