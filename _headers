@@ -12,6 +12,17 @@
   Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
   Access-Control-Allow-Headers: Content-Type, Authorization
 
+# 주유소 API 캐시 제어 (실시간 데이터를 위해 짧은 캐시)
+/api/public/gas-stations*
+  Cache-Control: public, max-age=300, s-maxage=300
+  Vary: Accept-Encoding
+
+# 디버그 API는 캐시하지 않음
+/api/debug/*
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
 # 정적 자산 캐싱
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
