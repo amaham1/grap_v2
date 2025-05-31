@@ -188,9 +188,9 @@
 
         <!-- 빠른 액션 버튼들 -->
         <div class="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200">
-          <button @click="window.debugGasStations?.compareEnvironment()" class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">환경 비교</button>
-          <button @click="window.debugGasStations?.logCurrentState()" class="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">상태 확인</button>
-          <button @click="window.debugGasStations?.forceSearch()" class="px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600">강제 검색</button>
+          <button @click="handleDebugAction('compareEnvironment')" class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">환경 비교</button>
+          <button @click="handleDebugAction('logCurrentState')" class="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">상태 확인</button>
+          <button @click="handleDebugAction('forceSearch')" class="px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600">강제 검색</button>
         </div>
       </div>
     </div>
@@ -326,6 +326,33 @@ const handleKeyPress = (event: KeyboardEvent) => {
     showDebugButton.value = true;
     console.log('🔧 [DEBUG] 디버그 모드 활성화됨');
     keySequence.value = ''; // 시퀀스 초기화
+  }
+};
+
+// 디버그 액션 핸들러
+const handleDebugAction = (action: string) => {
+  try {
+    if (typeof window !== 'undefined' && window.debugGasStations) {
+      switch (action) {
+        case 'compareEnvironment':
+          window.debugGasStations.compareEnvironment();
+          break;
+        case 'logCurrentState':
+          window.debugGasStations.logCurrentState();
+          break;
+        case 'forceSearch':
+          window.debugGasStations.forceSearch();
+          break;
+        default:
+          console.warn('알 수 없는 디버그 액션:', action);
+      }
+    } else {
+      console.warn('디버그 함수가 아직 초기화되지 않았습니다.');
+      updateDebugInfo('error', '디버그 함수가 아직 초기화되지 않았습니다.');
+    }
+  } catch (error) {
+    console.error('디버그 액션 실행 중 오류:', error);
+    updateDebugInfo('error', `디버그 액션 실행 중 오류: ${error}`);
   }
 };
 
