@@ -195,8 +195,8 @@
       </div>
     </div>
 
-    <!-- 🔧 [DEBUG] 디버그 패널 토글 버튼 (화면 우하단) - 강제 표시 -->
-    <div class="fixed bottom-16 right-4 z-[9999]" style="z-index: 9999 !important;">
+    <!-- 🔧 [DEBUG] 디버그 패널 토글 버튼 (화면 우하단) - 'ddebb' 입력시에만 표시 -->
+    <div v-if="showDebugButton" class="fixed bottom-16 right-4 z-[9999]" style="z-index: 9999 !important;">
       <button
         @click="toggleDebugPanel"
         class="w-14 h-14 bg-red-500 text-white rounded-full shadow-2xl hover:bg-red-600 transition-all duration-200 flex items-center justify-center border-2 border-white transform hover:scale-110"
@@ -254,7 +254,7 @@ const { map, isMapLoaded, mapError, initializeMap, waitForKakaoMaps, moveMapCent
 const { clearMarkers, addUserLocationMarker, addGasStationMarkers, moveToStation, closeCurrentInfoWindow } = useGasStationMarkers(map);
 
 // 상태 관리
-const searchRadius = ref(2); // 기본 2km
+const searchRadius = ref(5); // 기본 5km로 변경
 const selectedFuel = ref('gasoline'); // 기본값을 휘발유로 설정
 const topLowestPriceStations = ref<GasStation[]>([]);
 const isInitialLoad = ref(true); // 최초 로드 여부
@@ -272,6 +272,8 @@ const debugInfo = ref({
 });
 
 const showDebugPanel = ref(false); // 디버그 패널 표시 여부
+const showDebugButton = ref(false); // 디버그 버튼 표시 여부
+const keySequence = ref(''); // 키보드 입력 시퀀스
 
 // 🔧 [DEBUG] 디버깅 정보 업데이트 함수들
 const updateDebugInfo = (type: string, data: any) => {
@@ -307,6 +309,24 @@ const updateDebugInfo = (type: string, data: any) => {
 const toggleDebugPanel = () => {
   showDebugPanel.value = !showDebugPanel.value;
   updateDebugInfo('environment', { host: window.location.hostname });
+};
+
+// 키보드 이벤트 핸들러 - 'ddebb' 입력시 디버그 버튼 표시
+const handleKeyPress = (event: KeyboardEvent) => {
+  const key = event.key.toLowerCase();
+  keySequence.value += key;
+
+  // 최근 5글자만 유지
+  if (keySequence.value.length > 5) {
+    keySequence.value = keySequence.value.slice(-5);
+  }
+
+  // 'ddebb' 시퀀스 확인
+  if (keySequence.value.includes('ddebb')) {
+    showDebugButton.value = true;
+    console.log('🔧 [DEBUG] 디버그 모드 활성화됨');
+    keySequence.value = ''; // 시퀀스 초기화
+  }
 };
 
 // 이벤트 핸들러
@@ -594,12 +614,18 @@ watch(selectedFuel, () => {
 
 onMounted(() => {
   initializeApp();
+
+  // 키보드 이벤트 리스너 추가
+  document.addEventListener('keydown', handleKeyPress);
 });
 
 onUnmounted(() => {
   if (window.closeInfoWindow) {
     delete window.closeInfoWindow;
   }
+
+  // 키보드 이벤트 리스너 제거
+  document.removeEventListener('keydown', handleKeyPress);
 });
 
 // 전역 타입 선언

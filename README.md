@@ -108,6 +108,44 @@ npx wrangler secret put SECRET_NAME
 - **데이터베이스**: Supabase
 - **CDN**: Cloudflare
 
+## 🎉 최신 업데이트 (Cloudflare Workers 배포)
+
+### ✅ 완료된 작업들
+
+1. **Nitro 설정 업데이트**
+   - `cloudflare-pages`에서 `cloudflare_module`로 preset 변경
+   - 호환성 날짜를 `2024-09-19`로 설정
+   - Node.js 호환성 및 자동 배포 설정 활성화
+
+2. **Wrangler 설정 파일 생성**
+   - `wrangler.toml` 파일 생성으로 Workers 설정 관리
+   - 환경 변수, 크론 작업, 바인딩 설정 예시 포함
+
+3. **배포 스크립트 업데이트**
+   - `npm run deploy:cloudflare`: Workers 배포
+   - `npm run preview:cloudflare`: 로컬 미리보기
+   - `npm run login:cloudflare`: Cloudflare 로그인
+
+4. **문서 업데이트**
+   - `CLOUDFLARE_WORKERS_DEPLOYMENT.md`: 상세한 Workers 배포 가이드
+   - `DEPLOYMENT_GUIDE.md`: 기존 가이드를 Workers 방식으로 업데이트
+
+### 🚀 주요 장점
+
+- **최신 기술**: `cloudflare_module` preset 사용으로 최신 Workers 기능 활용
+- **향상된 성능**: 더 빠른 콜드 스타트와 최적화된 번들 크기
+- **Node.js 호환성**: 대부분의 Node.js 모듈 사용 가능
+- **자동 설정**: Nitro가 자동으로 wrangler.json 생성
+- **Static Assets**: 정적 파일 자동 처리
+
+### 🔧 환경 변수 설정
+
+프로덕션 배포 시 Cloudflare 대시보드에서 환경 변수를 설정하거나 wrangler CLI를 사용하세요:
+
+```bash
+npx wrangler secret put SECRET_NAME
+```
+
 ## 📄 라이선스
 
 이 프로젝트는 MIT 라이선스 하에 배포됩니다.
