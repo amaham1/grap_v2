@@ -100,30 +100,54 @@ export default defineEventHandler(async (event) => {
 
     // 연료 타입 필터링 (가격 정보가 있는 주유소만)
     if (fuelType && filteredItems.length > 0) {
-      filteredItems = filteredItems.filter(station => {
-        if (!station.latest_price) return false;
+      console.log(`[API] 연료 타입 필터링 시작: ${fuelType}, 대상: ${filteredItems.length}개`);
 
+      filteredItems = filteredItems.filter(station => {
+        if (!station.latest_price) {
+          console.log(`[API] ${station.station_name}: 가격 정보 없음`);
+          return false;
+        }
+
+        let hasTargetFuel = false;
         switch (fuelType) {
           case 'gasoline':
-            return station.latest_price.gasoline_price > 0;
+            hasTargetFuel = station.latest_price.gasoline_price && station.latest_price.gasoline_price > 0;
+            break;
           case 'diesel':
-            return station.latest_price.diesel_price > 0;
+            hasTargetFuel = station.latest_price.diesel_price && station.latest_price.diesel_price > 0;
+            break;
           case 'lpg':
-            return station.latest_price.lpg_price > 0;
+            hasTargetFuel = station.latest_price.lpg_price && station.latest_price.lpg_price > 0;
+            break;
           default:
-            return true;
+            hasTargetFuel = true;
         }
+
+        console.log(`[API] ${station.station_name}: ${fuelType} 가격 ${hasTargetFuel ? '있음' : '없음'}`);
+        return hasTargetFuel;
       });
+
+      console.log(`[API] 연료 타입 필터링 완료: ${filteredItems.length}개 남음`);
     } else if (filteredItems.length > 0) {
+      console.log(`[API] 일반 가격 필터링 시작: ${filteredItems.length}개`);
+
       // 연료 타입이 선택되지 않은 경우에도 가격 정보가 있는 주유소만 필터링
       filteredItems = filteredItems.filter(station => {
-        if (!station.latest_price) return false;
+        if (!station.latest_price) {
+          console.log(`[API] ${station.station_name}: 가격 정보 없음`);
+          return false;
+        }
 
         // 적어도 하나의 연료 가격이 있어야 함
-        return station.latest_price.gasoline_price > 0 ||
-               station.latest_price.diesel_price > 0 ||
-               station.latest_price.lpg_price > 0;
+        const hasAnyPrice = (station.latest_price.gasoline_price && station.latest_price.gasoline_price > 0) ||
+                           (station.latest_price.diesel_price && station.latest_price.diesel_price > 0) ||
+                           (station.latest_price.lpg_price && station.latest_price.lpg_price > 0);
+
+        console.log(`[API] ${station.station_name}: 가격 정보 ${hasAnyPrice ? '있음' : '없음'}`);
+        return hasAnyPrice;
       });
+
+      console.log(`[API] 일반 가격 필터링 완료: ${filteredItems.length}개 남음`);
     }
 
     // 최저가 주유소 식별
