@@ -195,12 +195,19 @@
       </div>
     </div>
 
-    <!-- 🔧 [DEBUG] 디버그 패널 토글 버튼 (화면 우하단) -->
-    <button
-      @click="toggleDebugPanel"
-      class="fixed bottom-16 right-4 z-40 w-12 h-12 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors flex items-center justify-center">
-      <span class="text-lg">🔧</span>
-    </button>
+    <!-- 🔧 [DEBUG] 디버그 패널 토글 버튼 (화면 우하단) - 강제 표시 -->
+    <div class="fixed bottom-16 right-4 z-[9999]" style="z-index: 9999 !important;">
+      <button
+        @click="toggleDebugPanel"
+        class="w-14 h-14 bg-red-500 text-white rounded-full shadow-2xl hover:bg-red-600 transition-all duration-200 flex items-center justify-center border-2 border-white transform hover:scale-110"
+        style="background-color: #ef4444 !important; position: relative !important;">
+        <span class="text-xl font-bold">🔧</span>
+      </button>
+      <!-- 추가 표시용 텍스트 -->
+      <div class="absolute -top-8 -left-4 bg-black text-white text-xs px-2 py-1 rounded opacity-75">
+        DEBUG
+      </div>
+    </div>
 
     <!-- 하단 광고 블록 -->
     <div class="fixed bottom-0 left-0 right-0 w-full h-[50px] bg-white border-t border-gray-300 flex items-center justify-center z-50 px-2">
@@ -456,57 +463,105 @@ const initializeApp = async () => {
       closeCurrentInfoWindow();
     };
 
-    // 🔧 [DEBUG] 전역 디버깅 함수 설정
-    window.debugGasStations = {
-      // 환경 정보 출력
-      logEnv: () => logEnvironmentInfo(),
+    // 🔧 [DEBUG] 전역 디버깅 함수 설정 (강제 활성화)
+    try {
+      // 프로덕션에서도 확실히 작동하도록 강제 설정
+      if (typeof window !== 'undefined') {
+        window.debugGasStations = {
+          // 환경 정보 출력
+          logEnv: () => {
+            console.log('🌐 [DEBUG-ENV] logEnvironmentInfo 호출');
+            logEnvironmentInfo();
+          },
 
-      // 현재 상태 정보 출력
-      logCurrentState: () => {
-        const state = {
-          userLocation: userLocation.value,
-          searchRadius: searchRadius.value,
-          selectedFuel: selectedFuel.value,
-          isSearching: isSearching.value,
-          isMapLoaded: isMapLoaded.value,
-          searchStats: searchStats.value,
-          topStationsCount: topLowestPriceStations.value.length,
-          markersCount: currentMarkers.value.length
+          // 현재 상태 정보 출력
+          logCurrentState: () => {
+            const state = {
+              userLocation: userLocation.value,
+              searchRadius: searchRadius.value,
+              selectedFuel: selectedFuel.value,
+              isSearching: isSearching.value,
+              isMapLoaded: isMapLoaded.value,
+              searchStats: searchStats.value,
+              topStationsCount: topLowestPriceStations.value.length,
+              markersCount: currentMarkers.value.length
+            };
+            console.log(`🔍 [CURRENT-STATE-DEBUG] 현재 상태:`, state);
+            updateDebugInfo('current-state', state);
+          },
+
+          // 강제 재검색
+          forceSearch: () => {
+            console.log(`🔄 [FORCE-SEARCH-DEBUG] 강제 재검색 시작`);
+            if (typeof handleNearbySearch === 'function') {
+              handleNearbySearch();
+            } else {
+              console.error('handleNearbySearch 함수를 찾을 수 없습니다.');
+            }
+          },
+
+          // 환경 비교 (로컬 vs 배포)
+          compareEnvironment: () => {
+            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const isProduction = window.location.hostname === 'grap.co.kr';
+
+            const envInfo = {
+              currentHost: window.location.hostname,
+              isLocal,
+              isProduction,
+              protocol: window.location.protocol,
+              port: window.location.port,
+              userAgent: navigator.userAgent.substring(0, 100) + '...',
+              timestamp: new Date().toISOString()
+            };
+
+            console.log(`🔄 [ENV-COMPARE-DEBUG] 환경 비교:`, envInfo);
+            updateDebugInfo('environment', envInfo);
+          },
+
+          // 디버그 패널 표시/숨김
+          toggleDebug: () => {
+            console.log('🔧 [DEBUG] toggleDebugPanel 호출');
+            if (typeof toggleDebugPanel === 'function') {
+              toggleDebugPanel();
+            } else {
+              console.error('toggleDebugPanel 함수를 찾을 수 없습니다.');
+            }
+          },
+
+          // 디버그 정보 가져오기
+          getDebugInfo: () => debugInfo.value,
+
+          // API 직접 테스트
+          testAPI: async (lat = 33.4778141, lng = 126.5494835, radius = 5) => {
+            try {
+              const url = `/api/public/gas-stations?lat=${lat}&lng=${lng}&radius=${radius}&pageSize=100&sortBy=distance&sortOrder=asc&fuel=gasoline`;
+              console.log('🚀 [MANUAL-API-DEBUG] API 호출:', url);
+
+              const response = await fetch(url);
+              const data = await response.json();
+
+              console.log('📊 [MANUAL-RESPONSE-DEBUG] 응답 데이터:', {
+                success: data.success,
+                itemsCount: data.items?.length || 0,
+                totalInRadius: data.stats?.total_in_radius,
+                pagination: data.pagination,
+                filters: data.filters
+              });
+
+              return data;
+            } catch (error) {
+              console.error('❌ [MANUAL-ERROR]', error);
+            }
+          }
         };
-        console.log(`🔍 [CURRENT-STATE-DEBUG] 현재 상태:`, state);
-        updateDebugInfo('current-state', state);
-      },
 
-      // 강제 재검색
-      forceSearch: () => {
-        console.log(`🔄 [FORCE-SEARCH-DEBUG] 강제 재검색 시작`);
-        handleNearbySearch();
-      },
-
-      // 환경 비교 (로컬 vs 배포)
-      compareEnvironment: () => {
-        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        const isProduction = window.location.hostname === 'grap.co.kr';
-
-        const envInfo = {
-          currentHost: window.location.hostname,
-          isLocal,
-          isProduction,
-          protocol: window.location.protocol,
-          port: window.location.port,
-          userAgent: navigator.userAgent.substring(0, 100) + '...'
-        };
-
-        console.log(`🔄 [ENV-COMPARE-DEBUG] 환경 비교:`, envInfo);
-        updateDebugInfo('environment', envInfo);
-      },
-
-      // 디버그 패널 표시/숨김
-      toggleDebug: () => toggleDebugPanel(),
-
-      // 디버그 정보 가져오기
-      getDebugInfo: () => debugInfo.value
-    };
+        // 설정 완료 확인
+        console.log('✅ [DEBUG-SETUP] window.debugGasStations 설정 완료');
+      }
+    } catch (error) {
+      console.error('❌ [DEBUG-SETUP-ERROR] 디버그 함수 설정 실패:', error);
+    }
 
     // 최초 로드시 자동으로 현재 위치 가져오기
     if (isInitialLoad.value) {
