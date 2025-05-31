@@ -18,6 +18,19 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export default defineEventHandler(async (event) => {
   try {
+    // 🌍 [ENV-DEBUG] 환경 정보 로깅
+    const host = getHeader(event, 'host') || 'unknown';
+    const userAgent = getHeader(event, 'user-agent') || 'unknown';
+    const isLocal = host.includes('localhost') || host.includes('127.0.0.1');
+    const isProduction = host.includes('grap.co.kr');
+
+    console.log('🌍 [ENV-DEBUG] API 요청 환경:', {
+      host,
+      isLocal,
+      isProduction,
+      userAgent: userAgent.substring(0, 50) + '...',
+      timestamp: new Date().toISOString()
+    });
 
     const query = getQuery(event);
 
@@ -124,11 +137,12 @@ export default defineEventHandler(async (event) => {
     const stationsWithCoords = result.data.filter(station =>
       station.latitude && station.longitude
     );
-    console.log(`🗺️ [COORD-DEBUG] 좌표가 있는 주유소: ${stationsWithCoords.length}개 / ${result.data.length}개`);
+
+    console.log(`📍 [COORDS-DEBUG] 좌표가 있는 주유소: ${stationsWithCoords.length}/${result.data.length}개`);
 
     // 가격 정보가 있는 주유소 개수 확인
     const stationsWithPrices = result.data.filter(station => station.latest_price);
-    console.log(`💰 [PRICE-DEBUG] 가격 정보가 있는 주유소: ${stationsWithPrices.length}개 / ${result.data.length}개`);
+    console.log(`💰 [PRICE-DEBUG] 가격 정보가 있는 주유소: ${stationsWithPrices.length}/${result.data.length}개`);
 
     let filteredItems = result.data;
 

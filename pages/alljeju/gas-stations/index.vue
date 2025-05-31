@@ -191,6 +191,7 @@
           <button @click="handleDebugAction('compareEnvironment')" class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">환경 비교</button>
           <button @click="handleDebugAction('logCurrentState')" class="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">상태 확인</button>
           <button @click="handleDebugAction('forceSearch')" class="px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600">강제 검색</button>
+          <button @click="handleDebugAction('testAPI')" class="px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600">API 테스트</button>
         </div>
       </div>
     </div>
@@ -342,6 +343,9 @@ const handleDebugAction = (action: string) => {
           break;
         case 'forceSearch':
           window.debugGasStations.forceSearch();
+          break;
+        case 'testAPI':
+          window.debugGasStations.testAPI();
           break;
         default:
           console.warn('알 수 없는 디버그 액션:', action);
@@ -531,7 +535,7 @@ const initializeApp = async () => {
               isMapLoaded: isMapLoaded.value,
               searchStats: searchStats.value,
               topStationsCount: topLowestPriceStations.value.length,
-              markersCount: currentMarkers.value.length
+              markersCount: currentMarkers ? currentMarkers.value.length : 0
             };
             console.log(`🔍 [CURRENT-STATE-DEBUG] 현재 상태:`, state);
             updateDebugInfo('current-state', state);
@@ -548,7 +552,7 @@ const initializeApp = async () => {
           },
 
           // 환경 비교 (로컬 vs 배포)
-          compareEnvironment: () => {
+          compareEnvironment: async () => {
             const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
             const isProduction = window.location.hostname === 'grap.co.kr';
 
@@ -564,6 +568,29 @@ const initializeApp = async () => {
 
             console.log(`🔄 [ENV-COMPARE-DEBUG] 환경 비교:`, envInfo);
             updateDebugInfo('environment', envInfo);
+
+            // 데이터베이스 상태 확인
+            try {
+              console.log('🗃️ [DB-DEBUG] 데이터베이스 상태 확인 중...');
+              const dbResponse = await fetch('/api/debug/gas-stations-data');
+              const dbData = await dbResponse.json();
+              console.log('🗃️ [DB-DEBUG] 데이터베이스 상태:', dbData);
+
+              // API 직접 테스트
+              const testLat = userLocation.value?.latitude || 33.4692352;
+              const testLng = userLocation.value?.longitude || 126.5532928;
+              const testResponse = await fetch(`/api/public/gas-stations?lat=${testLat}&lng=${testLng}&radius=5&pageSize=100&sortBy=distance&sortOrder=asc&fuel=gasoline`);
+              const testData = await testResponse.json();
+              console.log('🧪 [API-TEST-DEBUG] API 테스트 결과:', {
+                success: testData.success,
+                itemsCount: testData.items?.length || 0,
+                totalInRadius: testData.stats?.total_in_radius,
+                environment: window.location.hostname,
+                timestamp: new Date().toISOString()
+              });
+            } catch (error) {
+              console.error('❌ [ENV-DEBUG-ERROR] 환경 비교 중 오류:', error);
+            }
           },
 
           // 디버그 패널 표시/숨김
@@ -667,6 +694,7 @@ declare global {
       compareEnvironment: () => void;
       toggleDebug: () => void;
       getDebugInfo: () => any;
+      testAPI: (lat?: number, lng?: number, radius?: number) => Promise<any>;
     };
   }
 }
