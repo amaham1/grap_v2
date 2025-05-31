@@ -1,5 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  // SSG 모드 강제 설정
+  ssr: true,
+  target: 'static',
+
   app: {
     baseURL: '/',
     head: {
@@ -20,7 +24,10 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxt/image', '@nuxtjs/tailwindcss'],
   nitro: {
-    preset: 'cloudflare-pages',
+    preset: 'cloudflare-pages-static',
+    prerender: {
+      routes: ['/']
+    },
     experimental: {
       wasm: true
     },

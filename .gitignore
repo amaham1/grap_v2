@@ -5,6 +5,9 @@
 .nitro
 .cache
 dist
+# Cloudflare Workers 자동 생성 파일들
+dist/_worker.js/
+_worker.js
 
 # Node dependencies
 node_modules
