@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   // SSG 모드 강제 설정
-  ssr: true,
+  ssr: false,
   target: 'static',
 
   app: {
@@ -24,12 +24,9 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxt/image', '@nuxtjs/tailwindcss'],
   nitro: {
-    preset: 'cloudflare-pages-static',
+    preset: 'static',
     prerender: {
       routes: ['/']
-    },
-    experimental: {
-      wasm: true
     },
     rollupConfig: {
       external: ['mysql2']
