@@ -19,6 +19,12 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-05-15',
   devtools: { enabled: true },
   modules: ['@nuxt/image', '@nuxtjs/tailwindcss'],
+  nitro: {
+    preset: 'cloudflare-pages',
+    experimental: {
+      wasm: true
+    }
+  },
   runtimeConfig: {
     // 서버 사이드에서만 사용되는 환경 변수들
     dbHost: process.env.DB_HOST,
