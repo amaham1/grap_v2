@@ -177,15 +177,22 @@ export const useGasStationMarkers = (map: Ref<any>) => {
 
   // 주유소 마커들 추가
   const addGasStationMarkers = (stations: GasStation[], selectedFuel: string) => {
-    console.log(`[DEBUG] 마커 생성 시작: ${stations.length}개 주유소`);
+    // 🗺️ [MARKERS-DEBUG] 마커 생성 시작
+    console.log(`🗺️ [MARKERS-DEBUG] 마커 생성 시작:`, {
+      totalStations: stations.length,
+      selectedFuel,
+      mapExists: !!map.value,
+      timestamp: new Date().toISOString()
+    });
 
     if (!map.value) {
-      console.error('[ERROR] 지도 객체가 없습니다. 마커를 생성할 수 없습니다.');
+      console.error('❌ [MARKERS-ERROR] 지도 객체가 없습니다. 마커를 생성할 수 없습니다.');
       return;
     }
 
     let markersCreated = 0;
     let markersSkipped = 0;
+    const skipReasons: Record<string, number> = {};
 
     stations.forEach((station, index) => {
       // 좌표와 가격 정보가 있는 주유소만 마커 생성
@@ -210,12 +217,20 @@ export const useGasStationMarkers = (map: Ref<any>) => {
         const reason = !station.location?.latitude || !station.location?.longitude
           ? '좌표 없음'
           : '가격 정보 없음';
-        console.log(`[DEBUG] ${reason}으로 스킵: ${station.name} (lat: ${station.location?.latitude}, lng: ${station.location?.longitude}, prices: ${!!station.prices})`);
+        skipReasons[reason] = (skipReasons[reason] || 0) + 1;
         markersSkipped++;
       }
     });
 
-    console.log(`[DEBUG] 마커 생성 완료: 성공 ${markersCreated}개, 스킵 ${markersSkipped}개`);
+    // 🗺️ [MARKERS-RESULT-DEBUG] 마커 생성 완료
+    console.log(`🗺️ [MARKERS-RESULT-DEBUG] 마커 생성 완료:`, {
+      created: markersCreated,
+      skipped: markersSkipped,
+      total: stations.length,
+      skipReasons,
+      successRate: ((markersCreated / stations.length) * 100).toFixed(1) + '%',
+      currentMarkersTotal: currentMarkers.value.length
+    });
   };
 
   // 특정 주유소로 지도 이동

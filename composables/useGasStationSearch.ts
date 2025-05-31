@@ -21,17 +21,50 @@ export const useGasStationSearch = () => {
       if (params.fuel) queryParams.append('fuel', params.fuel);
 
       const url = `/api/public/gas-stations?${queryParams.toString()}`;
-      console.log(`[SEARCH] API 호출: ${url}`);
+
+      // 🔍 [CLIENT-DEBUG] 클라이언트 요청 정보
+      console.log(`🚀 [CLIENT-REQUEST-DEBUG] API 요청 시작:`, {
+        url,
+        params,
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent.substring(0, 50) + '...',
+        location: window.location.href
+      });
 
       const response = await $fetch<GasStationSearchResponse>(url);
 
+      // 🎯 [CLIENT-RESPONSE-DEBUG] API 응답 분석
+      console.log(`🎯 [CLIENT-RESPONSE-DEBUG] API 응답 분석:`, {
+        success: response.success,
+        itemsCount: response.items?.length || 0,
+        totalInRadius: response.stats?.total_in_radius,
+        lowestPriceCount: response.stats?.lowest_price_count,
+        pagination: response.pagination,
+        filters: response.filters,
+        hasLocationFilter: !!response.filters?.location,
+        timestamp: new Date().toISOString()
+      });
+
       if (response.success) {
-        console.log(`[SEARCH] 검색 성공: ${response.items.length}개 주유소 반환`);
-        console.log(`[SEARCH] 통계:`, response.stats);
+        console.log(`✅ [SEARCH] 검색 성공: ${response.items.length}개 주유소 반환`);
+        console.log(`📊 [SEARCH] 통계:`, response.stats);
 
         // 가격 정보가 있는 주유소 개수 확인
         const stationsWithPrices = response.items.filter(station => station.prices);
-        console.log(`[SEARCH] 가격 정보가 있는 주유소: ${stationsWithPrices.length}개 / ${response.items.length}개`);
+        console.log(`💰 [SEARCH] 가격 정보가 있는 주유소: ${stationsWithPrices.length}개 / ${response.items.length}개`);
+
+        // 🗺️ [CLIENT-LOCATION-DEBUG] 위치 기반 검색 결과 분석
+        if (params.lat && params.lng) {
+          const stationsWithDistance = response.items.filter(item => item.distance !== null);
+          console.log(`🗺️ [CLIENT-LOCATION-DEBUG] 위치 기반 검색 결과:`, {
+            userLocation: { lat: params.lat, lng: params.lng },
+            radius: params.radius,
+            totalWithDistance: stationsWithDistance.length,
+            totalWithoutDistance: response.items.length - stationsWithDistance.length,
+            averageDistance: stationsWithDistance.length > 0 ?
+              (stationsWithDistance.reduce((sum, item) => sum + (item.distance || 0), 0) / stationsWithDistance.length).toFixed(2) + 'km' : 'N/A'
+          });
+        }
 
         searchStats.value = response.stats;
         return response.items;
@@ -39,7 +72,7 @@ export const useGasStationSearch = () => {
         throw new Error('검색 실패');
       }
     } catch (error) {
-      console.error('주유소 검색 중 오류:', error);
+      console.error('❌ [SEARCH] 검색 중 오류:', error);
       throw error;
     } finally {
       isSearching.value = false;

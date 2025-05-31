@@ -4,21 +4,25 @@ import { welfareServiceDAO, logDAO } from '~/server/dao/supabase';
 
 const MAX_RETRIES = 2;
 const SOURCE_NAME = 'welfare_services';
-const API_URL = 'https://www.jeju.go.kr/api/jejutoseoul/welfare';
+const API_URL = 'http://www.jeju.go.kr/rest/JejuWelfareServiceInfo/getJejuWelfareServiceInfoList';
 
 export default defineEventHandler(async (event) => {
   // 보안 검증: GitHub Actions 또는 관리자만 접근 가능
   const userAgent = getHeader(event, 'user-agent') || '';
   const cronSource = getHeader(event, 'x-cron-source') || '';
+  const adminTrigger = getHeader(event, 'x-admin-trigger') || '';
 
-  const isValidCronRequest = userAgent.includes('GitHub-Actions') || cronSource === 'github-actions' || cronSource === 'github-actions-manual';
+  const isValidCronRequest = userAgent.includes('GitHub-Actions') ||
+                            cronSource === 'github-actions' ||
+                            cronSource === 'github-actions-manual' ||
+                            (adminTrigger === 'true' && cronSource === 'admin-manual');
 
   if (!isValidCronRequest) {
-    console.log(`[${new Date().toISOString()}] Unauthorized cron request blocked. User-Agent: ${userAgent}`);
+    console.log(`[${new Date().toISOString()}] Unauthorized cron request blocked. User-Agent: ${userAgent}, Cron-Source: ${cronSource}, Admin-Trigger: ${adminTrigger}`);
     throw createError({
       statusCode: 403,
       statusMessage: 'Forbidden',
-      message: 'This endpoint is only accessible via scheduled cron jobs.'
+      message: 'This endpoint is only accessible via scheduled cron jobs or admin triggers.'
     });
   }
 

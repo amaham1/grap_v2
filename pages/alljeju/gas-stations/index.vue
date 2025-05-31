@@ -214,6 +214,14 @@ const handleNearbySearch = async () => {
   }
 
   try {
+    // 🔍 [PAGE-DEBUG] 주변 검색 시작
+    console.log(`🔍 [PAGE-NEARBY-DEBUG] 주변 검색 시작:`, {
+      userLocation: userLocation.value,
+      searchRadius: searchRadius.value,
+      selectedFuel: selectedFuel.value,
+      timestamp: new Date().toISOString()
+    });
+
     clearMarkers();
 
     const stations = await searchNearbyStations(
@@ -223,16 +231,29 @@ const handleNearbySearch = async () => {
       selectedFuel.value
     );
 
+    // 🎯 [PAGE-RESULT-DEBUG] 검색 결과 분석
+    console.log(`🎯 [PAGE-NEARBY-RESULT-DEBUG] 주변 검색 결과:`, {
+      stationsFound: stations.length,
+      searchRadius: searchRadius.value,
+      selectedFuel: selectedFuel.value,
+      hasUserLocation: !!userLocation.value,
+      userLocation: userLocation.value
+    });
+
     addGasStationMarkers(stations, selectedFuel.value);
 
     if (userLocation.value) {
       addUserLocationMarker(userLocation.value);
     }
 
+    if (stations.length === 0) {
+      console.warn(`⚠️ [PAGE-WARNING] 검색 반경 ${searchRadius.value}km 내에 주유소가 없습니다.`);
+    }
+
     // 최저가 TOP10 목록 업데이트
     topLowestPriceStations.value = updateTopLowestPriceStations(stations, selectedFuel.value);
   } catch (error) {
-    console.error('주유소 검색 중 오류:', error);
+    console.error('❌ [PAGE-ERROR] 주유소 검색 중 오류:', error);
     alert('주유소 검색 중 오류가 발생했습니다.');
   }
 };
@@ -272,15 +293,92 @@ const handleStationClick = (station: GasStation) => {
   moveToStation(station);
 };
 
+// 환경 정보 디버깅 함수
+const logEnvironmentInfo = () => {
+  console.log(`🌐 [ENV-INFO-DEBUG] 환경 정보 상세:`, {
+    // 브라우저 정보
+    userAgent: navigator.userAgent,
+    platform: navigator.platform,
+    language: navigator.language,
+    cookieEnabled: navigator.cookieEnabled,
+    onLine: navigator.onLine,
+
+    // 위치 정보
+    geolocationSupported: !!navigator.geolocation,
+
+    // 페이지 정보
+    url: window.location.href,
+    host: window.location.host,
+    protocol: window.location.protocol,
+
+    // 시간 정보
+    timestamp: new Date().toISOString(),
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+
+    // 화면 정보
+    screenWidth: screen.width,
+    screenHeight: screen.height,
+    windowWidth: window.innerWidth,
+    windowHeight: window.innerHeight,
+
+    // 기타
+    referrer: document.referrer
+  });
+};
+
 // 초기화 및 자동 검색
 const initializeApp = async () => {
   try {
+    // 🌐 [DEBUG] 환경 정보 로깅
+    logEnvironmentInfo();
+
     await waitForKakaoMaps();
     await initializeMap();
 
     // 전역 함수 설정 (인포윈도우 닫기용)
     window.closeInfoWindow = () => {
       closeCurrentInfoWindow();
+    };
+
+    // 🔧 [DEBUG] 전역 디버깅 함수 설정
+    window.debugGasStations = {
+      // 환경 정보 출력
+      logEnv: () => logEnvironmentInfo(),
+
+      // 현재 상태 정보 출력
+      logCurrentState: () => {
+        console.log(`🔍 [CURRENT-STATE-DEBUG] 현재 상태:`, {
+          userLocation: userLocation.value,
+          searchRadius: searchRadius.value,
+          selectedFuel: selectedFuel.value,
+          isSearching: isSearching.value,
+          isMapLoaded: isMapLoaded.value,
+          searchStats: searchStats.value,
+          topStationsCount: topLowestPriceStations.value.length,
+          markersCount: currentMarkers.value.length
+        });
+      },
+
+      // 강제 재검색
+      forceSearch: () => {
+        console.log(`🔄 [FORCE-SEARCH-DEBUG] 강제 재검색 시작`);
+        handleNearbySearch();
+      },
+
+      // 환경 비교 (로컬 vs 배포)
+      compareEnvironment: () => {
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const isProduction = window.location.hostname === 'grap.co.kr';
+
+        console.log(`🔄 [ENV-COMPARE-DEBUG] 환경 비교:`, {
+          currentHost: window.location.hostname,
+          isLocal,
+          isProduction,
+          protocol: window.location.protocol,
+          port: window.location.port,
+          userAgent: navigator.userAgent.substring(0, 100) + '...'
+        });
+      }
     };
 
     // 최초 로드시 자동으로 현재 위치 가져오기
@@ -296,11 +394,11 @@ const initializeApp = async () => {
           await handleNearbySearch();
         }
       } catch (error) {
-        console.error('자동 위치 확인 실패:', error);
+        console.error('❌ [INIT-ERROR] 자동 위치 확인 실패:', error);
       }
     }
   } catch (error) {
-    console.error('앱 초기화 실패:', error);
+    console.error('❌ [INIT-ERROR] 앱 초기화 실패:', error);
   }
 };
 
@@ -327,6 +425,12 @@ declare global {
   interface Window {
     kakao: any;
     closeInfoWindow?: () => void;
+    debugGasStations?: {
+      logEnv: () => void;
+      logCurrentState: () => void;
+      forceSearch: () => void;
+      compareEnvironment: () => void;
+    };
   }
 }
 </script>

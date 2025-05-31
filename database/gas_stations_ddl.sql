@@ -78,3 +78,26 @@ INSERT INTO gas_station_brands (brand_code, brand_name, brand_type) VALUES
 ('NCO', '자가상표', 'gas'),
 ('SKG', 'SK가스', 'lpg'),
 ('E1G', 'E1', 'lpg');
+
+-- 사용자 테이블
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE COMMENT '이메일 (로그인 ID)',
+    password VARCHAR(255) NOT NULL COMMENT '해시된 비밀번호',
+    role VARCHAR(50) NOT NULL DEFAULT 'user' COMMENT '사용자 역할 (admin, user 등)',
+    name VARCHAR(100) COMMENT '사용자 이름',
+    is_active BOOLEAN DEFAULT TRUE COMMENT '활성 상태',
+    last_login_at TIMESTAMP NULL COMMENT '마지막 로그인 시간',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시간',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시간',
+
+    INDEX idx_email (email),
+    INDEX idx_role (role),
+    INDEX idx_is_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 정보';
+
+-- 기본 관리자 계정 생성 (비밀번호: admin123!)
+-- 실제 운영환경에서는 더 강력한 비밀번호로 변경해야 합니다.
+INSERT INTO users (email, password, role, name, is_active) VALUES
+('admin@grap.co.kr', '$2b$12$EqAJ0mDG6E2nVth5roaHEOmCQtPvDD2nIDmbO9aKsTTJP1VrhXoLO', 'admin', '시스템 관리자', TRUE);
+-- 위 해시는 'admin123!' 비밀번호의 bcrypt 해시입니다.

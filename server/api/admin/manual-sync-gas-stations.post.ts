@@ -35,25 +35,28 @@ export default defineEventHandler(async (event) => {
       const stationResponse = await fetch(GAS_INFO_API_URL);
       const stationData = await stationResponse.json();
 
-      if (stationData && stationData.data && Array.isArray(stationData.data)) {
-        console.log(`[MANUAL-SYNC] ${stationData.data.length}개 주유소 정보 수신`);
-        
-        for (const station of stationData.data) {
+      if (stationData && stationData.info && Array.isArray(stationData.info)) {
+        console.log(`[MANUAL-SYNC] ${stationData.info.length}개 주유소 정보 수신`);
+
+        for (const station of stationData.info) {
           try {
             syncResults.stationsProcessed++;
             
             const gasStationData = {
-              opinet_id: station.opinet_id,
-              station_name: station.station_name,
-              brand_code: station.brand_code,
-              brand_name: station.brand_name,
-              gas_brand_code: station.gas_brand_code,
-              gas_brand_name: station.gas_brand_name,
-              address: station.address,
-              phone: station.phone,
-              station_type: station.station_type,
-              latitude: parseFloat(station.latitude) || null,
-              longitude: parseFloat(station.longitude) || null,
+              opinet_id: station.id,
+              station_name: station.osnm,
+              brand_code: station.poll,
+              brand_name: station.poll,
+              gas_brand_code: station.gpoll,
+              gas_brand_name: station.gpoll,
+              zip_code: station.zip,
+              address: station.adr,
+              phone: station.tel,
+              station_type: station.lpgyn === 'Y' ? 'Y' : 'N',
+              katec_x: parseFloat(station.gisxcoor) || null,
+              katec_y: parseFloat(station.gisycoor) || null,
+              latitude: null,
+              longitude: null,
               is_exposed: true,
               fetched_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
@@ -74,19 +77,19 @@ export default defineEventHandler(async (event) => {
       const priceResponse = await fetch(GAS_PRICE_API_URL);
       const priceData = await priceResponse.json();
 
-      if (priceData && priceData.data && Array.isArray(priceData.data)) {
-        console.log(`[MANUAL-SYNC] ${priceData.data.length}개 가격 정보 수신`);
-        
-        for (const price of priceData.data) {
+      if (priceData && priceData.info && Array.isArray(priceData.info)) {
+        console.log(`[MANUAL-SYNC] ${priceData.info.length}개 가격 정보 수신`);
+
+        for (const price of priceData.info) {
           try {
             syncResults.pricesProcessed++;
             
             const gasPriceData = {
-              opinet_id: price.opinet_id,
-              gasoline_price: parseInt(price.gasoline_price) || 0,
-              premium_gasoline_price: parseInt(price.premium_gasoline_price) || 0,
-              diesel_price: parseInt(price.diesel_price) || 0,
-              lpg_price: parseInt(price.lpg_price) || 0,
+              opinet_id: price.id,
+              gasoline_price: parseInt(price.gasoline) || 0,
+              premium_gasoline_price: parseInt(price.premium_gasoline) || 0,
+              diesel_price: parseInt(price.diesel) || 0,
+              lpg_price: parseInt(price.lpg) || 0,
               price_date: price.price_date || new Date().toISOString().split('T')[0],
               fetched_at: new Date().toISOString(),
               updated_at: new Date().toISOString()

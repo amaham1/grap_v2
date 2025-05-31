@@ -1,8 +1,19 @@
 import { defineEventHandler, getRouterParam, createError } from 'h3';
 import { logDAO } from '~/server/dao/supabase';
+import { verifyAuthToken } from '~/server/utils/authVerify';
 
 
 export default defineEventHandler(async (event) => {
+  // 관리자 권한 확인
+  const decodedUser = verifyAuthToken(event);
+  if (!decodedUser || decodedUser.role !== 'admin') {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Forbidden',
+      message: 'Admin access required'
+    });
+  }
+
   const sourceNameParam = getRouterParam(event, 'sourceName');
   const startTime = new Date();
 
@@ -22,19 +33,43 @@ export default defineEventHandler(async (event) => {
 
     switch (sourceName) {
       case 'festivals':
-        fetchPromise = $fetch('/api/cron/festivals', { method: 'GET' });
+        fetchPromise = $fetch('/api/cron/festivals', {
+          method: 'GET',
+          headers: {
+            'x-admin-trigger': 'true',
+            'x-cron-source': 'admin-manual'
+          }
+        });
         resultMessage = `Festival data fetch triggered successfully via /api/cron/festivals.`;
         break;
       case 'exhibitions':
-        fetchPromise = $fetch('/api/cron/exhibitions', { method: 'GET' });
+        fetchPromise = $fetch('/api/cron/exhibitions', {
+          method: 'GET',
+          headers: {
+            'x-admin-trigger': 'true',
+            'x-cron-source': 'admin-manual'
+          }
+        });
         resultMessage = `Exhibition data fetch triggered successfully via /api/cron/exhibitions.`;
         break;
       case 'welfare-services':
-        fetchPromise = $fetch('/api/cron/welfare-services', { method: 'GET' });
+        fetchPromise = $fetch('/api/cron/welfare-services', {
+          method: 'GET',
+          headers: {
+            'x-admin-trigger': 'true',
+            'x-cron-source': 'admin-manual'
+          }
+        });
         resultMessage = `Welfare service data fetch triggered successfully via /api/cron/welfare-services.`;
         break;
       case 'gas-stations':
-        fetchPromise = $fetch('/api/cron/gas-stations', { method: 'GET' });
+        fetchPromise = $fetch('/api/cron/gas-stations', {
+          method: 'GET',
+          headers: {
+            'x-admin-trigger': 'true',
+            'x-cron-source': 'admin-manual'
+          }
+        });
         resultMessage = `Gas station data fetch triggered successfully via /api/cron/gas-stations.`;
         break;
       default:
@@ -61,6 +96,7 @@ export default defineEventHandler(async (event) => {
     });
 
     return {
+      success: true,
       message: resultMessage,
       source: sourceName,
     };

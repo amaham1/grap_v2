@@ -206,6 +206,33 @@ CREATE TRIGGER update_exhibitions_updated_at BEFORE UPDATE ON exhibitions FOR EA
 CREATE TRIGGER update_festivals_updated_at BEFORE UPDATE ON festivals FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_welfare_services_updated_at BEFORE UPDATE ON welfare_services FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- 6. 사용자 테이블
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE, -- 이메일 (로그인 ID)
+    password VARCHAR(255) NOT NULL, -- 해시된 비밀번호
+    role VARCHAR(50) NOT NULL DEFAULT 'user', -- 사용자 역할 (admin, user 등)
+    name VARCHAR(100), -- 사용자 이름
+    is_active BOOLEAN DEFAULT TRUE, -- 활성 상태
+    last_login_at TIMESTAMP WITH TIME ZONE, -- 마지막 로그인 시간
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP, -- 생성 시간
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP -- 수정 시간
+);
+
+-- 인덱스 생성
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_is_active ON users(is_active);
+
+-- users 테이블에 updated_at 트리거 적용
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- 기본 관리자 계정 생성 (비밀번호: admin123!)
+-- 실제 운영환경에서는 더 강력한 비밀번호로 변경해야 합니다.
+INSERT INTO users (email, password, role, name, is_active) VALUES
+('admin@grap.co.kr', '$2b$12$EqAJ0mDG6E2nVth5roaHEOmCQtPvDD2nIDmbO9aKsTTJP1VrhXoLO', 'admin', '시스템 관리자', TRUE);
+-- 위 해시는 'admin123!' 비밀번호의 bcrypt 해시입니다.
+
 -- RLS (Row Level Security) 활성화 (필요시)
 -- ALTER TABLE gas_stations ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE gas_prices ENABLE ROW LEVEL SECURITY;
@@ -213,3 +240,4 @@ CREATE TRIGGER update_welfare_services_updated_at BEFORE UPDATE ON welfare_servi
 -- ALTER TABLE festivals ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE welfare_services ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE api_logs ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE users ENABLE ROW LEVEL SECURITY;

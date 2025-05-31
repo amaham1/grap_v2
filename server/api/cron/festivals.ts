@@ -4,21 +4,25 @@ import { festivalDAO, logDAO } from '~/server/dao/supabase';
 
 const MAX_RETRIES = 2; // 최대 재시도 횟수
 const SOURCE_NAME = 'festivals'; // 데이터 소스명
-const API_URL = 'https://www.jeju.go.kr/api/jejutoseoul/festival'; // 제주도 행사/축제 API 엔드포인트
+const API_URL = 'https://www.jeju.go.kr/api/jejutoseoul/festival/'; // 제주도 행사/축제 API 엔드포인트
 
 export default defineEventHandler(async (event) => {
   // 보안 검증: GitHub Actions 또는 관리자만 접근 가능
   const userAgent = getHeader(event, 'user-agent') || '';
   const cronSource = getHeader(event, 'x-cron-source') || '';
+  const adminTrigger = getHeader(event, 'x-admin-trigger') || '';
 
-  const isValidCronRequest = userAgent.includes('GitHub-Actions') || cronSource === 'github-actions' || cronSource === 'github-actions-manual';
+  const isValidCronRequest = userAgent.includes('GitHub-Actions') ||
+                            cronSource === 'github-actions' ||
+                            cronSource === 'github-actions-manual' ||
+                            (adminTrigger === 'true' && cronSource === 'admin-manual');
 
   if (!isValidCronRequest) {
-    console.log(`[${new Date().toISOString()}] Unauthorized cron request blocked. User-Agent: ${userAgent}`);
+    console.log(`[${new Date().toISOString()}] Unauthorized cron request blocked. User-Agent: ${userAgent}, Cron-Source: ${cronSource}, Admin-Trigger: ${adminTrigger}`);
     throw createError({
       statusCode: 403,
       statusMessage: 'Forbidden',
-      message: 'This endpoint is only accessible via scheduled cron jobs.'
+      message: 'This endpoint is only accessible via scheduled cron jobs or admin triggers.'
     });
   }
 

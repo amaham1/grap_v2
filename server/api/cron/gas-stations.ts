@@ -12,15 +12,19 @@ export default defineEventHandler(async (event) => {
   // 보안 검증: GitHub Actions 또는 관리자만 접근 가능
   const userAgent = getHeader(event, 'user-agent') || '';
   const cronSource = getHeader(event, 'x-cron-source') || '';
+  const adminTrigger = getHeader(event, 'x-admin-trigger') || '';
 
-  const isValidCronRequest = userAgent.includes('GitHub-Actions') || cronSource === 'github-actions' || cronSource === 'github-actions-manual';
+  const isValidCronRequest = userAgent.includes('GitHub-Actions') ||
+                            cronSource === 'github-actions' ||
+                            cronSource === 'github-actions-manual' ||
+                            (adminTrigger === 'true' && cronSource === 'admin-manual');
 
   if (!isValidCronRequest) {
-    console.log(`[${new Date().toISOString()}] Unauthorized cron request blocked. User-Agent: ${userAgent}`);
+    console.log(`[${new Date().toISOString()}] Unauthorized cron request blocked. User-Agent: ${userAgent}, Cron-Source: ${cronSource}, Admin-Trigger: ${adminTrigger}`);
     throw createError({
       statusCode: 403,
       statusMessage: 'Forbidden',
-      message: 'This endpoint is only accessible via scheduled cron jobs.'
+      message: 'This endpoint is only accessible via scheduled cron jobs or admin triggers.'
     });
   }
 
@@ -42,27 +46,27 @@ export default defineEventHandler(async (event) => {
         console.log(`[${new Date().toISOString()}] Fetching gas station info from ${GAS_INFO_API_URL}`);
         const infoResponse = await $fetch(GAS_INFO_API_URL, { method: 'GET' });
 
-        if (infoResponse && infoResponse.data && Array.isArray(infoResponse.data)) {
-          console.log(`[${new Date().toISOString()}] Received ${infoResponse.data.length} gas station info items`);
+        if (infoResponse && infoResponse.info && Array.isArray(infoResponse.info)) {
+          console.log(`[${new Date().toISOString()}] Received ${infoResponse.info.length} gas station info items`);
 
           // 주유소 정보 처리
-          for (const item of infoResponse.data) {
+          for (const item of infoResponse.info) {
             try {
               const gasStationData: gasStationDAO.GasStation = {
                 opinet_id: item.id || '',
-                station_name: item.name || '',
-                brand_code: item.brand_code || '',
-                brand_name: item.brand_name || '',
-                gas_brand_code: item.gas_brand_code || '',
-                gas_brand_name: item.gas_brand_name || '',
-                zip_code: item.zip_code || '',
-                address: item.address || '',
-                phone: item.phone || '',
-                station_type: item.station_type || 'N',
-                katec_x: parseFloat(item.katec_x) || null,
-                katec_y: parseFloat(item.katec_y) || null,
-                latitude: parseFloat(item.latitude) || null,
-                longitude: parseFloat(item.longitude) || null,
+                station_name: item.osnm || '',
+                brand_code: item.poll || '',
+                brand_name: item.poll || '',
+                gas_brand_code: item.gpoll || '',
+                gas_brand_name: item.gpoll || '',
+                zip_code: item.zip || '',
+                address: item.adr || '',
+                phone: item.tel || '',
+                station_type: item.lpgyn === 'Y' ? 'Y' : 'N',
+                katec_x: parseFloat(item.gisxcoor) || null,
+                katec_y: parseFloat(item.gisycoor) || null,
+                latitude: null, // API에서 제공하지 않음
+                longitude: null, // API에서 제공하지 않음
                 api_raw_data: JSON.stringify(item),
                 is_exposed: false
               };
@@ -88,18 +92,18 @@ export default defineEventHandler(async (event) => {
         console.log(`[${new Date().toISOString()}] Fetching gas price info from ${GAS_PRICE_API_URL}`);
         const priceResponse = await $fetch(GAS_PRICE_API_URL, { method: 'GET' });
 
-        if (priceResponse && priceResponse.data && Array.isArray(priceResponse.data)) {
-          console.log(`[${new Date().toISOString()}] Received ${priceResponse.data.length} gas price items`);
+        if (priceResponse && priceResponse.info && Array.isArray(priceResponse.info)) {
+          console.log(`[${new Date().toISOString()}] Received ${priceResponse.info.length} gas price items`);
 
           // 가격 정보 처리
-          for (const item of priceResponse.data) {
+          for (const item of priceResponse.info) {
             try {
               const gasPriceData: gasStationDAO.GasPrice = {
                 opinet_id: item.id || '',
-                gasoline_price: parseInt(item.gasoline_price) || 0,
-                premium_gasoline_price: parseInt(item.premium_gasoline_price) || 0,
-                diesel_price: parseInt(item.diesel_price) || 0,
-                lpg_price: parseInt(item.lpg_price) || 0,
+                gasoline_price: parseInt(item.gasoline) || 0,
+                premium_gasoline_price: parseInt(item.premium_gasoline) || 0,
+                diesel_price: parseInt(item.diesel) || 0,
+                lpg_price: parseInt(item.lpg) || 0,
                 price_date: item.price_date || new Date().toISOString().split('T')[0],
                 api_raw_data: JSON.stringify(item)
               };

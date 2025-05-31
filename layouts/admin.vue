@@ -8,7 +8,7 @@
       <nav class="mt-4">
         <ul>
           <li>
-            <NuxtLink to="/admin" class="block px-4 py-2 hover:bg-gray-700">대시보드</NuxtLink>
+            <NuxtLink to="/alljeju/admin" class="block px-4 py-2 hover:bg-gray-700">대시보드</NuxtLink>
           </li>
           <li>
             <NuxtLink to="/admin/content/festivals" class="block px-4 py-2 hover:bg-gray-700">축제 관리</NuxtLink>
@@ -26,7 +26,7 @@
             <NuxtLink to="/admin/api-logs" class="block px-4 py-2 hover:bg-gray-700">API 수집 로그</NuxtLink>
           </li>
           <li>
-            <NuxtLink to="/admin/trigger-fetch" class="block px-4 py-2 hover:bg-gray-700">수동 데이터 수집</NuxtLink>
+            <NuxtLink to="/alljeju/admin/trigger-fetch" class="block px-4 py-2 hover:bg-gray-700">수동 데이터 수집</NuxtLink>
           </li>
           <!-- 추가 네비게이션 항목 -->
         </ul>
