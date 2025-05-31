@@ -13,7 +13,7 @@
     "test:supabase": "cd scripts && tsx --tsconfig tsconfig.json test-supabase-connection.ts",
     "migrate:supabase": "cd scripts && tsx --tsconfig tsconfig.json migrate-to-supabase.ts",
     "update:dao": "cd scripts && tsx --tsconfig tsconfig.json update-dao-imports.ts",
-    "deploy:cloudflare": "npm run build && npx wrangler pages deploy .output/public --project-name=grap"
+    "deploy:cloudflare": "npm run build && npx wrangler pages deploy .output/public --project-name=grapv2"
   },
   "dependencies": {
     "@nuxt/image": "1.10.0",

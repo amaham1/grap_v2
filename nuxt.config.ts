@@ -1,8 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  // SSG 모드 강제 설정
-  ssr: false,
-  target: 'static',
+  // SSR 모드로 변경 (Workers 지원)
+  ssr: true,
 
   app: {
     baseURL: '/',
@@ -24,9 +23,9 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxt/image', '@nuxtjs/tailwindcss'],
   nitro: {
-    preset: 'static',
-    prerender: {
-      routes: ['/']
+    preset: 'cloudflare-pages',
+    experimental: {
+      wasm: true
     },
     rollupConfig: {
       external: ['mysql2']
