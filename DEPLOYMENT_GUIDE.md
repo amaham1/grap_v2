@@ -1,6 +1,8 @@
-# 클라우드플래어 + Supabase 배포 가이드
+# 클라우드플래어 Workers + Supabase 배포 가이드
 
-이 가이드는 Nuxt.js 애플리케이션을 클라우드플래어 Pages에 배포하고 Supabase를 데이터베이스로 사용하는 방법을 설명합니다.
+이 가이드는 Nuxt.js 애플리케이션을 클라우드플래어 Workers에 배포하고 Supabase를 데이터베이스로 사용하는 방법을 설명합니다.
+
+> **중요**: 이 프로젝트는 최신 Cloudflare Workers (`cloudflare_module` preset)를 사용합니다. 자세한 Workers 배포 정보는 `CLOUDFLARE_WORKERS_DEPLOYMENT.md`를 참조하세요.
 
 ## 1. Supabase 설정
 
@@ -53,22 +55,27 @@ KAKAO_MAP_API_KEY=your_kakao_map_api_key
 npm run migrate:supabase
 ```
 
-## 3. 클라우드플래어 설정
+## 3. 클라우드플래어 Workers 설정
 
 ### 3.1 클라우드플래어 계정 설정
 1. [Cloudflare](https://cloudflare.com)에 로그인
-2. "Pages" 섹션으로 이동
-3. "Create a project" 클릭
+2. "Workers & Pages" 섹션으로 이동
+3. "Create application" > "Create Worker" 클릭
 
-### 3.2 GitHub 연동 (권장)
-1. GitHub 리포지토리 연결
-2. 빌드 설정:
-   - Framework preset: `Nuxt.js`
-   - Build command: `npm run build`
-   - Build output directory: `.output/public`
+### 3.2 Wrangler CLI 설정
+```bash
+# Wrangler 로그인
+npm run login:cloudflare
+
+# 로컬 미리보기
+npm run preview:cloudflare
+
+# 프로덕션 배포
+npm run deploy:cloudflare
+```
 
 ### 3.3 환경 변수 설정
-클라우드플래어 Pages 대시보드에서 "Settings" > "Environment variables"에 다음 변수들을 추가:
+클라우드플래어 Workers 대시보드에서 "Settings" > "Variables"에 다음 변수들을 추가:
 
 **Production 환경:**
 ```
@@ -81,24 +88,22 @@ KAKAO_MAP_API_KEY=your_kakao_map_api_key
 NODE_ENV=production
 ```
 
-## 4. 수동 배포 (선택사항)
+## 4. GitHub Actions 자동 배포 (선택사항)
 
-### 4.1 Wrangler CLI 설치 및 로그인
-```bash
-npm install -g wrangler
-wrangler login
-```
+### 4.1 GitHub Secrets 설정
+GitHub 리포지토리의 Settings > Secrets and variables > Actions에서 다음 시크릿을 추가:
+- `CLOUDFLARE_API_TOKEN`: Cloudflare API 토큰
+- `CLOUDFLARE_ACCOUNT_ID`: Cloudflare 계정 ID
 
-### 4.2 수동 배포 실행
-```bash
-npm run deploy:cloudflare
-```
+### 4.2 GitHub Actions 워크플로우
+`.github/workflows/deploy.yml` 파일을 생성하여 자동 배포 설정 가능
 
 ## 5. 도메인 설정
 
 ### 5.1 커스텀 도메인 연결
-1. 클라우드플래어 Pages 대시보드에서 "Custom domains" 클릭
-2. 도메인 추가 및 DNS 설정 확인
+1. 클라우드플래어 Workers 대시보드에서 "Settings" > "Triggers" 클릭
+2. "Custom Domains" 섹션에서 도메인 추가
+3. DNS 설정 확인
 
 ### 5.2 SSL 인증서
 클라우드플래어에서 자동으로 SSL 인증서를 제공합니다.
@@ -134,7 +139,7 @@ Supabase 대시보드에서 데이터베이스 사용량과 API 호출을 모니
 ### 8.3 API 오류
 - 환경 변수가 올바르게 설정되었는지 확인
 - CORS 설정 확인
-- 클라우드플래어 Functions 로그 확인
+- 클라우드플래어 Workers 로그 확인 (`wrangler tail` 명령어 사용)
 
 ## 9. 보안 고려사항
 
@@ -164,6 +169,7 @@ GitHub 등의 버전 관리 시스템을 사용하여 코드를 백업하세요.
 
 - [Nuxt.js 공식 문서](https://nuxt.com)
 - [Supabase 공식 문서](https://supabase.com/docs)
-- [Cloudflare Pages 공식 문서](https://developers.cloudflare.com/pages)
+- [Cloudflare Workers 공식 문서](https://developers.cloudflare.com/workers)
+- [Nitro Cloudflare 가이드](https://nitro.build/deploy/providers/cloudflare)
 
 문제가 발생하면 각 플랫폼의 공식 문서를 참조하거나 커뮤니티에 도움을 요청하세요.

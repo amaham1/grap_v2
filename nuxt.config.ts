@@ -23,12 +23,17 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxt/image', '@nuxtjs/tailwindcss'],
   nitro: {
-    preset: 'cloudflare-pages',
+    preset: 'cloudflare_module',
+    compatibilityDate: '2024-09-19',
     experimental: {
       wasm: true
     },
     rollupConfig: {
       external: ['mysql2']
+    },
+    cloudflare: {
+      deployConfig: true,
+      nodeCompat: true
     }
   },
   runtimeConfig: {
