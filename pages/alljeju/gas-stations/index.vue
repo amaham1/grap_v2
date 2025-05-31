@@ -572,9 +572,21 @@ const initializeApp = async () => {
             // 데이터베이스 상태 확인
             try {
               console.log('🗃️ [DB-DEBUG] 데이터베이스 상태 확인 중...');
-              const dbResponse = await fetch('/api/debug/gas-stations-data');
+              const dbResponse = await fetch('/api/debug/database-status');
               const dbData = await dbResponse.json();
               console.log('🗃️ [DB-DEBUG] 데이터베이스 상태:', dbData);
+
+              // 추가 상세 정보
+              if (dbData.success && dbData.data) {
+                console.log('📊 [DB-DETAIL-DEBUG] 상세 정보:', {
+                  totalStations: dbData.data.totalStations,
+                  exposedStations: dbData.data.exposedStations,
+                  withCoords: dbData.data.sampleData.withCoordinates,
+                  withPrices: dbData.data.sampleData.withPrices,
+                  jejuCityStations: dbData.data.sampleData.jejuCityStations,
+                  environment: dbData.environment.NODE_ENV
+                });
+              }
 
               // API 직접 테스트
               const testLat = userLocation.value?.latitude || 33.4692352;

@@ -111,7 +111,10 @@ export default defineEventHandler(async (event) => {
       queryLimit: fetchPageSize,
       searchTerm: searchQuery,
       brandCode,
-      stationType
+      stationType,
+      userLat,
+      userLng,
+      radius
     });
 
     const result = await gasStationDAO.getGasStationsWithPrices({
@@ -151,9 +154,15 @@ export default defineEventHandler(async (event) => {
       console.log(`📍 [LOCATION-DEBUG] 위치 기반 필터링 시작 - 사용자 위치: (${userLat}, ${userLng}), 반경: ${radius}km`);
 
       const stationsWithDistance = result.data
-        .map(station => {
+        .map((station, index) => {
           if (station.latitude && station.longitude) {
             const distance = calculateDistance(userLat, userLng, station.latitude, station.longitude);
+
+            // 처음 5개 주유소의 거리 계산 로그
+            if (index < 5) {
+              console.log(`📏 [DISTANCE-CALC-DEBUG] ${index + 1}. ${station.station_name}: (${station.latitude}, ${station.longitude}) → ${distance.toFixed(2)}km`);
+            }
+
             return { ...station, distance };
           }
           return null;
@@ -186,6 +195,14 @@ export default defineEventHandler(async (event) => {
 
       filteredItems = stationsWithDistance.filter(station => station.distance <= radius);
       console.log(`🎯 [RADIUS-DEBUG] 반경 ${radius}km 내 주유소: ${filteredItems.length}개`);
+
+      // 반경 내 주유소 목록 (처음 10개)
+      const nearbyStations = filteredItems.slice(0, 10).map(station => ({
+        name: station.station_name,
+        distance: station.distance.toFixed(2) + 'km',
+        hasPrice: !!station.latest_price
+      }));
+      console.log(`🏪 [NEARBY-STATIONS-DEBUG] 반경 내 주유소 (상위 10개):`, nearbyStations);
     }
 
     // 연료 타입 필터링 (가격 정보가 있는 주유소만)
