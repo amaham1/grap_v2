@@ -252,7 +252,7 @@ useHead({
 const { userLocation, isGettingLocation, getCurrentLocation } = useUserLocation();
 const { isSearching, searchStats, searchNearbyStations, searchCurrentViewStations } = useGasStationSearch();
 const { map, isMapLoaded, mapError, initializeMap, waitForKakaoMaps, moveMapCenter } = useKakaoMap();
-const { clearMarkers, addUserLocationMarker, addGasStationMarkers, moveToStation, closeCurrentInfoWindow } = useGasStationMarkers(map);
+const { currentMarkers, clearMarkers, addUserLocationMarker, addGasStationMarkers, moveToStation, closeCurrentInfoWindow } = useGasStationMarkers(map);
 
 // 상태 관리
 const searchRadius = ref(5); // 기본 5km로 변경
@@ -535,7 +535,7 @@ const initializeApp = async () => {
               isMapLoaded: isMapLoaded.value,
               searchStats: searchStats.value,
               topStationsCount: topLowestPriceStations.value.length,
-              markersCount: currentMarkers ? currentMarkers.value.length : 0
+              markersCount: currentMarkers.value.length
             };
             console.log(`🔍 [CURRENT-STATE-DEBUG] 현재 상태:`, state);
             updateDebugInfo('current-state', state);
@@ -579,15 +579,38 @@ const initializeApp = async () => {
               // API 직접 테스트
               const testLat = userLocation.value?.latitude || 33.4692352;
               const testLng = userLocation.value?.longitude || 126.5532928;
-              const testResponse = await fetch(`/api/public/gas-stations?lat=${testLat}&lng=${testLng}&radius=5&pageSize=100&sortBy=distance&sortOrder=asc&fuel=gasoline`);
+              const testUrl = `/api/public/gas-stations?lat=${testLat}&lng=${testLng}&radius=5&pageSize=100&sortBy=distance&sortOrder=asc&fuel=gasoline`;
+              console.log('🚀 [API-TEST-URL] 테스트 URL:', testUrl);
+
+              const testResponse = await fetch(testUrl);
+              console.log('📡 [API-TEST-RESPONSE] 응답 상태:', {
+                status: testResponse.status,
+                statusText: testResponse.statusText,
+                ok: testResponse.ok
+              });
+
               const testData = await testResponse.json();
               console.log('🧪 [API-TEST-DEBUG] API 테스트 결과:', {
                 success: testData.success,
                 itemsCount: testData.items?.length || 0,
                 totalInRadius: testData.stats?.total_in_radius,
+                lowestPriceCount: testData.stats?.lowest_price_count,
+                pagination: testData.pagination,
                 environment: window.location.hostname,
                 timestamp: new Date().toISOString()
               });
+
+              // 상세 분석
+              if (testData.items && testData.items.length > 0) {
+                const withPrices = testData.items.filter(item => item.prices);
+                const withCoords = testData.items.filter(item => item.location?.latitude && item.location?.longitude);
+                console.log('📊 [API-TEST-ANALYSIS] 상세 분석:', {
+                  totalItems: testData.items.length,
+                  withPrices: withPrices.length,
+                  withCoords: withCoords.length,
+                  sampleItem: testData.items[0]
+                });
+              }
             } catch (error) {
               console.error('❌ [ENV-DEBUG-ERROR] 환경 비교 중 오류:', error);
             }
