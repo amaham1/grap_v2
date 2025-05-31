@@ -5,30 +5,10 @@ compatibility_date = "2024-01-01"
 # 참고: Cron 작업은 GitHub Actions를 통해 실행됩니다.
 # .github/workflows/cron-jobs.yml 파일을 참조하세요.
 
-# 환경 변수 설정 (실제 값은 Cloudflare Dashboard에서 설정)
+# Pages 환경 변수 설정 (실제 값은 Cloudflare Dashboard에서 설정)
 [env.production.vars]
 NODE_ENV = "production"
 
-# 개발 환경 설정
-[env.development.vars]
+# Preview 환경 설정 (development 대신 preview 사용)
+[env.preview.vars]
 NODE_ENV = "development"
-
-# 빌드 설정
-[build]
-command = "npm run build"
-cwd = "."
-watch_dir = "."
-
-# Pages 설정 (Nuxt.js SSR 지원)
-[pages]
-build_output_dir = ".output/public"
-compatibility_date = "2024-01-01"
-
-# Functions 설정 (Nuxt.js 서버 사이드 렌더링)
-[[pages.functions]]
-pattern = "/api/*"
-compatibility_date = "2024-01-01"
-
-[[pages.functions]]
-pattern = "/*"
-compatibility_date = "2024-01-01"

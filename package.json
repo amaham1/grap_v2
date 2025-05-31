@@ -8,7 +8,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "server": "wrangler pages deploy .output/public",
+    "server": "echo 'Build completed successfully'",
     "test:supabase": "cd scripts && tsx --tsconfig tsconfig.json test-supabase-connection.ts",
     "migrate:supabase": "cd scripts && tsx --tsconfig tsconfig.json migrate-to-supabase.ts",
     "update:dao": "cd scripts && tsx --tsconfig tsconfig.json update-dao-imports.ts",

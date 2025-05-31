@@ -23,6 +23,9 @@ export default defineNuxtConfig({
     preset: 'cloudflare-pages',
     experimental: {
       wasm: true
+    },
+    rollupConfig: {
+      external: ['mysql2']
     }
   },
   runtimeConfig: {
