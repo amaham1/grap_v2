@@ -45,6 +45,33 @@ export const useGasStationSearch = () => {
         timestamp: new Date().toISOString()
       });
 
+      // 🔍 [DETAILED-RESPONSE-DEBUG] 상세 응답 분석
+      console.log(`🔍 [DETAILED-RESPONSE-DEBUG] 상세 응답 정보:`, {
+        // 페이지네이션 정보
+        pagination: {
+          page: response.pagination?.page,
+          pageSize: response.pagination?.pageSize,
+          total: response.pagination?.total,
+          totalPages: response.pagination?.totalPages
+        },
+        // 필터 정보
+        appliedFilters: {
+          search: response.filters?.search,
+          brand: response.filters?.brand,
+          type: response.filters?.type,
+          fuel: response.filters?.fuel,
+          location: response.filters?.location
+        },
+        // 통계 정보
+        statistics: {
+          totalInRadius: response.stats?.total_in_radius,
+          lowestPriceCount: response.stats?.lowest_price_count,
+          lowestPriceStations: response.stats?.lowest_price_stations
+        },
+        // 응답 헤더 정보 (가능한 경우)
+        responseHeaders: response.headers || 'N/A'
+      });
+
       if (response.success) {
         console.log(`✅ [SEARCH] 검색 성공: ${response.items.length}개 주유소 반환`);
         console.log(`📊 [SEARCH] 통계:`, response.stats);
@@ -63,6 +90,25 @@ export const useGasStationSearch = () => {
             totalWithoutDistance: response.items.length - stationsWithDistance.length,
             averageDistance: stationsWithDistance.length > 0 ?
               (stationsWithDistance.reduce((sum, item) => sum + (item.distance || 0), 0) / stationsWithDistance.length).toFixed(2) + 'km' : 'N/A'
+          });
+
+          // 🏪 [STATION-DETAILS-DEBUG] 개별 주유소 상세 정보
+          console.log(`🏪 [STATION-DETAILS-DEBUG] 발견된 주유소 목록:`);
+          response.items.forEach((station, index) => {
+            console.log(`  ${index + 1}. ${station.name}:`, {
+              id: station.id,
+              opinet_id: station.opinet_id,
+              brand: station.brand?.name,
+              address: station.address,
+              location: station.location,
+              distance: station.distance ? `${station.distance.toFixed(2)}km` : 'N/A',
+              prices: station.prices ? {
+                gasoline: station.prices.gasoline,
+                diesel: station.prices.diesel,
+                lpg: station.prices.lpg
+              } : 'No prices',
+              isLowestPrice: station.is_lowest_price
+            });
           });
         }
 
