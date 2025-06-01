@@ -4,10 +4,14 @@ import type { GasStation, GasStationSearchParams, GasStationSearchResponse, Sear
 export const useGasStationSearch = () => {
   const isSearching = ref(false);
   const searchStats = ref<SearchStats | null>(null);
+  const allFetchedStations = ref<GasStation[]>([]);
+  const currentPage = ref(1);
+  const totalPages = ref(1);
 
   // 주유소 검색 API 호출
   const searchGasStations = async (params: GasStationSearchParams): Promise<GasStation[]> => {
     isSearching.value = true;
+    const pageToFetch = params.page || 1; // Use page from params or default to 1
 
     try {
       const queryParams = new URLSearchParams();
@@ -15,10 +19,16 @@ export const useGasStationSearch = () => {
       if (params.lat !== undefined) queryParams.append('lat', params.lat.toString());
       if (params.lng !== undefined) queryParams.append('lng', params.lng.toString());
       if (params.radius !== undefined) queryParams.append('radius', params.radius.toString());
+      // pageSize is now managed by the API and used for totalPages calculation,
+      // but we still need to send it if the API expects it for pagination.
+      // The subtask implies the API handles pageSize for its internal pagination logic.
+      // Let's assume the API's `pageSize` parameter determines items per page.
+      // For "load more", we request specific pages.
       if (params.pageSize !== undefined) queryParams.append('pageSize', params.pageSize.toString());
       if (params.sortBy) queryParams.append('sortBy', params.sortBy);
       if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
       if (params.fuel) queryParams.append('fuel', params.fuel);
+      queryParams.append('page', pageToFetch.toString()); // Add page parameter for API call
 
       const url = `/api/public/gas-stations?${queryParams.toString()}`;
 
@@ -112,13 +122,36 @@ export const useGasStationSearch = () => {
           });
         }
 
-        searchStats.value = response.stats;
-        return response.items;
+        searchStats.value = response.stats; // This might reflect stats for the current page or overall, API dependent
+
+        if (response.pagination) {
+          currentPage.value = response.pagination.page || 1;
+          totalPages.value = response.pagination.totalPages || 1;
+        }
+
+        if (pageToFetch === 1) {
+          allFetchedStations.value = response.items;
+        } else {
+          allFetchedStations.value = [...allFetchedStations.value, ...response.items];
+        }
+        return response.items; // Return only the newly fetched items
       } else {
-        throw new Error('검색 실패');
+        // Reset pagination on error for a new search
+        if (pageToFetch === 1) {
+          allFetchedStations.value = [];
+          currentPage.value = 1;
+          totalPages.value = 1;
+        }
+        throw new Error(response.message || '검색 실패');
       }
     } catch (error) {
       console.error('❌ [SEARCH] 검색 중 오류:', error);
+      // Reset pagination on error for a new search
+      if (pageToFetch === 1) {
+        allFetchedStations.value = [];
+        currentPage.value = 1;
+        totalPages.value = 1;
+      }
       throw error;
     } finally {
       isSearching.value = false;
@@ -130,15 +163,17 @@ export const useGasStationSearch = () => {
     userLat: number,
     userLng: number,
     radius: number,
-    selectedFuel: string
+    selectedFuel: string,
+    page: number = 1 // Added page parameter, defaults to 1
   ): Promise<GasStation[]> => {
     const params: GasStationSearchParams = {
       lat: userLat,
       lng: userLng,
       radius,
-      pageSize: 100,
+      pageSize: 20, // Standard page size, API might use this to calculate totalPages
       sortBy: 'distance',
-      sortOrder: 'asc'
+      sortOrder: 'asc',
+      page: page // Pass page to searchGasStations
     };
 
     if (selectedFuel) {
@@ -153,15 +188,17 @@ export const useGasStationSearch = () => {
     centerLat: number,
     centerLng: number,
     radius: number,
-    selectedFuel: string
+    selectedFuel: string,
+    page: number = 1 // Added page parameter, defaults to 1
   ): Promise<GasStation[]> => {
     const params: GasStationSearchParams = {
       lat: centerLat,
       lng: centerLng,
       radius,
-      pageSize: 100,
+      pageSize: 20, // Standard page size
       sortBy: 'distance',
-      sortOrder: 'asc'
+      sortOrder: 'asc',
+      page: page // Pass page to searchGasStations
     };
 
     if (selectedFuel) {
@@ -174,6 +211,9 @@ export const useGasStationSearch = () => {
   return {
     isSearching: readonly(isSearching),
     searchStats: readonly(searchStats),
+    allFetchedStations: readonly(allFetchedStations),
+    currentPage: readonly(currentPage),
+    totalPages: readonly(totalPages),
     searchGasStations,
     searchNearbyStations,
     searchCurrentViewStations

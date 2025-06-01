@@ -210,6 +210,16 @@
       </div>
     </div>
 
+    <!-- Load More Button -->
+    <div v-if="totalPages > 1 && currentPage < totalPages" class="fixed bottom-[60px] left-1/2 transform -translate-x-1/2 z-40 mb-2 px-4 w-full max-w-md">
+      <button
+        @click="handleLoadMore"
+        :disabled="isSearching"
+        class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg shadow-lg hover:bg-blue-700 disabled:bg-gray-400 text-sm font-medium transition-colors">
+        {{ isSearching ? '로딩 중...' : `더 보기 (${currentPage}/${totalPages})` }}
+      </button>
+    </div>
+
     <!-- 하단 광고 블록 -->
     <div class="fixed bottom-0 left-0 right-0 w-full h-[50px] bg-white border-t border-gray-300 flex items-center justify-center z-50 px-2">
       <GoogleAdsense
@@ -250,7 +260,15 @@ useHead({
 
 // 컴포저블 사용
 const { userLocation, isGettingLocation, getCurrentLocation } = useUserLocation();
-const { isSearching, searchStats, searchNearbyStations, searchCurrentViewStations } = useGasStationSearch();
+const {
+  isSearching,
+  searchStats,
+  searchNearbyStations,
+  searchCurrentViewStations,
+  allFetchedStations, // Added
+  currentPage,      // Added
+  totalPages        // Added
+} = useGasStationSearch();
 const { map, isMapLoaded, mapError, initializeMap, waitForKakaoMaps, moveMapCenter } = useKakaoMap();
 const { currentMarkers, clearMarkers, addUserLocationMarker, addGasStationMarkers, moveToStation, closeCurrentInfoWindow } = useGasStationMarkers(map);
 
@@ -391,39 +409,44 @@ const handleNearbySearch = async () => {
     console.log(`🔍 [PAGE-NEARBY-DEBUG] 주변 검색 시작:`, searchParams);
     updateDebugInfo('search-start', searchParams);
 
-    clearMarkers();
+    clearMarkers(); // Clear existing markers for a new search
 
-    const stations = await searchNearbyStations(
+    // For a new search, always fetch page 1
+    const newStations = await searchNearbyStations(
       userLocation.value.latitude,
       userLocation.value.longitude,
       searchRadius.value,
-      selectedFuel.value
+      selectedFuel.value,
+      1 // Explicitly page 1 for new search
     );
 
     // 🎯 [PAGE-RESULT-DEBUG] 검색 결과 분석
     const searchResults = {
-      stationsFound: stations.length,
+      stationsFoundThisPage: newStations.length, // This is for the current page
+      totalAllFetched: allFetchedStations.value.length, // Total after fetch by composable
       searchRadius: searchRadius.value,
       selectedFuel: selectedFuel.value,
       hasUserLocation: !!userLocation.value,
-      userLocation: userLocation.value
+      userLocation: userLocation.value,
+      page: currentPage.value, // From composable
+      totalPages: totalPages.value // From composable
     };
 
-    console.log(`🎯 [PAGE-NEARBY-RESULT-DEBUG] 주변 검색 결과:`, searchResults);
+    console.log(`🎯 [PAGE-NEARBY-RESULT-DEBUG] 주변 검색 결과 (Page ${currentPage.value}/${totalPages.value}):`, searchResults);
     updateDebugInfo('search-result', searchResults);
 
-    addGasStationMarkers(stations, selectedFuel.value);
+    addGasStationMarkers(newStations, selectedFuel.value); // Add markers for the first page
 
     if (userLocation.value) {
-      addUserLocationMarker(userLocation.value);
+      addUserLocationMarker(userLocation.value); // Re-add user marker if it was cleared
     }
 
-    if (stations.length === 0) {
+    if (newStations.length === 0 && currentPage.value === 1) { // Check currentPage for new search emptiness
       console.warn(`⚠️ [PAGE-WARNING] 검색 반경 ${searchRadius.value}km 내에 주유소가 없습니다.`);
     }
 
-    // 최저가 TOP10 목록 업데이트
-    topLowestPriceStations.value = updateTopLowestPriceStations(stations, selectedFuel.value);
+    // 최저가 TOP10 목록 업데이트 using allFetchedStations from composable
+    topLowestPriceStations.value = updateTopLowestPriceStations(allFetchedStations.value, selectedFuel.value);
   } catch (error) {
     const errorMessage = `주유소 검색 중 오류: ${error}`;
     console.error('❌ [PAGE-ERROR]', errorMessage);
@@ -440,23 +463,32 @@ const handleCurrentViewSearch = async () => {
 
   try {
     const center = map.value.getCenter();
-    clearMarkers();
+    clearMarkers(); // Clear existing markers for a new search
 
-    const stations = await searchCurrentViewStations(
+    // For a new current view search, always fetch page 1
+    const newStations = await searchCurrentViewStations(
       center.getLat(),
       center.getLng(),
       searchRadius.value,
-      selectedFuel.value
+      selectedFuel.value,
+      1 // Explicitly page 1
     );
 
-    addGasStationMarkers(stations, selectedFuel.value);
+    // Add markers for the first page
+    addGasStationMarkers(newStations, selectedFuel.value);
 
     if (userLocation.value) {
-      addUserLocationMarker(userLocation.value);
+      addUserLocationMarker(userLocation.value); // Re-add user marker
     }
 
-    // 최저가 TOP10 목록 업데이트
-    topLowestPriceStations.value = updateTopLowestPriceStations(stations, selectedFuel.value);
+    // 최저가 TOP10 목록 업데이트 using allFetchedStations
+    topLowestPriceStations.value = updateTopLowestPriceStations(allFetchedStations.value, selectedFuel.value);
+     console.log(`🎯 [PAGE-CV-RESULT-DEBUG] 현재 지도 검색 결과 (Page ${currentPage.value}/${totalPages.value}):`, {
+        stationsFoundThisPage: newStations.length,
+        totalAllFetched: allFetchedStations.value.length,
+        page: currentPage.value,
+        totalPages: totalPages.value
+     });
   } catch (error) {
     console.error('주유소 검색 중 오류:', error);
     alert('주유소 검색 중 오류가 발생했습니다.');
@@ -465,6 +497,53 @@ const handleCurrentViewSearch = async () => {
 
 const handleStationClick = (station: GasStation) => {
   moveToStation(station);
+};
+
+const handleLoadMore = async () => {
+  if (currentPage.value >= totalPages.value || isSearching.value) return;
+
+  // Determine if the original search was user-location based or map-center based.
+  // This example assumes userLocation.value indicates a "nearby" search context.
+  // A more robust solution might store the type of the last search.
+  const isNearbyContext = !!userLocation.value;
+
+  try {
+    let additionalStations: GasStation[];
+    if (isNearbyContext && userLocation.value) {
+       additionalStations = await searchNearbyStations(
+        userLocation.value.latitude,
+        userLocation.value.longitude,
+        searchRadius.value,
+        selectedFuel.value,
+        currentPage.value + 1
+      );
+    } else if (map.value) { // Fallback to map center if no userLocation or not nearby context
+      const center = map.value.getCenter();
+      additionalStations = await searchCurrentViewStations(
+        center.getLat(),
+        center.getLng(),
+        searchRadius.value,
+        selectedFuel.value,
+        currentPage.value + 1
+      );
+    } else {
+      // Should not happen if load more button is visible and correctly managed
+      console.warn("Load more called without sufficient context (user location or map).");
+      return;
+    }
+
+    // Add only the newly fetched markers. Do NOT call clearMarkers() here.
+    addGasStationMarkers(additionalStations, selectedFuel.value);
+
+    // Update top list with all fetched stations from the composable
+    topLowestPriceStations.value = updateTopLowestPriceStations(allFetchedStations.value, selectedFuel.value);
+
+    console.log(`➕ [LOAD-MORE-DEBUG] 추가 로드 완료 (Page ${currentPage.value}/${totalPages.value}): ${additionalStations.length}개 추가, 총 ${allFetchedStations.value.length}개`);
+
+  } catch (error) {
+    console.error('추가 주유소 로딩 중 오류:', error);
+    alert('추가 주유소를 로딩하는 중 오류가 발생했습니다.');
+  }
 };
 
 // 환경 정보 디버깅 함수

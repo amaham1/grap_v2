@@ -43,6 +43,26 @@ export async function testSupabaseConnection() {
   }
 }
 
+// RPC 호출 헬퍼 함수
+export async function executeSupabaseRpc<T = any>(
+  functionName: string,
+  params: Record<string, any> = {}
+): Promise<{ data: T[] | null; error: any; count?: number }> { // Supabase RPC can return 'count' if specified in the function
+  try {
+    const { data, error, count } = await supabase.rpc(functionName, params)
+
+    if (error) {
+      console.error(`Supabase RPC call to ${functionName} failed:`, error)
+      return { data: null, error, count: count || undefined }
+    }
+
+    return { data: data as T[], error: null, count: count || undefined }
+  } catch (error) {
+    console.error(`Error during RPC call to ${functionName}:`, error)
+    return { data: null, error, count: undefined }
+  }
+}
+
 // 쿼리 실행 헬퍼 함수
 export async function executeSupabaseQuery<T = any>(
   tableName: string,

@@ -1,5 +1,5 @@
 // server/dao/supabase/gas-station-dao.ts
-import { executeSupabaseQuery, batchUpsert } from '~/server/utils/supabase'
+import { executeSupabaseQuery, batchUpsert, executeSupabaseRpc } from '~/server/utils/supabase'
 
 export interface GasStation {
   id?: number
@@ -250,34 +250,123 @@ export async function getGasStationBrands() {
 }
 
 /**
- * 주유소와 가격 정보를 함께 조회 (기존 MySQL DAO 호환성)
+ * 주유소와 가격 정보를 함께 조회 (Supabase RPC 사용)
  */
 export async function getGasStationsWithPrices(options: GetGasStationsOptions = {}) {
-  // 주유소 목록 조회
-  const stationsResult = await getGasStations(options)
+  const {
+    page = 1,
+    limit = 20,
+    searchTerm,
+    brandCode,
+    stationType,
+    isExposed
+  } = options;
 
-  if (stationsResult.error || !stationsResult.data) {
-    return stationsResult
+  let exposed_filter: boolean | undefined;
+  if (isExposed === 'true') exposed_filter = true;
+  else if (isExposed === 'false') exposed_filter = false;
+
+  const rpcParams = {
+    page_num: page,
+    page_size: limit,
+    search_term: searchTerm || null,
+    brand_filter: brandCode || null,
+    type_filter: stationType || null,
+    exposed_filter: exposed_filter // This can be undefined, true, or false
+  };
+
+  // Define the expected structure from the RPC
+  type RpcStationWithPrice = {
+    id: number;
+    opinet_id: string;
+    station_name: string;
+    brand_code?: string;
+    brand_name?: string;
+    gas_brand_code?: string;
+    gas_brand_name?: string;
+    address?: string;
+    phone?: string;
+    station_type?: 'N' | 'Y' | 'C';
+    latitude?: number;
+    longitude?: number;
+    is_exposed?: boolean;
+    fetched_at?: string; // station's fetched_at
+    // latest price fields from RPC
+    gasoline_price?: number;
+    premium_gasoline_price?: number;
+    diesel_price?: number;
+    lpg_price?: number;
+    price_date?: string;
+    price_fetched_at?: string; // price's fetched_at
+    total_count: number; // Total count for pagination
+  };
+
+  const { data: rpcResult, error, count: rpcCallRawCount } = await executeSupabaseRpc<RpcStationWithPrice>(
+    'get_stations_with_latest_prices',
+    rpcParams
+  );
+
+  if (error) {
+    console.error('Error calling get_stations_with_latest_prices RPC:', error);
+    // Ensure the return type matches what the calling function expects,
+    // which is Promise<{ data: GasStation[] | null; error: any; count?: number }>
+    // or similar, based on other DAO functions.
+    // Explicitly casting `stationsWithPrices` to `GasStation[]` might be needed if TS complains.
+    return { data: null, error, count: 0 };
   }
 
-  // 각 주유소의 최신 가격 정보 조회
-  const stationsWithPrices = await Promise.all(
-    stationsResult.data.map(async (station) => {
-      const pricesResult = await getGasPrices(station.opinet_id, 1)
-      const latestPrice = pricesResult.data?.[0] || null
+  if (!rpcResult) {
+    return { data: [], error: null, count: 0 };
+  }
 
-      return {
-        ...station,
-        latest_price: latestPrice
-      }
-    })
-  )
+  const stationsWithPrices: GasStation[] = rpcResult.map(row => {
+    const {
+      gasoline_price,
+      premium_gasoline_price,
+      diesel_price,
+      lpg_price,
+      price_date,
+      price_fetched_at,
+      total_count, // eslint-disable-line @typescript-eslint/no-unused-vars
+      ...stationData // Spread the rest of the station data
+    } = row;
+
+    const latest_price: GasPrice | null = price_date
+      ? {
+          opinet_id: stationData.opinet_id,
+          gasoline_price,
+          premium_gasoline_price,
+          diesel_price,
+          lpg_price,
+          price_date,
+          fetched_at: price_fetched_at,
+          // Optional fields from GasPrice interface that are not in RpcStationWithPrice
+          // id: undefined, api_raw_data: undefined, created_at: undefined, updated_at: undefined
+        }
+      : null;
+
+    return {
+      ...stationData, // Spread the station data (id, name, address, etc.)
+      // Ensure all fields expected by GasStation interface are present
+      // For fields not directly from RPC, assign undefined or default if appropriate
+      zip_code: stationData.zip_code || undefined, // Example if zip_code is in stationData
+      katec_x: stationData.katec_x || undefined,
+      katec_y: stationData.katec_y || undefined,
+      api_raw_data: stationData.api_raw_data || undefined,
+      admin_memo: stationData.admin_memo || undefined,
+      created_at: stationData.created_at || undefined,
+      updated_at: stationData.updated_at || undefined,
+      latest_price // Add the nested latest_price object
+    } as GasStation; // Added type assertion
+  });
+
+  const totalCountFromRpc = rpcResult.length > 0 ? rpcResult[0].total_count : (rpcCallRawCount || 0);
 
   return {
     data: stationsWithPrices,
     error: null,
-    count: stationsResult.count
-  }
+    count: totalCountFromRpc
+  };
 }
 
 /**
