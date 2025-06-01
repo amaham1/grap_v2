@@ -1,9 +1,11 @@
 // composables/useGasStationSearch.ts
 import type { GasStation, GasStationSearchParams, GasStationSearchResponse, SearchStats } from '~/types/gasStation';
+import { useMemoization } from '~/composables/useMemoization';
 
 export const useGasStationSearch = () => {
   const isSearching = ref(false);
   const searchStats = ref<SearchStats | null>(null);
+  const { memoizeAsync } = useMemoization();
 
   // 주유소 검색 API 호출
   const searchGasStations = async (params: GasStationSearchParams): Promise<GasStation[]> => {
@@ -125,8 +127,8 @@ export const useGasStationSearch = () => {
     }
   };
 
-  // 사용자 위치 기준 주변 주유소 검색
-  const searchNearbyStations = async (
+  // 사용자 위치 기준 주변 주유소 검색 (메모이제이션 적용)
+  const searchNearbyStations = memoizeAsync(async (
     userLat: number,
     userLng: number,
     radius: number,
@@ -146,10 +148,14 @@ export const useGasStationSearch = () => {
     }
 
     return await searchGasStations(params);
-  };
+  }, {
+    maxAge: 2 * 60 * 1000, // 2분 캐시
+    maxSize: 20,
+    keyGenerator: (lat, lng, radius, fuel) => `nearby-${lat.toFixed(4)}-${lng.toFixed(4)}-${radius}-${fuel}`
+  });
 
-  // 현재 지도 중심점 기준 주유소 검색
-  const searchCurrentViewStations = async (
+  // 현재 지도 중심점 기준 주유소 검색 (메모이제이션 적용)
+  const searchCurrentViewStations = memoizeAsync(async (
     centerLat: number,
     centerLng: number,
     radius: number,
@@ -169,7 +175,11 @@ export const useGasStationSearch = () => {
     }
 
     return await searchGasStations(params);
-  };
+  }, {
+    maxAge: 1 * 60 * 1000, // 1분 캐시 (더 짧게)
+    maxSize: 15,
+    keyGenerator: (lat, lng, radius, fuel) => `view-${lat.toFixed(4)}-${lng.toFixed(4)}-${radius}-${fuel}`
+  });
 
   return {
     isSearching: readonly(isSearching),

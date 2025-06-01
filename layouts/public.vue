@@ -107,11 +107,15 @@
 
     <!-- 광고 블록 (최저가 주유소 페이지에서는 숨김) -->
     <AdBlock v-if="!isGasStationsPage" />
+
+    <!-- 에러 표시 컴포넌트 -->
+    <ErrorDisplay />
   </div>
 </template>
 
 <script setup lang="ts">
 import AdBlock from '~/components/public/AdBlock.vue';
+import ErrorDisplay from '~/components/common/ErrorDisplay.vue';
 
 const isMobileMenuOpen = ref(false);
 const route = useRoute();

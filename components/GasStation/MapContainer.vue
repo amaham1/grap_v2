@@ -1,5 +1,5 @@
 <template>
-  <div id="map" class="w-full h-[calc(100vh-114px)] relative">
+  <div id="map" class="w-full h-[calc(100vh-152px)] relative">
     <!-- 로딩 상태 -->
     <div v-if="!isMapLoaded && !mapError" class="absolute inset-0 flex items-center justify-center bg-gray-100">
       <div class="text-center">
