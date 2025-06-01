@@ -5,7 +5,7 @@ import { verifyAuthToken } from '~/server/utils/authVerify';
 
 export default defineEventHandler(async (event) => {
   // 관리자 권한 확인
-  const decodedUser = verifyAuthToken(event);
+  const decodedUser = await verifyAuthToken(event);
   if (!decodedUser || decodedUser.role !== 'admin') {
     throw createError({
       statusCode: 403,
