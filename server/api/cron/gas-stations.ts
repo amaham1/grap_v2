@@ -9,14 +9,18 @@ const GAS_INFO_API_URL = `http://api.jejuits.go.kr/api/infoGasInfoList?code=${AP
 const GAS_PRICE_API_URL = `http://api.jejuits.go.kr/api/infoGasPriceList?code=${API_KEY}`;
 
 export default defineEventHandler(async (event) => {
-  // 보안 검증: GitHub Actions 또는 관리자만 접근 가능
+  // 보안 검증: GitHub Actions, Cloudflare Workers Scheduled, 또는 관리자만 접근 가능
   const userAgent = getHeader(event, 'user-agent') || '';
   const cronSource = getHeader(event, 'x-cron-source') || '';
   const adminTrigger = getHeader(event, 'x-admin-trigger') || '';
+  const cfScheduled = getHeader(event, 'cf-scheduled') || '';
 
   const isValidCronRequest = userAgent.includes('GitHub-Actions') ||
+                            userAgent.includes('Cloudflare-Workers') ||
                             cronSource === 'github-actions' ||
                             cronSource === 'github-actions-manual' ||
+                            cronSource === 'cloudflare-scheduled' ||
+                            cfScheduled === 'true' ||
                             (adminTrigger === 'true' && cronSource === 'admin-manual');
 
   if (!isValidCronRequest) {

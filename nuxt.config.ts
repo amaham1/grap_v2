@@ -34,7 +34,15 @@ export default defineNuxtConfig({
     cloudflare: {
       deployConfig: true,
       nodeCompat: true
-    }
+    },
+    // Cloudflare Workers scheduled handler 설정
+    handlers: [
+      {
+        route: '/__scheduled',
+        handler: '~/server/api/scheduled-handler.ts',
+        method: 'post'
+      }
+    ]
   },
   runtimeConfig: {
     // 서버 사이드에서만 사용되는 환경 변수들
