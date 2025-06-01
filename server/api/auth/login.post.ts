@@ -1,6 +1,6 @@
 import { defineEventHandler, readBody, createError, setCookie } from 'h3';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { SignJWT } from 'jose';
 import { executeSupabaseQuery } from '~/server/utils/supabase';
 
 // User 인터페이스 정의
@@ -22,11 +22,12 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const jwtSecret = process.env.JWT_SECRET_KEY;
-  const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  const config = useRuntimeConfig();
+  const jwtSecret = config.jwtSecretKey;
+  const jwtExpiresIn = config.jwtExpiresIn || '7d';
 
   if (!jwtSecret) {
-    console.error('JWT_SECRET_KEY is not defined in .env file');
+    console.error('JWT_SECRET_KEY is not defined in runtime config');
     throw createError({
       statusCode: 500,
       statusMessage: '서버 설정 오류입니다. 관리자에게 문의하세요.',
@@ -98,9 +99,17 @@ export default defineEventHandler(async (event) => {
       role: user.role,
     };
 
-    const token = jwt.sign(tokenPayload, jwtSecret, {
-      expiresIn: jwtExpiresIn,
-    });
+    // JWT 시크릿을 TextEncoder로 인코딩
+    const secret = new TextEncoder().encode(jwtSecret);
+
+    // 만료 시간 계산 (7d = 7일)
+    const expirationTime = Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60); // 7일
+
+    const token = await new SignJWT(tokenPayload)
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime(expirationTime)
+      .sign(secret);
 
     setCookie(event, 'authToken', token, {
       httpOnly: true,

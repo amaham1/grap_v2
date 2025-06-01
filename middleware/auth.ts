@@ -9,7 +9,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     const event = useRequestEvent();
     // verifyAuthToken을 동적으로 임포트합니다.
     const { verifyAuthToken } = await import('~/server/utils/authVerify');
-    const decodedUser = event ? verifyAuthToken(event) : null;
+    const decodedUser = event ? await verifyAuthToken(event) : null;
 
     // verifyAuthToken 결과에 따라 userState.value를 미들웨어에서 직접 설정합니다.
     if (decodedUser) {

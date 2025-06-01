@@ -1,12 +1,12 @@
 // server/utils/authVerify.ts
-import jwt from 'jsonwebtoken';
+import { jwtVerify } from 'jose';
 import type { H3Event } from 'h3';
 // getCookie를 h3에서 직접 가져오도록 명시합니다.
-import { getCookie } from 'h3'; 
+import { getCookie } from 'h3';
 
 // JwtPayload 인터페이스를 export하여 다른 곳에서도 타입을 사용할 수 있게 합니다.
 export interface JwtPayload {
-  id: string;
+  userId: string;
   email: string;
   role: string;
   iat?: number; // JWT 표준 클레임 (선택적)
@@ -14,9 +14,10 @@ export interface JwtPayload {
   // 다른 필요한 사용자 정보가 있다면 여기에 추가
 }
 
-export function verifyAuthToken(event: H3Event): JwtPayload | null {
+export async function verifyAuthToken(event: H3Event): Promise<JwtPayload | null> {
   const tokenCookie = getCookie(event, 'authToken');
-  const jwtSecret = process.env.JWT_SECRET_KEY;
+  const config = useRuntimeConfig();
+  const jwtSecret = config.jwtSecretKey;
 
   if (!tokenCookie || !jwtSecret) {
     // console.log('[authVerify] Token or JWT_SECRET_KEY is missing.');
@@ -24,9 +25,12 @@ export function verifyAuthToken(event: H3Event): JwtPayload | null {
   }
 
   try {
-    const decoded = jwt.verify(tokenCookie, jwtSecret) as JwtPayload;
-    // console.log('[authVerify] Token verified successfully:', decoded);
-    return decoded;
+    // JWT 시크릿을 TextEncoder로 인코딩
+    const secret = new TextEncoder().encode(jwtSecret);
+
+    const { payload } = await jwtVerify(tokenCookie, secret);
+    // console.log('[authVerify] Token verified successfully:', payload);
+    return payload as JwtPayload;
   } catch (error) {
     // console.error('[authVerify] Invalid token error object:', error);
     // console.log('[AuthVerify] JWT verification failed, token might be invalid or expired.');
