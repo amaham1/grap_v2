@@ -1,5 +1,5 @@
 // server/dao/supabase/gas-station-dao.ts
-import { executeSupabaseQuery, batchUpsert } from '~/server/utils/supabase'
+import { executeSupabaseQuery, batchUpsert, supabase } from '~/server/utils/supabase'
 
 export interface GasStation {
   id?: number
@@ -74,13 +74,40 @@ export async function getGasStations(options: GetGasStationsOptions = {}) {
   if (stationType) filters.station_type = stationType
   if (searchTerm) filters.station_name = `%${searchTerm}%`
 
-  return await executeSupabaseQuery<GasStation>('gas_stations', 'select', {
+  console.log('🔍 [QUERY-DEBUG] Supabase 쿼리 실행:', {
+    table: 'gas_stations',
+    operation: 'select',
+    page,
+    limit,
+    offset,
+    filters,
+    searchTerm,
+    brandCode,
+    stationType,
+    isExposed,
+    timestamp: new Date().toISOString()
+  });
+
+  const queryStartTime = Date.now();
+  const result = await executeSupabaseQuery<GasStation>('gas_stations', 'select', {
     select: 'id, opinet_id, station_name, brand_code, brand_name, address, phone, station_type, latitude, longitude, is_exposed, fetched_at',
     filters,
     orderBy: { column: 'station_name', ascending: true },
     limit,
     offset
-  })
+  });
+
+  console.log('🔍 [QUERY-RESULT-DEBUG] Supabase 쿼리 결과:', {
+    success: !result.error,
+    dataCount: result.data?.length || 0,
+    totalCount: result.count || 0,
+    error: result.error?.message || null,
+    queryTime: Date.now() - queryStartTime + 'ms',
+    hasCoordinates: result.data?.filter(s => s.latitude && s.longitude).length || 0,
+    exposedCount: result.data?.filter(s => s.is_exposed).length || 0
+  });
+
+  return result;
 }
 
 /**
@@ -159,6 +186,64 @@ export async function getGasPrices(opinet_id: string, limit: number = 30) {
     orderBy: { column: 'price_date', ascending: false },
     limit
   })
+}
+
+/**
+ * 여러 주유소의 최신 가격 정보를 배치로 조회 (Cloudflare Workers subrequest 제한 해결)
+ */
+export async function getBatchLatestGasPrices(opinet_ids: string[]) {
+  const startTime = Date.now();
+
+  console.log('🔥 [BATCH-PRICE-DEBUG] 배치 가격 조회 시작:', {
+    opinet_ids_count: opinet_ids.length,
+    opinet_ids_sample: opinet_ids.slice(0, 5),
+    timestamp: new Date().toISOString()
+  });
+
+  if (opinet_ids.length === 0) {
+    return { data: [], error: null };
+  }
+
+  // IN 절 필터링을 위해 직접 supabase 클라이언트 사용
+  try {
+    const batchResult = await supabase
+      .from('gas_prices')
+      .select('*')
+      .in('opinet_id', opinet_ids)
+      .order('price_date', { ascending: false });
+
+    if (batchResult.error) {
+      console.error('🔥 [BATCH-PRICE-ERROR] 배치 가격 조회 실패:', batchResult.error);
+      return { data: [], error: batchResult.error };
+    }
+
+    // 각 주유소별로 최신 가격만 필터링
+    const latestPricesMap = new Map<string, any>();
+
+    if (batchResult.data) {
+      batchResult.data.forEach(price => {
+        const existing = latestPricesMap.get(price.opinet_id);
+        if (!existing || new Date(price.price_date) > new Date(existing.price_date)) {
+          latestPricesMap.set(price.opinet_id, price);
+        }
+      });
+    }
+
+    const latestPrices = Array.from(latestPricesMap.values());
+
+    console.log('🔥 [BATCH-PRICE-DEBUG] 배치 가격 조회 완료:', {
+      requested_count: opinet_ids.length,
+      total_prices_found: batchResult.data?.length || 0,
+      latest_prices_count: latestPrices.length,
+      success_rate: `${Math.round((latestPrices.length / opinet_ids.length) * 100)}%`,
+      queryTime: Date.now() - startTime + 'ms'
+    });
+
+    return { data: latestPrices, error: null };
+  } catch (error) {
+    console.error('🔥 [BATCH-PRICE-ERROR] 배치 가격 조회 예외:', error);
+    return { data: [], error };
+  }
 }
 
 /**
@@ -250,34 +335,115 @@ export async function getGasStationBrands() {
 }
 
 /**
- * 주유소와 가격 정보를 함께 조회 (기존 MySQL DAO 호환성)
+ * 주유소와 가격 정보를 함께 조회 (기존 MySQL DAO 호환성) - 배치 최적화 버전
  */
 export async function getGasStationsWithPrices(options: GetGasStationsOptions = {}) {
+  const startTime = Date.now();
+
+  console.log('🗃️ [DAO-DEBUG] getGasStationsWithPrices 시작 (배치 최적화):', {
+    options,
+    timestamp: new Date().toISOString()
+  });
+
   // 주유소 목록 조회
+  console.log('📋 [DAO-DEBUG] 주유소 목록 조회 시작...');
   const stationsResult = await getGasStations(options)
 
+  console.log('📋 [DAO-DEBUG] 주유소 목록 조회 완료:', {
+    success: !stationsResult.error,
+    dataCount: stationsResult.data?.length || 0,
+    totalCount: stationsResult.count || 0,
+    error: stationsResult.error?.message || null,
+    queryTime: Date.now() - startTime + 'ms'
+  });
+
   if (stationsResult.error || !stationsResult.data) {
+    console.error('❌ [DAO-ERROR] 주유소 목록 조회 실패:', stationsResult.error);
     return stationsResult
   }
 
-  // 각 주유소의 최신 가격 정보 조회
-  const stationsWithPrices = await Promise.all(
-    stationsResult.data.map(async (station) => {
-      const pricesResult = await getGasPrices(station.opinet_id, 1)
-      const latestPrice = pricesResult.data?.[0] || null
+  // 모든 주유소의 opinet_id 수집
+  const opinet_ids = stationsResult.data.map(station => station.opinet_id);
 
-      return {
-        ...station,
-        latest_price: latestPrice
-      }
-    })
-  )
+  console.log('💰 [DAO-DEBUG] 배치 가격 정보 조회 시작:', {
+    stationCount: stationsResult.data.length,
+    opinet_ids_sample: opinet_ids.slice(0, 5)
+  });
 
-  return {
+  const priceStartTime = Date.now();
+
+  // 배치로 모든 주유소의 최신 가격 정보 조회 (단일 쿼리)
+  const batchPricesResult = await getBatchLatestGasPrices(opinet_ids);
+
+  if (batchPricesResult.error) {
+    console.error('❌ [BATCH-PRICE-ERROR] 배치 가격 조회 실패:', batchPricesResult.error);
+    // 가격 정보 없이 주유소 정보만 반환
+    const stationsWithoutPrices = stationsResult.data.map(station => ({
+      ...station,
+      latest_price: null
+    }));
+
+    return {
+      data: stationsWithoutPrices,
+      error: null,
+      count: stationsResult.count
+    };
+  }
+
+  // 가격 정보를 opinet_id로 매핑
+  const pricesMap = new Map<string, any>();
+  if (batchPricesResult.data) {
+    batchPricesResult.data.forEach(price => {
+      pricesMap.set(price.opinet_id, price);
+    });
+  }
+
+  // 주유소와 가격 정보 결합
+  const stationsWithPrices = stationsResult.data.map((station, index) => {
+    const latestPrice = pricesMap.get(station.opinet_id) || null;
+
+    // 처음 5개 주유소의 가격 정보 상세 로그
+    if (index < 5) {
+      console.log(`💰 [PRICE-DETAIL-DEBUG] ${index + 1}. ${station.station_name} (${station.opinet_id}):`, {
+        hasPrice: !!latestPrice,
+        gasoline: latestPrice?.gasoline_price || null,
+        diesel: latestPrice?.diesel_price || null,
+        lpg: latestPrice?.lpg_price || null,
+        priceDate: latestPrice?.price_date || null
+      });
+    }
+
+    return {
+      ...station,
+      latest_price: latestPrice
+    };
+  });
+
+  const priceSuccessCount = stationsWithPrices.filter(s => s.latest_price).length;
+  const priceFailCount = stationsWithPrices.length - priceSuccessCount;
+
+  console.log('💰 [DAO-DEBUG] 배치 가격 정보 조회 완료:', {
+    totalStations: stationsResult.data.length,
+    priceSuccessCount,
+    priceFailCount,
+    successRate: `${Math.round((priceSuccessCount / stationsResult.data.length) * 100)}%`,
+    priceQueryTime: Date.now() - priceStartTime + 'ms',
+    totalTime: Date.now() - startTime + 'ms'
+  });
+
+  const finalResult = {
     data: stationsWithPrices,
     error: null,
     count: stationsResult.count
-  }
+  };
+
+  console.log('🎯 [DAO-DEBUG] getGasStationsWithPrices 완료 (배치 최적화):', {
+    finalDataCount: finalResult.data.length,
+    finalTotalCount: finalResult.count,
+    totalProcessingTime: Date.now() - startTime + 'ms'
+  });
+
+  return finalResult;
 }
 
 /**

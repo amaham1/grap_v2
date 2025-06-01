@@ -56,31 +56,46 @@ export async function executeSupabaseQuery<T = any>(
     offset?: number
   } = {}
 ): Promise<{ data: T[] | null; error: any; count?: number }> {
+  const queryStartTime = Date.now();
+
+  console.log('🔧 [SUPABASE-DEBUG] 쿼리 실행 시작:', {
+    tableName,
+    operation,
+    options: {
+      ...options,
+      data: options.data ? `[${Array.isArray(options.data) ? options.data.length : 1} items]` : undefined
+    },
+    timestamp: new Date().toISOString()
+  });
+
   try {
     let query = supabase.from(tableName)
+    let appliedFilters: string[] = [];
 
     switch (operation) {
       case 'select':
         query = query.select(options.select || '*', { count: 'exact' })
-        
+
         // 필터 적용
         if (options.filters) {
           Object.entries(options.filters).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== '') {
               if (typeof value === 'string' && value.includes('%')) {
                 query = query.like(key, value)
+                appliedFilters.push(`${key} LIKE '${value}'`);
               } else {
                 query = query.eq(key, value)
+                appliedFilters.push(`${key} = '${value}'`);
               }
             }
           })
         }
-        
+
         // 정렬
         if (options.orderBy) {
           query = query.order(options.orderBy.column, { ascending: options.orderBy.ascending ?? true })
         }
-        
+
         // 페이징
         if (options.limit) {
           query = query.limit(options.limit)
@@ -99,6 +114,7 @@ export async function executeSupabaseQuery<T = any>(
         if (options.filters) {
           Object.entries(options.filters).forEach(([key, value]) => {
             query = query.eq(key, value)
+            appliedFilters.push(`${key} = '${value}'`);
           })
         }
         break
@@ -107,6 +123,7 @@ export async function executeSupabaseQuery<T = any>(
         if (options.filters) {
           Object.entries(options.filters).forEach(([key, value]) => {
             query = query.eq(key, value)
+            appliedFilters.push(`${key} = '${value}'`);
           })
         }
         query = query.delete()
@@ -117,14 +134,40 @@ export async function executeSupabaseQuery<T = any>(
         break
     }
 
+    console.log('🔧 [SUPABASE-DEBUG] 쿼리 구성 완료:', {
+      tableName,
+      operation,
+      appliedFilters,
+      select: options.select || '*',
+      orderBy: options.orderBy,
+      limit: options.limit,
+      offset: options.offset
+    });
+
     const result = await query
+
+    console.log('🔧 [SUPABASE-DEBUG] 쿼리 실행 완료:', {
+      tableName,
+      operation,
+      success: !result.error,
+      dataCount: result.data?.length || 0,
+      totalCount: result.count || 0,
+      error: result.error?.message || null,
+      queryTime: Date.now() - queryStartTime + 'ms'
+    });
+
     return {
       data: result.data as T[],
       error: result.error,
       count: result.count || undefined
     }
   } catch (error) {
-    console.error(`Supabase ${operation} operation failed:`, error)
+    console.error(`🔧 [SUPABASE-ERROR] ${operation} operation failed:`, {
+      tableName,
+      operation,
+      error: error.message,
+      queryTime: Date.now() - queryStartTime + 'ms'
+    });
     return {
       data: null,
       error: error
