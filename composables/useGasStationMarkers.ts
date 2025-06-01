@@ -1,6 +1,6 @@
 // composables/useGasStationMarkers.ts
 import type { GasStation, UserLocation } from '~/types/gasStation';
-import { encodeToBase64, generatePriceInfoHtml } from '~/utils/gasStationUtils';
+import { encodeToBase64, generatePriceInfoHtml, isFavoriteStation } from '~/utils/gasStationUtils';
 
 export const useGasStationMarkers = (map: Ref<any>) => {
   const currentMarkers = shallowRef<any[]>([]); // 마커 배열도 shallowRef 사용
@@ -85,8 +85,10 @@ export const useGasStationMarkers = (map: Ref<any>) => {
 
     // 최저가 주유소인지 확인
     const isLowestPrice = station.is_lowest_price;
+    // 좋아요 주유소인지 확인
+    const isFavorite = isFavoriteStation(station.opinet_id, selectedFuel);
 
-    // 마커 이미지 설정 (최저가는 특별 마커)
+    // 마커 이미지 설정 (최저가는 특별 마커, 좋아요는 하트 표시)
     let markerImage = null;
     if (isLowestPrice) {
       markerImage = new window.kakao.maps.MarkerImage(
@@ -101,10 +103,24 @@ export const useGasStationMarkers = (map: Ref<any>) => {
             <circle cx="20" cy="20" r="12" fill="#FF6B35"/>
             <text x="20" y="16" text-anchor="middle" fill="white" font-size="8" font-weight="bold">🏆</text>
             <text x="20" y="26" text-anchor="middle" fill="white" font-size="7" font-weight="bold">최저가</text>
+            ${isFavorite ? '<text x="32" y="12" text-anchor="middle" fill="#EF4444" font-size="12">❤️</text>' : ''}
           </svg>
         `),
         new window.kakao.maps.Size(40, 40),
         { offset: new window.kakao.maps.Point(20, 20) }
+      );
+    } else if (isFavorite) {
+      // 좋아요 주유소 마커 (하트 표시)
+      markerImage = new window.kakao.maps.MarkerImage(
+        'data:image/svg+xml;base64,' + encodeToBase64(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+            <circle cx="16" cy="16" r="14" fill="#EF4444" stroke="white" stroke-width="2"/>
+            <text x="16" y="20" text-anchor="middle" fill="white" font-size="10" font-weight="bold">⛽</text>
+            <text x="24" y="10" text-anchor="middle" fill="#EF4444" font-size="8">❤️</text>
+          </svg>
+        `),
+        new window.kakao.maps.Size(32, 32),
+        { offset: new window.kakao.maps.Point(16, 16) }
       );
     } else {
       // 일반 주유소 마커
@@ -140,12 +156,42 @@ export const useGasStationMarkers = (map: Ref<any>) => {
       ? `<div style="color:#666; font-size:11px; margin-top:4px;">📍 ${station.distance.toFixed(1)}km</div>`
       : '';
 
+    // 좋아요 버튼
+    const favoriteButton = `
+      <button
+        onclick="window.toggleStationFavorite && window.toggleStationFavorite('${station.opinet_id}')"
+        style="
+          position:absolute;
+          top:4px;
+          right:28px;
+          background:none;
+          border:none;
+          font-size:16px;
+          cursor:pointer;
+          color:${isFavorite ? '#EF4444' : '#999'};
+          padding:0;
+          width:20px;
+          height:20px;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+        "
+        title="${isFavorite ? '좋아요 취소' : '좋아요'}"
+      >
+        ${isFavorite ? '❤️' : '🤍'}
+      </button>
+    `;
+
     // 인포윈도우 내용 (최적화된 크기)
     const infoContent = `
       <div style="padding:8px; width:200px; position:relative;">
         <button onclick="window.closeInfoWindow && window.closeInfoWindow()" style="position:absolute; top:4px; right:4px; background:none; border:none; font-size:16px; cursor:pointer; color:#999; padding:0; width:20px; height:20px; display:flex; align-items:center; justify-content:center;">×</button>
-        <div style="margin-right:20px;">
-          <h4 style="margin:0 0 4px 0; font-weight:bold; font-size:13px; line-height:1.2;">${station.name}</h4>
+        ${favoriteButton}
+        <div style="margin-right:50px;">
+          <h4 style="margin:0 0 4px 0; font-weight:bold; font-size:13px; line-height:1.2;">
+            ${station.name}
+            ${isFavorite ? '<span style="color:#EF4444; font-size:10px; margin-left:4px;">❤️</span>' : ''}
+          </h4>
           <div style="margin:0 0 4px 0; color:#666; font-size:10px;">${station.brand?.name || ''}</div>
           ${lowestPriceTag}
           ${mainPriceInfo}

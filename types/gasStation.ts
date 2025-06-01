@@ -83,3 +83,13 @@ export interface SearchStats {
   lowest_price_count: number;
   lowest_price_stations: readonly string[];
 }
+
+// 좋아요 관련 인터페이스
+export interface FavoriteStation {
+  opinet_id: string;
+  name: string;
+  address?: string;
+  brand?: string;
+  addedAt: string; // ISO 날짜 문자열
+  fuelType: string; // 좋아요할 때의 연료 타입
+}

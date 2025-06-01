@@ -1,5 +1,5 @@
 // utils/gasStationUtils.ts
-import type { GasStation, FuelType } from '~/types/gasStation';
+import type { GasStation, FuelType, FavoriteStation } from '~/types/gasStation';
 
 // 연료 타입 옵션
 export const fuelTypes: FuelType[] = [
@@ -126,4 +126,166 @@ export const generatePriceInfoHtml = (station: GasStation, selectedFuel: string)
   }
 
   return mainPriceInfo;
+};
+
+// 좋아요 관련 유틸리티 함수들
+const FAVORITES_STORAGE_KEY = 'gas_station_favorites';
+
+// 기존 좋아요 데이터 마이그레이션
+const migrateFavoriteData = (): void => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
+    if (!stored) return;
+
+    const favorites = JSON.parse(stored);
+    if (favorites.length === 0) return;
+
+    // 첫 번째 항목에 fuelType이 없으면 마이그레이션 필요
+    if (favorites[0] && !favorites[0].fuelType) {
+      console.log('좋아요 데이터 마이그레이션 시작...');
+
+      // 기존 데이터를 휘발유 기준으로 마이그레이션
+      const migratedFavorites = favorites.map((fav: any) => ({
+        ...fav,
+        fuelType: 'gasoline' // 기본값으로 휘발유 설정
+      }));
+
+      localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(migratedFavorites));
+      console.log('좋아요 데이터 마이그레이션 완료');
+    }
+  } catch (error) {
+    console.error('좋아요 데이터 마이그레이션 실패:', error);
+  }
+};
+
+// 좋아요 목록 가져오기
+export const getFavoriteStations = (): FavoriteStation[] => {
+  if (typeof window === 'undefined') return [];
+
+  // 첫 호출 시 마이그레이션 실행
+  migrateFavoriteData();
+
+  try {
+    const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('좋아요 목록 로드 실패:', error);
+    return [];
+  }
+};
+
+// 좋아요 추가 (연료 타입별 관리 및 개수 제한)
+export const addFavoriteStation = (station: GasStation, fuelType: string): { success: boolean; message?: string } => {
+  if (typeof window === 'undefined') return { success: false, message: '브라우저 환경이 아닙니다.' };
+
+  try {
+    const favorites = getFavoriteStations();
+
+    // 이미 좋아요한 주유소인지 확인 (같은 연료 타입으로)
+    if (favorites.some(fav => fav.opinet_id === station.opinet_id && fav.fuelType === fuelType)) {
+      return { success: false, message: '이미 좋아요한 주유소입니다.' };
+    }
+
+    // 해당 연료 타입의 좋아요 개수 확인 (최대 3개)
+    const currentFuelTypeFavorites = favorites.filter(fav => fav.fuelType === fuelType);
+    if (currentFuelTypeFavorites.length >= 3) {
+      return { success: false, message: '주유소 3개까지만 좋아요 가능해요' };
+    }
+
+    const newFavorite: FavoriteStation = {
+      opinet_id: station.opinet_id,
+      name: station.name,
+      address: station.address,
+      brand: station.brand?.name,
+      addedAt: new Date().toISOString(),
+      fuelType: fuelType
+    };
+
+    favorites.push(newFavorite);
+    localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
+    return { success: true };
+  } catch (error) {
+    console.error('좋아요 추가 실패:', error);
+    return { success: false, message: '좋아요 추가 중 오류가 발생했습니다.' };
+  }
+};
+
+// 좋아요 제거 (특정 연료 타입으로)
+export const removeFavoriteStation = (opinet_id: string, fuelType: string): boolean => {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    const favorites = getFavoriteStations();
+    const filteredFavorites = favorites.filter(fav => !(fav.opinet_id === opinet_id && fav.fuelType === fuelType));
+
+    localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(filteredFavorites));
+    return true;
+  } catch (error) {
+    console.error('좋아요 제거 실패:', error);
+    return false;
+  }
+};
+
+// 좋아요 여부 확인 (특정 연료 타입으로)
+export const isFavoriteStation = (opinet_id: string, fuelType: string): boolean => {
+  const favorites = getFavoriteStations();
+  return favorites.some(fav => fav.opinet_id === opinet_id && fav.fuelType === fuelType);
+};
+
+// 좋아요 토글 (연료 타입별)
+export const toggleFavoriteStation = (station: GasStation, fuelType: string): { success: boolean; isFavorite: boolean; message?: string } => {
+  if (isFavoriteStation(station.opinet_id, fuelType)) {
+    const removed = removeFavoriteStation(station.opinet_id, fuelType);
+    return { success: removed, isFavorite: false };
+  } else {
+    const result = addFavoriteStation(station, fuelType);
+    return { success: result.success, isFavorite: result.success, message: result.message };
+  }
+};
+
+// 좋아요한 주유소 중 최저가 TOP3 가져오기 (특정 연료 타입만)
+export const getFavoriteTop3Stations = (allStations: GasStation[], selectedFuel: string): GasStation[] => {
+  if (!selectedFuel) return [];
+
+  const favorites = getFavoriteStations();
+
+  // 현재 선택된 연료 타입으로 좋아요한 주유소들만 필터링
+  const currentFuelFavorites = favorites.filter(fav => fav.fuelType === selectedFuel);
+
+  // 좋아요한 주유소들을 전체 주유소 목록에서 찾기
+  const favoriteStations = allStations.filter(station =>
+    currentFuelFavorites.some(fav => fav.opinet_id === station.opinet_id)
+  );
+
+  if (favoriteStations.length === 0) {
+    return [];
+  }
+
+  // 선택된 연료 타입의 가격이 있는 주유소만 필터링
+  const stationsWithPrice = favoriteStations.filter(station => {
+    if (!station.prices) return false;
+
+    switch (selectedFuel) {
+      case 'gasoline':
+        return station.prices.gasoline > 0;
+      case 'diesel':
+        return station.prices.diesel > 0;
+      case 'lpg':
+        return station.prices.lpg > 0;
+      default:
+        return false;
+    }
+  });
+
+  // 가격순으로 정렬
+  const sortedStations = stationsWithPrice.sort((a, b) => {
+    const priceA = getStationPrice(a, selectedFuel);
+    const priceB = getStationPrice(b, selectedFuel);
+    return priceA - priceB;
+  });
+
+  // TOP3 반환
+  return sortedStations.slice(0, 3);
 };

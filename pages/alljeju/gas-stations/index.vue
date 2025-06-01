@@ -5,7 +5,20 @@
     <!-- 검색 설정 패널 -->
     <div class="absolute top-20 left-2 z-40 bg-white rounded-lg shadow-lg max-w-md border border-gray-300">
       <div class="flex items-center justify-between p-3 border-b border-gray-200">
-        <h3 class="text-sm font-semibold text-gray-700">검색 설정</h3>
+        <div class="flex items-center gap-2">
+          <h3 class="text-sm font-semibold text-gray-700">검색 설정</h3>
+          <!-- 현재 선택된 필터 표시 -->
+          <div v-if="selectedFuel" class="flex items-center gap-1">
+            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+              {{ fuelTypes.find(f => f.value === selectedFuel)?.label }}
+            </span>
+          </div>
+          <div v-else class="flex items-center gap-1">
+            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+              전체
+            </span>
+          </div>
+        </div>
         <button
           @click="isSearchPanelCollapsed = !isSearchPanelCollapsed"
           class="p-1 text-gray-500 hover:text-gray-700 transition-colors">
@@ -110,13 +123,16 @@
           <div
             v-for="(station, index) in topLowestPriceStations.slice(0, 10)"
             :key="station.opinet_id"
-            @click="handleStationClick(station)"
-            class="p-2 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors">
+            class="p-2 border border-gray-200 rounded-lg hover:bg-blue-50 transition-colors relative">
             <div class="flex items-start justify-between">
-              <div class="flex-1 min-w-0">
+              <div
+                @click="handleStationClick(station)"
+                class="flex-1 min-w-0 cursor-pointer">
                 <div class="flex items-center gap-2">
                   <span class="text-xs font-bold text-blue-600">{{ index + 1 }}위</span>
                   <h4 class="text-sm font-medium text-gray-900 truncate">{{ station.name }}</h4>
+                  <!-- 좋아요 표시 아이콘 -->
+                  <span v-if="isFavoriteStation(station.opinet_id, selectedFuel)" class="text-red-500 text-xs">❤️</span>
                 </div>
                 <p class="text-xs text-gray-600 truncate">{{ station.brand?.name }}</p>
                 <p class="text-xs text-gray-500 truncate">{{ station.address }}</p>
@@ -129,6 +145,74 @@
                   </span>
                 </div>
               </div>
+              <!-- 좋아요 버튼 -->
+              <button
+                @click.stop="handleToggleFavorite(station)"
+                class="ml-2 p-1 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0"
+                :title="isFavoriteStation(station.opinet_id, selectedFuel) ? '좋아요 취소' : '좋아요'">
+                <svg class="w-4 h-4" :class="isFavoriteStation(station.opinet_id, selectedFuel) ? 'text-red-500 fill-current' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 좋아요 TOP3 목록 -->
+    <div v-if="favoriteTop3Stations.length > 0" class="absolute top-[420px] md:top-[480px] right-2 z-40 bg-white rounded-lg shadow-lg w-72 md:w-80 border border-gray-300">
+      <div class="flex items-center justify-between p-3 border-b border-gray-200">
+        <h3 class="text-sm font-semibold text-gray-700 flex items-center">
+          ❤️ 좋아요 TOP{{ Math.min(favoriteTop3Stations.length, 3) }}
+          <span v-if="selectedFuel" class="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+            {{ fuelTypes.find(f => f.value === selectedFuel)?.label }}
+          </span>
+        </h3>
+        <button
+          @click="isFavoriteListPanelCollapsed = !isFavoriteListPanelCollapsed"
+          class="p-1 text-gray-500 hover:text-gray-700 transition-colors">
+          <svg class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': !isFavoriteListPanelCollapsed }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div v-show="!isFavoriteListPanelCollapsed" class="p-3 max-h-60 overflow-y-auto">
+        <div class="space-y-2">
+          <div
+            v-for="(station, index) in favoriteTop3Stations.slice(0, 3)"
+            :key="station.opinet_id"
+            class="p-2 border border-gray-200 rounded-lg hover:bg-red-50 transition-colors relative">
+            <div class="flex items-start justify-between">
+              <div
+                @click="handleStationClick(station)"
+                class="flex-1 min-w-0 cursor-pointer">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold text-red-600">{{ index + 1 }}위</span>
+                  <h4 class="text-sm font-medium text-gray-900 truncate">{{ station.name }}</h4>
+                  <span class="text-red-500 text-xs">❤️</span>
+                </div>
+                <p class="text-xs text-gray-600 truncate">{{ station.brand?.name }}</p>
+                <p class="text-xs text-gray-500 truncate">{{ station.address }}</p>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-sm font-bold text-green-600">
+                    {{ formatPrice(getStationPrice(station, selectedFuel)) }}원/L
+                  </span>
+                  <span v-if="station.distance" class="text-xs text-gray-500">
+                    📍 {{ station.distance.toFixed(1) }}km
+                  </span>
+                </div>
+              </div>
+              <!-- 좋아요 제거 버튼 -->
+              <button
+                @click.stop="handleToggleFavorite(station)"
+                class="ml-2 p-1 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0"
+                title="좋아요 취소">
+                <svg class="w-4 h-4 text-red-500 fill-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -224,7 +308,7 @@
 
 <script setup lang="ts">
 import type { GasStation } from '~/types/gasStation';
-import { updateTopLowestPriceStations, fuelTypes, formatPrice, getStationPrice } from '~/utils/gasStationUtils';
+import { updateTopLowestPriceStations, fuelTypes, formatPrice, getStationPrice, isFavoriteStation, toggleFavoriteStation, getFavoriteTop3Stations } from '~/utils/gasStationUtils';
 import GasStationMapContainer from '~/components/GasStation/MapContainer.vue';
 import GoogleAdsense from '~/components/public/GoogleAdsense.vue';
 
@@ -258,9 +342,12 @@ const { currentMarkers, clearMarkers, addUserLocationMarker, addGasStationMarker
 const searchRadius = ref(5); // 기본 5km로 변경
 const selectedFuel = ref('gasoline'); // 기본값을 휘발유로 설정
 const topLowestPriceStations = ref<GasStation[]>([]);
+const favoriteTop3Stations = ref<GasStation[]>([]);
 const isInitialLoad = ref(true); // 최초 로드 여부
 const isSearchPanelCollapsed = ref(true); // 검색 패널 접힌 상태
 const isTopListPanelCollapsed = ref(true); // TOP10 패널 접힌 상태
+const isFavoriteListPanelCollapsed = ref(true); // 좋아요 TOP3 패널 접힌 상태
+const allStations = ref<GasStation[]>([]); // 전체 주유소 목록 (좋아요 TOP3 계산용)
 
 // 🔧 [DEBUG] 디버깅 정보 상태
 const debugInfo = ref({
@@ -422,8 +509,10 @@ const handleNearbySearch = async () => {
       console.warn(`⚠️ [PAGE-WARNING] 검색 반경 ${searchRadius.value}km 내에 주유소가 없습니다.`);
     }
 
-    // 최저가 TOP10 목록 업데이트
+    // 전체 주유소 목록 저장 및 TOP 목록들 업데이트
+    allStations.value = stations;
     topLowestPriceStations.value = updateTopLowestPriceStations(stations, selectedFuel.value);
+    updateFavoriteTop3();
   } catch (error) {
     const errorMessage = `주유소 검색 중 오류: ${error}`;
     console.error('❌ [PAGE-ERROR]', errorMessage);
@@ -455,8 +544,10 @@ const handleCurrentViewSearch = async () => {
       addUserLocationMarker(userLocation.value);
     }
 
-    // 최저가 TOP10 목록 업데이트
+    // 전체 주유소 목록 저장 및 TOP 목록들 업데이트
+    allStations.value = stations;
     topLowestPriceStations.value = updateTopLowestPriceStations(stations, selectedFuel.value);
+    updateFavoriteTop3();
   } catch (error) {
     console.error('주유소 검색 중 오류:', error);
     alert('주유소 검색 중 오류가 발생했습니다.');
@@ -466,6 +557,58 @@ const handleCurrentViewSearch = async () => {
 const handleStationClick = (station: GasStation) => {
   moveToStation(station);
 };
+
+// 좋아요 토글 핸들러
+const handleToggleFavorite = (station: GasStation) => {
+  const result = toggleFavoriteStation(station, selectedFuel.value);
+
+  if (!result.success && result.message) {
+    // 실패 시 사용자에게 알림
+    alert(result.message);
+    return;
+  }
+
+  // 좋아요 TOP3 목록 업데이트
+  updateFavoriteTop3();
+
+  // 마커 즉시 새로고침
+  refreshMarkers();
+
+  // 사용자 피드백
+  if (result.isFavorite) {
+    console.log(`❤️ ${station.name}을(를) 좋아요에 추가했습니다.`);
+  } else {
+    console.log(`💔 ${station.name}을(를) 좋아요에서 제거했습니다.`);
+  }
+};
+
+// 좋아요 TOP3 목록 업데이트
+const updateFavoriteTop3 = () => {
+  favoriteTop3Stations.value = getFavoriteTop3Stations(allStations.value, selectedFuel.value);
+};
+
+// 마커 즉시 새로고침
+const refreshMarkers = () => {
+  if (allStations.value.length > 0) {
+    clearMarkers();
+    addGasStationMarkers(allStations.value, selectedFuel.value);
+
+    if (userLocation.value) {
+      addUserLocationMarker(userLocation.value);
+    }
+  }
+};
+
+// 연료 타입 변경 시 좋아요 TOP3 업데이트 및 마커 새로고침
+watch(selectedFuel, () => {
+  updateFavoriteTop3();
+  refreshMarkers();
+});
+
+// 컴포넌트 마운트 시 좋아요 TOP3 초기화
+onMounted(() => {
+  updateFavoriteTop3();
+});
 
 // 환경 정보 디버깅 함수
 const logEnvironmentInfo = () => {
@@ -512,6 +655,14 @@ const initializeApp = async () => {
     // 전역 함수 설정 (인포윈도우 닫기용)
     window.closeInfoWindow = () => {
       closeCurrentInfoWindow();
+    };
+
+    // 전역 함수 설정 (인포윈도우 좋아요 토글용)
+    window.toggleStationFavorite = (opinet_id: string) => {
+      const station = allStations.value.find(s => s.opinet_id === opinet_id);
+      if (station) {
+        handleToggleFavorite(station);
+      }
     };
 
     // 🔧 [DEBUG] 전역 디버깅 함수 설정 (강제 활성화)
@@ -683,6 +834,9 @@ const initializeApp = async () => {
 
           // 자동으로 주변 주유소 검색
           await handleNearbySearch();
+        } else {
+          // 위치 정보가 없어도 좋아요 TOP3은 초기화
+          updateFavoriteTop3();
         }
       } catch (error) {
         console.error('❌ [INIT-ERROR] 자동 위치 확인 실패:', error);
