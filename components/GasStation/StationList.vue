@@ -26,7 +26,7 @@
           :key="`lowest-${station.opinet_id}`"
           @click="$emit('stationClick', station)"
           class="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors">
-          <div class="flex items-center space-x-3">
+          <div class="flex items-center space-x-3 max-w-[200px] break-keep">
             <div class="flex-shrink-0 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
               {{ index + 1 }}
             </div>
@@ -73,7 +73,7 @@
           :key="`favorite-${station.opinet_id}`"
           @click="$emit('stationClick', station)"
           class="flex items-center justify-between p-2 bg-pink-50 rounded-lg hover:bg-pink-100 cursor-pointer transition-colors">
-          <div class="flex items-center space-x-3">
+          <div class="flex items-center space-x-3 max-w-[200px] break-keep">
             <div class="flex-shrink-0 w-6 h-6 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
               {{ index + 1 }}
             </div>
