@@ -142,7 +142,10 @@ export async function upsertGasStation(gasStation: GasStation) {
     updated_at: new Date().toISOString()
   }
 
-  return await executeSupabaseQuery('gas_stations', 'upsert', { data })
+  return await executeSupabaseQuery('gas_stations', 'upsert', {
+    data,
+    onConflict: 'opinet_id' // opinet_id 기준으로 업데이트
+  })
 }
 
 /**
@@ -155,7 +158,7 @@ export async function batchUpsertGasStations(gasStations: GasStation[]) {
     updated_at: new Date().toISOString()
   }))
 
-  return await batchUpsert('gas_stations', data)
+  return await batchUpsert('gas_stations', data, 1000, 'opinet_id')
 }
 
 /**
@@ -256,7 +259,10 @@ export async function upsertGasPrice(gasPrice: GasPrice) {
     updated_at: new Date().toISOString()
   }
 
-  return await executeSupabaseQuery('gas_prices', 'upsert', { data })
+  return await executeSupabaseQuery('gas_prices', 'upsert', {
+    data,
+    onConflict: 'opinet_id,price_date' // opinet_id와 price_date 복합키 기준으로 업데이트
+  })
 }
 
 /**
@@ -269,7 +275,7 @@ export async function batchUpsertGasPrices(gasPrices: GasPrice[]) {
     updated_at: new Date().toISOString()
   }))
 
-  return await batchUpsert('gas_prices', data)
+  return await batchUpsert('gas_prices', data, 1000, 'opinet_id,price_date')
 }
 
 /**

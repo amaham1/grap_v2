@@ -138,7 +138,10 @@ export async function upsertWelfareService(service: WelfareService) {
     updated_at: new Date().toISOString()
   }
 
-  return await executeSupabaseQuery('welfare_services', 'upsert', { data })
+  return await executeSupabaseQuery('welfare_services', 'upsert', {
+    data,
+    onConflict: 'original_api_id' // original_api_id 기준으로 업데이트
+  })
 }
 
 /**
@@ -154,7 +157,7 @@ export async function batchUpsertWelfareServices(services: WelfareService[]) {
     updated_at: new Date().toISOString()
   }))
 
-  return await batchUpsert('welfare_services', data)
+  return await batchUpsert('welfare_services', data, 1000, 'original_api_id')
 }
 
 /**

@@ -54,6 +54,7 @@ export async function executeSupabaseQuery<T = any>(
     orderBy?: { column: string; ascending?: boolean }
     limit?: number
     offset?: number
+    onConflict?: string // upsert 시 conflict resolution 컬럼 지정
   } = {}
 ): Promise<{ data: T[] | null; error: any; count?: number }> {
   const queryStartTime = Date.now();
@@ -130,7 +131,11 @@ export async function executeSupabaseQuery<T = any>(
         break
 
       case 'upsert':
-        query = query.upsert(options.data)
+        if (options.onConflict) {
+          query = query.upsert(options.data, { onConflict: options.onConflict })
+        } else {
+          query = query.upsert(options.data)
+        }
         break
     }
 
@@ -179,7 +184,8 @@ export async function executeSupabaseQuery<T = any>(
 export async function batchUpsert<T = any>(
   tableName: string,
   data: T[],
-  chunkSize: number = 1000
+  chunkSize: number = 1000,
+  onConflict?: string
 ): Promise<{ success: boolean; error?: any; insertedCount?: number }> {
   try {
     let totalInserted = 0
@@ -187,16 +193,23 @@ export async function batchUpsert<T = any>(
     // 데이터를 청크 단위로 나누어 처리
     for (let i = 0; i < data.length; i += chunkSize) {
       const chunk = data.slice(i, i + chunkSize)
-      
-      const { error } = await supabase
-        .from(tableName)
-        .upsert(chunk)
-      
-      if (error) {
-        console.error(`Batch upsert failed for chunk ${i / chunkSize + 1}:`, error)
-        return { success: false, error }
+
+      let query = supabase.from(tableName)
+
+      if (onConflict) {
+        const { error } = await query.upsert(chunk, { onConflict })
+        if (error) {
+          console.error(`Batch upsert failed for chunk ${i / chunkSize + 1}:`, error)
+          return { success: false, error }
+        }
+      } else {
+        const { error } = await query.upsert(chunk)
+        if (error) {
+          console.error(`Batch upsert failed for chunk ${i / chunkSize + 1}:`, error)
+          return { success: false, error }
+        }
       }
-      
+
       totalInserted += chunk.length
     }
     

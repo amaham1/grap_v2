@@ -164,7 +164,10 @@ export async function upsertExhibition(exhibition: Exhibition) {
     updated_at: new Date().toISOString()
   }
 
-  return await executeSupabaseQuery('exhibitions', 'upsert', { data })
+  return await executeSupabaseQuery('exhibitions', 'upsert', {
+    data,
+    onConflict: 'original_api_id' // original_api_id 기준으로 업데이트
+  })
 }
 
 /**
@@ -177,7 +180,7 @@ export async function batchUpsertExhibitions(exhibitions: Exhibition[]) {
     updated_at: new Date().toISOString()
   }))
 
-  return await batchUpsert('exhibitions', data)
+  return await batchUpsert('exhibitions', data, 1000, 'original_api_id')
 }
 
 /**

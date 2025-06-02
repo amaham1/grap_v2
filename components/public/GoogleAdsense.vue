@@ -55,106 +55,157 @@ onMounted(() => {
       hostname: window.location.hostname,
       isProduction,
       isDevelopment,
-      hasAdSenseScript: !!document.querySelector('script[src*="adsbygoogle"]')
+      hasAdSenseScript: !!document.querySelector('script[src*="adsbygoogle"]'),
+      containerWidth: document.querySelector('.adsbygoogle')?.parentElement?.offsetWidth || 0,
+      containerHeight: document.querySelector('.adsbygoogle')?.parentElement?.offsetHeight || 0
     });
 
-    // 약간의 지연을 두어 DOM이 완전히 렌더링된 후 초기화
-    nextTick(() => {
-      const initializeAd = () => {
-        try {
-          // AdSense 스크립트가 로드되었는지 확인
-          if (!(window as any).adsbygoogle) {
-            console.warn('❌ [ADSENSE] AdSense script not loaded');
-            return;
-          }
-
-          const adsbygoogle = (window as any).adsbygoogle || [];
-
-          // 현재 컴포넌트의 광고 요소만 찾기
-          const adElement = document.querySelector('.adsbygoogle:not([data-adsbygoogle-status])');
-          if (adElement) {
-            console.log('✅ [ADSENSE] Initializing ad element');
-
-            // 광고 초기화 전에 크기 제한 설정
-            if (props.height) {
-              (adElement as HTMLElement).style.height = typeof props.height === 'number' ? props.height + 'px' : props.height;
-              (adElement as HTMLElement).style.maxHeight = typeof props.height === 'number' ? props.height + 'px' : props.height;
-              (adElement as HTMLElement).style.minHeight = typeof props.height === 'number' ? props.height + 'px' : props.height;
-              (adElement as HTMLElement).style.overflow = 'hidden';
+    // DOM이 완전히 렌더링되고 크기가 설정된 후 초기화
+    setTimeout(() => {
+      nextTick(() => {
+        const initializeAd = () => {
+          try {
+            // AdSense 스크립트가 로드되었는지 확인
+            if (!(window as any).adsbygoogle) {
+              console.warn('❌ [ADSENSE] AdSense script not loaded');
+              return;
             }
 
-            adsbygoogle.push({});
+            const adsbygoogle = (window as any).adsbygoogle || [];
 
-            // 광고 로드 후 크기 재확인 및 강제 적용
-            setTimeout(() => {
-              enforceAdSize(adElement as HTMLElement);
-            }, 1000);
+            // 현재 컴포넌트의 광고 요소만 찾기
+            const adElement = document.querySelector('.adsbygoogle:not([data-adsbygoogle-status])');
+            if (adElement) {
+              const container = adElement.parentElement;
+              const containerWidth = container?.offsetWidth || 0;
+              const containerHeight = container?.offsetHeight || 0;
 
-            // 주기적으로 크기 확인 (AdSense가 동적으로 변경할 수 있음)
-            const sizeCheckInterval = setInterval(() => {
-              enforceAdSize(adElement as HTMLElement);
-            }, 2000);
+              console.log('✅ [ADSENSE] Initializing ad element', {
+                containerWidth,
+                containerHeight,
+                propsWidth: props.width,
+                propsHeight: props.height
+              });
 
-            // 10초 후 체크 중단
-            setTimeout(() => {
-              clearInterval(sizeCheckInterval);
-            }, 10000);
-          } else {
-            console.warn('❌ [ADSENSE] Ad element not found');
+              // 컨테이너 크기가 0인 경우 기본값 설정
+              if (containerWidth === 0 && props.width) {
+                const width = typeof props.width === 'number' ? props.width + 'px' : props.width;
+                if (container) {
+                  (container as HTMLElement).style.width = width;
+                  (container as HTMLElement).style.minWidth = width;
+                }
+                (adElement as HTMLElement).style.width = width;
+                (adElement as HTMLElement).style.minWidth = width;
+              }
+
+              // 광고 초기화 전에 크기 설정
+              if (props.height) {
+                const height = typeof props.height === 'number' ? props.height + 'px' : props.height;
+                if (container) {
+                  (container as HTMLElement).style.height = height;
+                  (container as HTMLElement).style.maxHeight = height;
+                  (container as HTMLElement).style.minHeight = height;
+                }
+                (adElement as HTMLElement).style.height = height;
+                (adElement as HTMLElement).style.maxHeight = height;
+                (adElement as HTMLElement).style.minHeight = height;
+                (adElement as HTMLElement).style.overflow = 'hidden';
+              }
+
+              // 광고 요소에 display 속성 명시적 설정
+              (adElement as HTMLElement).style.display = 'block';
+
+              adsbygoogle.push({});
+
+              // 광고 로드 후 크기 재확인 및 강제 적용
+              setTimeout(() => {
+                enforceAdSize(adElement as HTMLElement);
+              }, 1000);
+
+              // 주기적으로 크기 확인 (AdSense가 동적으로 변경할 수 있음)
+              const sizeCheckInterval = setInterval(() => {
+                enforceAdSize(adElement as HTMLElement);
+              }, 2000);
+
+              // 10초 후 체크 중단
+              setTimeout(() => {
+                clearInterval(sizeCheckInterval);
+              }, 10000);
+            } else {
+              console.warn('❌ [ADSENSE] Ad element not found');
+            }
+          } catch (error) {
+            console.error('❌ [ADSENSE] Initialization failed:', error);
           }
-        } catch (error) {
-          console.error('❌ [ADSENSE] Initialization failed:', error);
-        }
-      };
+        };
 
-      // 크기 강제 적용 함수
-      const enforceAdSize = (element: HTMLElement) => {
-        if (!element || !props.height) return;
+        // 크기 강제 적용 함수
+        const enforceAdSize = (element: HTMLElement) => {
+          if (!element) return;
 
-        const targetHeight = typeof props.height === 'number' ? props.height + 'px' : props.height;
+          // 높이 설정
+          if (props.height) {
+            const targetHeight = typeof props.height === 'number' ? props.height + 'px' : props.height;
 
-        // 광고 요소 자체 크기 제한
-        element.style.height = targetHeight;
-        element.style.maxHeight = targetHeight;
-        element.style.minHeight = targetHeight;
-        element.style.overflow = 'hidden';
+            // 광고 요소 자체 크기 제한
+            element.style.height = targetHeight;
+            element.style.maxHeight = targetHeight;
+            element.style.minHeight = targetHeight;
+            element.style.overflow = 'hidden';
 
-        // iframe이 있다면 크기 제한
-        const iframe = element.querySelector('iframe');
-        if (iframe) {
-          iframe.style.height = targetHeight;
-          iframe.style.maxHeight = targetHeight;
-          iframe.style.minHeight = targetHeight;
-          iframe.style.overflow = 'hidden';
-        }
+            // iframe이 있다면 크기 제한
+            const iframe = element.querySelector('iframe');
+            if (iframe) {
+              iframe.style.height = targetHeight;
+              iframe.style.maxHeight = targetHeight;
+              iframe.style.minHeight = targetHeight;
+              iframe.style.overflow = 'hidden';
+            }
 
-        // 부모 컨테이너도 크기 제한
-        const parent = element.parentElement;
-        if (parent) {
-          parent.style.height = targetHeight;
-          parent.style.maxHeight = targetHeight;
-          parent.style.overflow = 'hidden';
-        }
-      };
+            // 부모 컨테이너도 크기 제한
+            const parent = element.parentElement;
+            if (parent) {
+              parent.style.height = targetHeight;
+              parent.style.maxHeight = targetHeight;
+              parent.style.overflow = 'hidden';
+            }
+          }
 
-      // 애드센스 스크립트가 이미 로드되었는지 확인
-      if ((window as any).adsbygoogle) {
-        initializeAd();
-      } else {
-        // 스크립트 로드를 기다림
-        const checkAdSense = setInterval(() => {
-          if ((window as any).adsbygoogle) {
+          // 너비 설정
+          if (props.width) {
+            const targetWidth = typeof props.width === 'number' ? props.width + 'px' : props.width;
+
+            element.style.width = targetWidth;
+            element.style.minWidth = targetWidth;
+
+            // 부모 컨테이너도 너비 설정
+            const parent = element.parentElement;
+            if (parent) {
+              parent.style.width = targetWidth;
+              parent.style.minWidth = targetWidth;
+            }
+          }
+        };
+
+        // 애드센스 스크립트가 이미 로드되었는지 확인
+        if ((window as any).adsbygoogle) {
+          initializeAd();
+        } else {
+          // 스크립트 로드를 기다림
+          const checkAdSense = setInterval(() => {
+            if ((window as any).adsbygoogle) {
+              clearInterval(checkAdSense);
+              initializeAd();
+            }
+          }, 100);
+
+          // 10초 후 타임아웃
+          setTimeout(() => {
             clearInterval(checkAdSense);
-            initializeAd();
-          }
-        }, 100);
-
-        // 10초 후 타임아웃
-        setTimeout(() => {
-          clearInterval(checkAdSense);
-        }, 10000);
-      }
-    });
+          }, 10000);
+        }
+      });
+    }, 100); // 100ms 지연 후 초기화 시작
   }
 });
 </script>

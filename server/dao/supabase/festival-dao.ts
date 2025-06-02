@@ -159,7 +159,10 @@ export async function upsertFestival(festival: Festival) {
     updated_at: new Date().toISOString()
   }
 
-  return await executeSupabaseQuery('festivals', 'upsert', { data })
+  return await executeSupabaseQuery('festivals', 'upsert', {
+    data,
+    onConflict: 'original_api_id' // original_api_id 기준으로 업데이트
+  })
 }
 
 /**
@@ -178,7 +181,7 @@ export async function batchUpsertFestivals(festivals: Festival[]) {
     updated_at: new Date().toISOString()
   }))
 
-  return await batchUpsert('festivals', data)
+  return await batchUpsert('festivals', data, 1000, 'original_api_id')
 }
 
 /**
