@@ -173,3 +173,57 @@ GitHub 등의 버전 관리 시스템을 사용하여 코드를 백업하세요.
 - [Nitro Cloudflare 가이드](https://nitro.build/deploy/providers/cloudflare)
 
 문제가 발생하면 각 플랫폼의 공식 문서를 참조하거나 커뮤니티에 도움을 요청하세요.
+
+## 11. 환경 변수 디버깅
+
+### 11.1 환경 변수 상태 확인
+
+배포 후 다음 URL로 환경 변수 상태 확인:
+```
+https://grap.co.kr/api/debug/environment
+```
+
+### 11.2 카카오맵 API 키 설정
+
+```bash
+# Cloudflare Workers에서 환경 변수 설정
+wrangler secret put NUXT_PUBLIC_KAKAO_MAP_API_KEY
+# 프롬프트에서 실제 카카오맵 API 키 입력
+```
+
+또는 Cloudflare Dashboard에서 설정:
+1. Cloudflare Dashboard → Workers & Pages
+2. 해당 프로젝트 선택
+3. Settings → Environment Variables
+4. Add variable: `NUXT_PUBLIC_KAKAO_MAP_API_KEY`
+
+### 11.3 카카오맵이 표시되지 않는 경우
+
+1. **API 키 확인**:
+   ```bash
+   # 환경 변수 확인
+   curl https://grap.co.kr/api/debug/environment
+   ```
+
+2. **카카오 개발자 콘솔에서 도메인 등록 확인**:
+   - https://developers.kakao.com
+   - 내 애플리케이션 → 플랫폼 → Web
+   - 사이트 도메인: `https://grap.co.kr` 등록 확인
+
+3. **브라우저 콘솔 에러 확인**:
+   - F12 → Console 탭
+   - 카카오맵 관련 에러 메시지 확인
+
+### 11.4 Google AdSense가 표시되지 않는 경우
+
+1. **AdSense 승인 상태 확인**:
+   - Google AdSense 계정에서 사이트 승인 상태 확인
+   - `grap.co.kr` 도메인이 승인되었는지 확인
+
+2. **광고 차단기 확인**:
+   - 브라우저의 광고 차단 확장 프로그램 비활성화
+   - 시크릿 모드에서 테스트
+
+3. **콘솔 에러 확인**:
+   - F12 → Console 탭
+   - AdSense 관련 에러 메시지 확인

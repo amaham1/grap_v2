@@ -47,15 +47,34 @@ const adFormat = computed(() => {
 // 클라이언트 사이드에서만 애드센스 초기화
 onMounted(() => {
   if (import.meta.client) {
+    // 환경 확인
+    const isProduction = window.location.hostname === 'grap.co.kr';
+    const isDevelopment = window.location.hostname === 'localhost';
+
+    console.log('🎯 [ADSENSE-INIT]', {
+      hostname: window.location.hostname,
+      isProduction,
+      isDevelopment,
+      hasAdSenseScript: !!document.querySelector('script[src*="adsbygoogle"]')
+    });
+
     // 약간의 지연을 두어 DOM이 완전히 렌더링된 후 초기화
     nextTick(() => {
       const initializeAd = () => {
         try {
+          // AdSense 스크립트가 로드되었는지 확인
+          if (!(window as any).adsbygoogle) {
+            console.warn('❌ [ADSENSE] AdSense script not loaded');
+            return;
+          }
+
           const adsbygoogle = (window as any).adsbygoogle || [];
 
           // 현재 컴포넌트의 광고 요소만 찾기
           const adElement = document.querySelector('.adsbygoogle:not([data-adsbygoogle-status])');
           if (adElement) {
+            console.log('✅ [ADSENSE] Initializing ad element');
+
             // 광고 초기화 전에 크기 제한 설정
             if (props.height) {
               (adElement as HTMLElement).style.height = typeof props.height === 'number' ? props.height + 'px' : props.height;
@@ -80,9 +99,11 @@ onMounted(() => {
             setTimeout(() => {
               clearInterval(sizeCheckInterval);
             }, 10000);
+          } else {
+            console.warn('❌ [ADSENSE] Ad element not found');
           }
         } catch (error) {
-          console.warn('AdSense initialization failed:', error);
+          console.error('❌ [ADSENSE] Initialization failed:', error);
         }
       };
 

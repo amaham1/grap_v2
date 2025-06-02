@@ -129,18 +129,30 @@ definePageMeta({
 
 const config = useRuntimeConfig();
 
+// 카카오맵 API 키 확인 및 폴백 처리
+const kakaoMapApiKey = config.public.kakaoMapApiKey;
+const isValidApiKey = kakaoMapApiKey && kakaoMapApiKey !== 'f7c0b5b7e8a4c5d6e7f8a9b0c1d2e3f4';
+
+// 디버그 정보 출력
+console.log('🗝️ [KAKAO-API-KEY]', {
+  hasKey: !!kakaoMapApiKey,
+  isValid: isValidApiKey,
+  keyPreview: kakaoMapApiKey ? `${kakaoMapApiKey.substring(0, 8)}...` : 'NOT_SET',
+  environment: process.env.NODE_ENV
+});
+
 // 페이지 제목 설정
 useHead({
   title: '최저가 주유소 - 제주 지역정보',
   meta: [
     { name: 'description', content: '제주도 최저가 주유소 정보를 카카오맵으로 확인하세요.' }
   ],
-  script: [
+  script: isValidApiKey ? [
     {
-      src: `//dapi.kakao.com/v2/maps/sdk.js?appkey=${config.public.kakaoMapApiKey}&autoload=false`,
+      src: `//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapApiKey}&autoload=false`,
       defer: true
     }
-  ]
+  ] : []
 });
 
 // Pinia 스토어 사용
@@ -412,6 +424,15 @@ const initializeApp = async () => {
 
     // 전역 에러 핸들러 설정
     setupGlobalErrorHandlers();
+
+    // 카카오맵 API 키 검증
+    if (!isValidApiKey) {
+      const errorMessage = '카카오맵 API 키가 설정되지 않았습니다. 관리자에게 문의하세요.';
+      console.error('❌ [KAKAO-API-KEY-ERROR]', errorMessage);
+      gasStationStore.setError(errorMessage);
+      gasStationStore.setMapError(true);
+      return;
+    }
 
     try {
       await waitForKakaoMaps();

@@ -129,6 +129,17 @@ const isGasStationsPage = computed(() => {
   return route.path.includes('/gas-stations');
 });
 
+// Google AdSense 스크립트 로드
+useHead({
+  script: [
+    {
+      src: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6491895061878011',
+      async: true,
+      crossorigin: 'anonymous'
+    }
+  ]
+});
+
 // 페이지 변경 시 모바일 메뉴 닫기
 watch(() => useRoute().path, () => {
   isMobileMenuOpen.value = false;
