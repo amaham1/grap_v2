@@ -809,7 +809,7 @@ declare global {
 
 .mobile-tab-toggle.active {
   background: #f3f4f6;
-  bottom: calc(50vh - 24px); /* 탭이 열린 상태에서 탭 컨테이너 위쪽에 위치 */
+  bottom: calc(50vh - 150px); /* 탭이 열린 상태에서 탭 컨테이너 위쪽에 위치 */
   max-height: 376px; /* max-height 400px - 24px */
 }
 
