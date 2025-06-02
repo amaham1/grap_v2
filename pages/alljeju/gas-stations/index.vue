@@ -722,9 +722,6 @@ declare global {
   left: 0;
   right: 0;
   width: 100%;
-  height: 50px !important;
-  max-height: 50px !important;
-  min-height: 50px !important;
   background: white;
   border-top: 1px solid #d1d5db;
   display: flex;
@@ -966,8 +963,6 @@ declare global {
 /* 모바일에서 추가 보장 */
 @media (max-width: 768px) {
   .gas-station-ad-container {
-    height: 50px !important;
-    max-height: 50px !important;
   }
 
   .gas-station-ad-wrapper {
