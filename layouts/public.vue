@@ -5,7 +5,7 @@
       <div class="max-w-5xl mx-auto px-4 py-3">
         <div class="flex items-center justify-between">
           <NuxtLink to="/" class="flex items-center smooth-transition hover:opacity-80">
-            <h1 class="text-lg font-bold text-blue-600">제주 지역정보</h1>
+            <h1 class="text-lg font-bold text-blue-600">Grap</h1>
           </NuxtLink>
 
           <nav class="hidden md:flex space-x-6">
@@ -66,7 +66,7 @@
       <div class="max-w-5xl mx-auto px-4 py-8">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <h3 class="text-base font-semibold mb-3 text-gray-900">제주 지역정보</h3>
+            <h3 class="text-base font-semibold mb-3 text-gray-900">Grap</h3>
             <p class="text-sm text-gray-600 leading-relaxed">제주도의 복지 서비스, 행사/축제, 공연/전시 정보를 한눈에 볼 수 있는 서비스입니다.</p>
           </div>
 
@@ -100,7 +100,7 @@
         </div>
 
         <div class="border-t border-gray-200 mt-6 pt-6 text-center">
-          <p class="text-sm text-gray-500">&copy; {{ new Date().getFullYear() }} 제주 지역정보. All rights reserved.</p>
+          <p class="text-sm text-gray-500">&copy; {{ new Date().getFullYear() }} Grap. All rights reserved.</p>
         </div>
       </div>
     </footer>
