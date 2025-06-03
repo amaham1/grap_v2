@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-white pb-[50px] xl:pb-0 relative">
+  <div class="min-h-screen flex flex-col bg-white relative">
     <!-- 헤더 -->
     <header class="bg-white border-b border-gray-100 sticky top-0 z-50">
       <div class="max-w-5xl mx-auto px-4 py-3">
@@ -105,8 +105,8 @@
       </div>
     </footer>
 
-    <!-- 광고 블록 (최저가 주유소 페이지에서는 숨김) -->
-    <AdBlock v-if="!isGasStationsPage" />
+    <!-- 하단 광고 배너 (모든 페이지 공통) -->
+    <BottomAdBanner />
 
     <!-- 에러 표시 컴포넌트 -->
     <ErrorDisplay />
@@ -114,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import AdBlock from '~/components/public/AdBlock.vue';
+import BottomAdBanner from '~/components/layout/BottomAdBanner.vue';
 import ErrorDisplay from '~/components/common/ErrorDisplay.vue';
 
 const isMobileMenuOpen = ref(false);

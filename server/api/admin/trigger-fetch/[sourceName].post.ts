@@ -38,7 +38,8 @@ export default defineEventHandler(async (event) => {
           headers: {
             'x-admin-trigger': 'true',
             'x-cron-source': 'admin-manual'
-          }
+          },
+          timeout: 120000 // 2분 타임아웃
         });
         resultMessage = `Festival data fetch triggered successfully via /api/cron/festivals.`;
         break;
@@ -48,7 +49,8 @@ export default defineEventHandler(async (event) => {
           headers: {
             'x-admin-trigger': 'true',
             'x-cron-source': 'admin-manual'
-          }
+          },
+          timeout: 120000 // 2분 타임아웃
         });
         resultMessage = `Exhibition data fetch triggered successfully via /api/cron/exhibitions.`;
         break;
@@ -58,7 +60,8 @@ export default defineEventHandler(async (event) => {
           headers: {
             'x-admin-trigger': 'true',
             'x-cron-source': 'admin-manual'
-          }
+          },
+          timeout: 120000 // 2분 타임아웃
         });
         resultMessage = `Welfare service data fetch triggered successfully via /api/cron/welfare-services.`;
         break;
@@ -68,7 +71,8 @@ export default defineEventHandler(async (event) => {
           headers: {
             'x-admin-trigger': 'true',
             'x-cron-source': 'admin-manual'
-          }
+          },
+          timeout: 120000 // 2분 타임아웃 (Cloudflare Workers 제한 고려)
         });
         resultMessage = `Gas station data fetch triggered successfully via /api/cron/gas-stations.`;
         break;
@@ -81,10 +85,11 @@ export default defineEventHandler(async (event) => {
     }
 
     // Wait for the internal fetch to complete with enhanced error handling
-    // The response from the cron job endpoint is not explicitly handled here,
-    // but errors during the fetch will be caught.
+    // The response from the cron job endpoint is explicitly handled here
+    let cronResult;
     try {
-      await fetchPromise;
+      cronResult = await fetchPromise;
+      console.log(`[${new Date().toISOString()}] Cron job result for ${sourceName}:`, cronResult);
     } catch (fetchError: any) {
       console.error(`[${new Date().toISOString()}] Fetch error for ${sourceName}:`, {
         message: fetchError.message,
@@ -99,26 +104,61 @@ export default defineEventHandler(async (event) => {
           fetchError.message.includes('Expected arc flag')) {
         console.warn(`[${new Date().toISOString()}] SVG/DOM error ignored for ${sourceName}, continuing...`);
         // 에러를 무시하고 성공으로 처리
+        cronResult = { status: 'success', message: 'Completed with client-side warnings', recordsProcessed: 0 };
       } else {
         // 다른 에러는 다시 던짐
         throw fetchError;
       }
     }
 
-    // Log successful manual trigger
+    // 실제 처리 결과 확인
+    if (cronResult && cronResult.status === 'success') {
+      const processedCount = cronResult.recordsProcessed || 0;
+      const stationsProcessed = cronResult.stationsProcessed || 0;
+      const pricesProcessed = cronResult.pricesProcessed || 0;
+
+      if (processedCount > 0) {
+        resultMessage = `${sourceName} data fetch completed successfully. Processed: ${processedCount} records (${stationsProcessed} stations, ${pricesProcessed} prices)`;
+      } else {
+        resultMessage = `${sourceName} data fetch completed, but no new records were processed. This may indicate no new data was available or all data was already up to date.`;
+      }
+    } else if (cronResult && cronResult.status === 'failure') {
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Cron Job Failed',
+        message: `${sourceName} data fetch failed: ${cronResult.message || 'Unknown error'}`
+      });
+    } else {
+      // 예상치 못한 응답 형식
+      console.warn(`[${new Date().toISOString()}] Unexpected cron result format for ${sourceName}:`, cronResult);
+      resultMessage = `${sourceName} data fetch completed with unexpected result format.`;
+    }
+
+    // Log successful manual trigger with detailed results
+    const processedCount = cronResult?.recordsProcessed || 0;
+    const stationsProcessed = cronResult?.stationsProcessed || 0;
+    const pricesProcessed = cronResult?.pricesProcessed || 0;
+
     await logDAO.createApiFetchLog({
         source_name: sourceName,
         fetch_timestamp: startTime,
         status: 'SUCCESS',
         retry_count: 0,
-        error_message: `Manual fetch triggered successfully for ${sourceName}.`,
-        // processed_items, new_items, updated_items can be set if known
+        processed_items: processedCount,
+        error_message: `Manual fetch completed successfully for ${sourceName}. Processed: ${processedCount} records (${stationsProcessed} stations, ${pricesProcessed} prices)`,
     });
 
     return {
       success: true,
       message: resultMessage,
       source: sourceName,
+      details: {
+        recordsProcessed: processedCount,
+        stationsProcessed: stationsProcessed,
+        pricesProcessed: pricesProcessed,
+        executionTime: new Date().getTime() - startTime.getTime(),
+        timestamp: new Date().toISOString()
+      }
     };
 
   } catch (error: any) {

@@ -99,8 +99,10 @@ export default defineEventHandler(async (event) => {
             const batchResult = await gasStationDAO.batchUpsertGasStations(gasStationDataList);
             if (batchResult.error) {
               console.error(`[${new Date().toISOString()}] Batch upsert failed:`, batchResult.error);
+              throw new Error(`Gas stations batch upsert failed: ${batchResult.error}`);
             } else {
               console.log(`[${new Date().toISOString()}] Batch upsert successful: ${batchResult.insertedCount} stations processed`);
+              processedStations = batchResult.insertedCount || gasStationDataList.length;
             }
           }
         }
@@ -149,8 +151,10 @@ export default defineEventHandler(async (event) => {
             const batchResult = await gasStationDAO.batchUpsertGasPrices(gasPriceDataList);
             if (batchResult.error) {
               console.error(`[${new Date().toISOString()}] Batch upsert failed:`, batchResult.error);
+              throw new Error(`Gas prices batch upsert failed: ${batchResult.error}`);
             } else {
               console.log(`[${new Date().toISOString()}] Batch upsert successful: ${batchResult.insertedCount} prices processed`);
+              processedPrices = batchResult.insertedCount || gasPriceDataList.length;
             }
           }
         }

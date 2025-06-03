@@ -23,19 +23,23 @@ const props = withDefaults(defineProps<Props>(), {
   containerClass: ''
 });
 
-// 광고 스타일 계산 - 크기 제한 제거하여 AdSense 자동 크기 계산 허용
+// 광고 스타일 계산 - 고정 크기 광고에 대해 명시적 크기 설정
 const adStyle = computed(() => {
   let style = 'display:block;';
 
   // 고정 크기 광고의 경우에만 크기 지정
   if (props.format === 'rectangle' || props.format === 'vertical') {
     if (props.width) {
-      style += `width: ${typeof props.width === 'number' ? props.width + 'px' : props.width};`;
+      const width = typeof props.width === 'number' ? props.width + 'px' : props.width;
+      style += `width: ${width}; min-width: ${width}; max-width: ${width};`;
     }
 
     if (props.height) {
-      style += `height: ${typeof props.height === 'number' ? props.height + 'px' : props.height};`;
+      const height = typeof props.height === 'number' ? props.height + 'px' : props.height;
+      style += `height: ${height}; min-height: ${height}; max-height: ${height};`;
     }
+
+    style += 'overflow: hidden; box-sizing: border-box;';
   }
 
   return style;

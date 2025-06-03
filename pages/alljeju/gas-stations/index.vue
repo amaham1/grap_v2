@@ -213,16 +213,7 @@
       </div>
     </div>
 
-    <!-- 하단 광고 블록 -->
-    <div class="gas-station-ad-container">
-      <div class="gas-station-ad-wrapper">
-        <GoogleAdsense
-          format="auto"
-          width="320"
-          height="50"
-          container-class="gas-station-ad-content" />
-      </div>
-    </div>
+
   </div>
 </template>
 
@@ -234,7 +225,7 @@ import { updateDebugInfo, logEnvironmentInfo, setupDebugFunctions } from '~/util
 const GasStationMapContainer = defineAsyncComponent(() => import('~/components/GasStation/MapContainer.vue'));
 const GasStationSearchControls = defineAsyncComponent(() => import('~/components/GasStation/SearchControls.vue'));
 const GasStationStationList = defineAsyncComponent(() => import('~/components/GasStation/StationList.vue'));
-const GoogleAdsense = defineAsyncComponent(() => import('~/components/public/GoogleAdsense.vue'));
+
 
 definePageMeta({
   layout: 'public'
@@ -714,81 +705,12 @@ declare global {
   }
 }
 
-/* 하단 광고 스타일 - Google 권장사항에 따른 명시적 크기 설정 */
-.gas-station-ad-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100vw !important; /* 뷰포트 전체 너비 */
-  min-width: 320px !important; /* 최소 너비 보장 */
-  background: white;
-  border-top: 1px solid #d1d5db;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-  padding: 8px;
-  height: 66px !important; /* 50px 광고 + 16px 패딩 */
-  box-sizing: border-box;
-  overflow: hidden !important;
-}
 
-.gas-station-ad-wrapper {
-  width: 320px !important; /* 광고 크기에 맞는 명시적 너비 */
-  height: 50px !important; /* 광고 크기에 맞는 명시적 높이 */
-  min-width: 320px !important;
-  min-height: 50px !important;
-  max-width: 320px !important;
-  max-height: 50px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  overflow: hidden !important;
-  box-sizing: border-box;
-}
-
-.gas-station-ad-content {
-  width: 320px !important; /* 명시적 너비 설정 */
-  height: 50px !important; /* 명시적 높이 설정 */
-  min-width: 320px !important;
-  min-height: 50px !important;
-  max-width: 320px !important;
-  max-height: 50px !important;
-  display: block !important;
-  overflow: hidden !important;
-  box-sizing: border-box;
-}
-
-/* AdSense 광고 요소 강제 크기 제한 */
-.gas-station-ad-content .adsbygoogle {
-  width: 320px !important;
-  height: 50px !important;
-  min-width: 320px !important;
-  min-height: 50px !important;
-  max-width: 320px !important;
-  max-height: 50px !important;
-  overflow: hidden !important;
-  display: block !important;
-  box-sizing: border-box;
-}
-
-/* AdSense가 동적으로 추가하는 iframe 크기 제한 */
-.gas-station-ad-content iframe {
-  width: 320px !important;
-  height: 50px !important;
-  min-width: 320px !important;
-  min-height: 50px !important;
-  max-width: 320px !important;
-  max-height: 50px !important;
-  overflow: hidden !important;
-  box-sizing: border-box;
-}
 
 /* 모바일 하단 탭 스타일 */
 .mobile-bottom-tabs {
   position: fixed;
-  bottom: 50px; /* 광고 위에 위치 */
+  bottom: 0; /* 이제 광고가 레이아웃에 포함되므로 하단에 위치 */
   left: 0;
   right: 0;
   z-index: 45;
