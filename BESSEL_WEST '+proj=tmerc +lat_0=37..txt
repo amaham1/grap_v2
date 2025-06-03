@@ -1,0 +1,1 @@
+BESSEL_WEST: '+proj=tmerc +lat_0=37.0918 +lon_0=125.8478 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +towgs84=-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43 +units=m +no_defs'

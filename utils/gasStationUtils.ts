@@ -1,5 +1,6 @@
 // utils/gasStationUtils.ts
 import type { GasStation, FuelType, FavoriteStation } from '~/types/gasStation';
+import proj4 from 'proj4';
 
 // 연료 타입 옵션
 export const fuelTypes: FuelType[] = [
@@ -31,62 +32,68 @@ export const getStationPrice = (station: GasStation, selectedFuel: string): numb
   }
 };
 
+// 좌표계 정의 - 제주도 지역 특화
+// 여러 좌표계를 시도해보기 위한 정의들
+const COORDINATE_SYSTEMS = {
+  BESSEL_WEST: '+proj=tmerc +lat_0=37.0918 +lon_0=125.8478 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +towgs84=-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43 +units=m +no_defs'
+};
+
+const WGS84_PROJ = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
+
 /**
- * KATEC 좌표계를 WGS84 좌표계로 변환하는 함수
- * 제주도 지역에 최적화된 변환 공식 사용
+ * 제주도 API의 gisxcoor, gisycoor 좌표를 WGS84 좌표계로 변환하는 함수
+ * proj4 라이브러리를 사용하여 여러 좌표계를 순차적으로 시도
  *
- * 제주도 API에서 제공하는 좌표는 한국측지계(Korean Datum) 기반
- * 실제 제주도 주유소 좌표를 분석하여 정확한 변환 공식 적용
+ * 제주도 API에서 제공하는 좌표계를 정확히 파악하기 위해 여러 좌표계를 시도
  */
 export const convertKatecToWgs84 = (katecX: number, katecY: number): { latitude: number; longitude: number } | null => {
   try {
-    // KATEC 좌표가 유효하지 않은 경우
+    // 좌표가 유효하지 않은 경우
     if (!katecX || !katecY || katecX === 0 || katecY === 0) {
+      console.warn(`[COORD-CONVERT] 유효하지 않은 좌표: (${katecX}, ${katecY})`);
       return null;
     }
 
-    // 제주도 지역 KATEC → WGS84 변환 공식
-    // 실제 제주도 주유소 좌표 데이터 분석 결과를 바탕으로 한 경험적 변환 공식
-
-    // 제주도 KATEC 좌표 범위 분석:
-    // X: 230,000 ~ 300,000 (동서 방향)
-    // Y: 70,000 ~ 110,000 (남북 방향)
-    //
-    // 제주도 실제 좌표 범위:
-    // 위도: 33.1° ~ 33.6°N
-    // 경도: 126.1° ~ 126.9°E
-
-    // 선형 변환을 통한 좌표 매핑
-    // KATEC 좌표 범위를 제주도 실제 좌표 범위로 선형 변환
-
-    const katecXMin = 230000;
-    const katecXMax = 300000;
-    const katecYMin = 70000;
-    const katecYMax = 110000;
-
-    const wgs84LatMin = 33.1;
-    const wgs84LatMax = 33.6;
-    const wgs84LngMin = 126.1;
-    const wgs84LngMax = 126.9;
-
-    // 선형 변환 공식: (value - min) / (max - min) * (targetMax - targetMin) + targetMin
-    const longitude = ((katecX - katecXMin) / (katecXMax - katecXMin)) * (wgs84LngMax - wgs84LngMin) + wgs84LngMin;
-    const latitude = ((katecY - katecYMin) / (katecYMax - katecYMin)) * (wgs84LatMax - wgs84LatMin) + wgs84LatMin;
-
-    // 제주도 영역 검증 (실제 제주도 좌표 범위)
-    if (latitude < 33.0 || latitude > 33.7 || longitude < 126.0 || longitude > 127.0) {
-      console.warn(`[COORD-CONVERT] 제주도 영역을 벗어난 좌표: KATEC(${katecX}, ${katecY}) → WGS84(${latitude.toFixed(6)}, ${longitude.toFixed(6)})`);
+    // 제주도 지역 좌표 범위 검증 (실제 API 데이터 기반)
+    // 제주도 API 좌표 범위: X(230,000~300,000), Y(70,000~110,000)
+    if (katecX < 200000 || katecX > 350000 || katecY < 50000 || katecY > 150000) {
+      console.warn(`[COORD-CONVERT] 좌표 범위를 벗어남: (${katecX}, ${katecY})`);
       return null;
     }
 
-    console.log(`[COORD-CONVERT] KATEC(${katecX}, ${katecY}) → WGS84(${latitude.toFixed(6)}, ${longitude.toFixed(6)})`);
+    // 여러 좌표계를 순차적으로 시도
+    const coordinateSystemsToTry = [
+      { name: 'BESSEL_WEST', proj: COORDINATE_SYSTEMS.BESSEL_WEST },
+    ];
 
-    return {
-      latitude: Math.round(latitude * 1000000) / 1000000, // 소수점 6자리로 반올림
-      longitude: Math.round(longitude * 1000000) / 1000000
-    };
+    for (const coordSystem of coordinateSystemsToTry) {
+      try {
+        // proj4를 사용한 좌표변환
+        const result = proj4(coordSystem.proj, WGS84_PROJ, [katecX, katecY]);
+
+        if (!result || result.length !== 2) {
+          continue;
+        }
+
+        const longitude = result[0];
+        const latitude = result[1];
+
+
+        return {
+          latitude: Math.round(latitude * 1000000) / 1000000, // 소수점 6자리로 반올림
+          longitude: Math.round(longitude * 1000000) / 1000000
+        };
+      } catch (err) {
+        // 이 좌표계로는 변환 실패, 다음 좌표계 시도
+        continue;
+      }
+    }
+
+    console.warn(`[COORD-CONVERT] 모든 좌표계 시도 실패: (${katecX}, ${katecY})`);
+    return null;
+
   } catch (error) {
-    console.error('[COORD-CONVERT] 좌표 변환 실패:', error);
+    console.error('[COORD-CONVERT] 좌표 변환 실패:', error, `좌표: (${katecX}, ${katecY})`);
     return null;
   }
 };
