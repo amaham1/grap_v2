@@ -217,10 +217,8 @@
     <div class="gas-station-ad-container">
       <div class="gas-station-ad-wrapper">
         <GoogleAdsense
-          format="rectangle"
-          width="320"
-          height="50"
-          full-width-responsive="auto"
+          format="auto"
+          full-width-responsive="true"
           container-class="gas-station-ad-content" />
       </div>
     </div>

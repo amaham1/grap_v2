@@ -53,7 +53,9 @@ export default defineEventHandler(async (event) => {
         if (infoResponse && infoResponse.info && Array.isArray(infoResponse.info)) {
           console.log(`[${new Date().toISOString()}] Received ${infoResponse.info.length} gas station info items`);
 
-          // 주유소 정보 처리
+          // 배치 처리를 위한 데이터 준비
+          const gasStationDataList: gasStationDAO.GasStation[] = [];
+
           for (const item of infoResponse.info) {
             try {
               const gasStationData: gasStationDAO.GasStation = {
@@ -75,7 +77,7 @@ export default defineEventHandler(async (event) => {
                 is_exposed: false
               };
 
-              await gasStationDAO.upsertGasStation(gasStationData);
+              gasStationDataList.push(gasStationData);
               processedStations++;
             } catch (itemError: any) {
               console.error(`[${new Date().toISOString()}] Error processing gas station item:`, itemError.message);
@@ -90,6 +92,17 @@ export default defineEventHandler(async (event) => {
               });
             }
           }
+
+          // 배치로 주유소 정보 저장/업데이트
+          if (gasStationDataList.length > 0) {
+            console.log(`[${new Date().toISOString()}] Batch upserting ${gasStationDataList.length} gas stations`);
+            const batchResult = await gasStationDAO.batchUpsertGasStations(gasStationDataList);
+            if (batchResult.error) {
+              console.error(`[${new Date().toISOString()}] Batch upsert failed:`, batchResult.error);
+            } else {
+              console.log(`[${new Date().toISOString()}] Batch upsert successful: ${batchResult.insertedCount} stations processed`);
+            }
+          }
         }
 
         // 2. 주유소 가격 정보 가져오기
@@ -99,7 +112,9 @@ export default defineEventHandler(async (event) => {
         if (priceResponse && priceResponse.info && Array.isArray(priceResponse.info)) {
           console.log(`[${new Date().toISOString()}] Received ${priceResponse.info.length} gas price items`);
 
-          // 가격 정보 처리
+          // 배치 처리를 위한 데이터 준비
+          const gasPriceDataList: gasStationDAO.GasPrice[] = [];
+
           for (const item of priceResponse.info) {
             try {
               const gasPriceData: gasStationDAO.GasPrice = {
@@ -112,7 +127,7 @@ export default defineEventHandler(async (event) => {
                 api_raw_data: JSON.stringify(item)
               };
 
-              await gasStationDAO.upsertGasPrice(gasPriceData);
+              gasPriceDataList.push(gasPriceData);
               processedPrices++;
             } catch (itemError: any) {
               console.error(`[${new Date().toISOString()}] Error processing gas price item:`, itemError.message);
@@ -125,6 +140,17 @@ export default defineEventHandler(async (event) => {
                   stack: itemError.stack
                 })
               });
+            }
+          }
+
+          // 배치로 가격 정보 저장/업데이트
+          if (gasPriceDataList.length > 0) {
+            console.log(`[${new Date().toISOString()}] Batch upserting ${gasPriceDataList.length} gas prices`);
+            const batchResult = await gasStationDAO.batchUpsertGasPrices(gasPriceDataList);
+            if (batchResult.error) {
+              console.error(`[${new Date().toISOString()}] Batch upsert failed:`, batchResult.error);
+            } else {
+              console.log(`[${new Date().toISOString()}] Batch upsert successful: ${batchResult.insertedCount} prices processed`);
             }
           }
         }

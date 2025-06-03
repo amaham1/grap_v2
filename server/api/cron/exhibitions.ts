@@ -67,6 +67,9 @@ export default defineEventHandler(async (event) => {
 
         console.log(`[${new Date().toISOString()}] Fetched total ${allRawDataItems.length} items from external API.`);
 
+        // 배치 처리를 위한 데이터 준비
+        const exhibitionDataList: exhibitionDAO.Exhibition[] = [];
+
         for (const item of allRawDataItems) {
           try {
             const exhibitionData: exhibitionDAO.Exhibition = {
@@ -81,7 +84,7 @@ export default defineEventHandler(async (event) => {
               is_exposed: false
             };
 
-            await exhibitionDAO.upsertExhibition(exhibitionData);
+            exhibitionDataList.push(exhibitionData);
             processedCount++;
           } catch (itemError: any) {
             console.error(`[${new Date().toISOString()}] Error processing item:`, itemError.message);
@@ -94,6 +97,17 @@ export default defineEventHandler(async (event) => {
                 stack: itemError.stack
               })
             });
+          }
+        }
+
+        // 배치로 DB에 데이터 저장/업데이트 (upsert)
+        if (exhibitionDataList.length > 0) {
+          console.log(`[${new Date().toISOString()}] Batch upserting ${exhibitionDataList.length} exhibitions`);
+          const batchResult = await exhibitionDAO.batchUpsertExhibitions(exhibitionDataList);
+          if (batchResult.error) {
+            console.error(`[${new Date().toISOString()}] Batch upsert failed:`, batchResult.error);
+          } else {
+            console.log(`[${new Date().toISOString()}] Batch upsert successful: ${batchResult.insertedCount} exhibitions processed`);
           }
         }
 

@@ -24,18 +24,21 @@ const props = withDefaults(defineProps<Props>(), {
   containerClass: ''
 });
 
-// 광고 스타일 계산
+// 광고 스타일 계산 - 크기 제한 제거하여 AdSense 자동 크기 계산 허용
 const adStyle = computed(() => {
   let style = 'display:block;';
-  
-  if (props.width) {
-    style += `width: ${typeof props.width === 'number' ? props.width + 'px' : props.width};`;
+
+  // 고정 크기 광고의 경우에만 크기 지정
+  if (props.format === 'rectangle' || props.format === 'vertical') {
+    if (props.width) {
+      style += `width: ${typeof props.width === 'number' ? props.width + 'px' : props.width};`;
+    }
+
+    if (props.height) {
+      style += `height: ${typeof props.height === 'number' ? props.height + 'px' : props.height};`;
+    }
   }
-  
-  if (props.height) {
-    style += `height: ${typeof props.height === 'number' ? props.height + 'px' : props.height};`;
-  }
-  
+
   return style;
 });
 
@@ -56,13 +59,14 @@ onMounted(() => {
       isProduction,
       isDevelopment,
       hasAdSenseScript: !!document.querySelector('script[src*="adsbygoogle"]'),
-      containerWidth: document.querySelector('.adsbygoogle')?.parentElement?.offsetWidth || 0,
-      containerHeight: document.querySelector('.adsbygoogle')?.parentElement?.offsetHeight || 0
+      format: props.format,
+      width: props.width,
+      height: props.height
     });
 
-    // DOM이 완전히 렌더링되고 크기가 설정된 후 초기화
-    setTimeout(() => {
-      nextTick(() => {
+    // DOM이 완전히 렌더링된 후 초기화
+    nextTick(() => {
+      setTimeout(() => {
         const initializeAd = () => {
           try {
             // AdSense 스크립트가 로드되었는지 확인
@@ -76,61 +80,51 @@ onMounted(() => {
             // 현재 컴포넌트의 광고 요소만 찾기
             const adElement = document.querySelector('.adsbygoogle:not([data-adsbygoogle-status])');
             if (adElement) {
-              const container = adElement.parentElement;
-              const containerWidth = container?.offsetWidth || 0;
-              const containerHeight = container?.offsetHeight || 0;
-
               console.log('✅ [ADSENSE] Initializing ad element', {
-                containerWidth,
-                containerHeight,
-                propsWidth: props.width,
-                propsHeight: props.height
+                format: props.format,
+                width: props.width,
+                height: props.height,
+                fullWidthResponsive: props.fullWidthResponsive
               });
 
-              // 컨테이너 크기가 0인 경우 기본값 설정
-              if (containerWidth === 0 && props.width) {
-                const width = typeof props.width === 'number' ? props.width + 'px' : props.width;
-                if (container) {
+              // 고정 크기 광고의 경우에만 컨테이너 크기 설정
+              if (props.format === 'rectangle' || props.format === 'vertical') {
+                const container = adElement.parentElement;
+
+                if (props.width && container) {
+                  const width = typeof props.width === 'number' ? props.width + 'px' : props.width;
                   (container as HTMLElement).style.width = width;
                   (container as HTMLElement).style.minWidth = width;
                 }
-                (adElement as HTMLElement).style.width = width;
-                (adElement as HTMLElement).style.minWidth = width;
-              }
 
-              // 광고 초기화 전에 크기 설정
-              if (props.height) {
-                const height = typeof props.height === 'number' ? props.height + 'px' : props.height;
-                if (container) {
+                if (props.height && container) {
+                  const height = typeof props.height === 'number' ? props.height + 'px' : props.height;
                   (container as HTMLElement).style.height = height;
                   (container as HTMLElement).style.maxHeight = height;
                   (container as HTMLElement).style.minHeight = height;
+                  (container as HTMLElement).style.overflow = 'hidden';
                 }
-                (adElement as HTMLElement).style.height = height;
-                (adElement as HTMLElement).style.maxHeight = height;
-                (adElement as HTMLElement).style.minHeight = height;
-                (adElement as HTMLElement).style.overflow = 'hidden';
               }
 
-              // 광고 요소에 display 속성 명시적 설정
-              (adElement as HTMLElement).style.display = 'block';
-
+              // 광고 초기화
               adsbygoogle.push({});
 
-              // 광고 로드 후 크기 재확인 및 강제 적용
-              setTimeout(() => {
-                enforceAdSize(adElement as HTMLElement);
-              }, 1000);
+              // 고정 크기 광고의 경우에만 크기 강제 적용
+              if (props.format === 'rectangle' || props.format === 'vertical') {
+                setTimeout(() => {
+                  enforceAdSize(adElement as HTMLElement);
+                }, 1000);
 
-              // 주기적으로 크기 확인 (AdSense가 동적으로 변경할 수 있음)
-              const sizeCheckInterval = setInterval(() => {
-                enforceAdSize(adElement as HTMLElement);
-              }, 2000);
+                // 주기적으로 크기 확인 (고정 크기 광고만)
+                const sizeCheckInterval = setInterval(() => {
+                  enforceAdSize(adElement as HTMLElement);
+                }, 3000);
 
-              // 10초 후 체크 중단
-              setTimeout(() => {
-                clearInterval(sizeCheckInterval);
-              }, 10000);
+                // 10초 후 체크 중단
+                setTimeout(() => {
+                  clearInterval(sizeCheckInterval);
+                }, 10000);
+              }
             } else {
               console.warn('❌ [ADSENSE] Ad element not found');
             }
@@ -139,9 +133,9 @@ onMounted(() => {
           }
         };
 
-        // 크기 강제 적용 함수
+        // 크기 강제 적용 함수 (고정 크기 광고만)
         const enforceAdSize = (element: HTMLElement) => {
-          if (!element) return;
+          if (!element || (props.format !== 'rectangle' && props.format !== 'vertical')) return;
 
           // 높이 설정
           if (props.height) {
@@ -204,8 +198,8 @@ onMounted(() => {
             clearInterval(checkAdSense);
           }, 10000);
         }
-      });
-    }, 100); // 100ms 지연 후 초기화 시작
+      }, 200); // 200ms 지연 후 초기화 시작
+    });
   }
 });
 </script>

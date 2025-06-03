@@ -67,6 +67,9 @@ export default defineEventHandler(async (event) => {
 
         console.log(`[${new Date().toISOString()}] Fetched total ${allRawDataItems.length} items from external API.`);
 
+        // 배치 처리를 위한 데이터 준비
+        const welfareDataList: welfareServiceDAO.WelfareService[] = [];
+
         for (const item of allRawDataItems) {
           try {
             const welfareData: welfareServiceDAO.WelfareService = {
@@ -82,7 +85,7 @@ export default defineEventHandler(async (event) => {
               is_exposed: false
             };
 
-            await welfareServiceDAO.upsertWelfareService(welfareData);
+            welfareDataList.push(welfareData);
             processedCount++;
           } catch (itemError: any) {
             console.error(`[${new Date().toISOString()}] Error processing item:`, itemError.message);
@@ -95,6 +98,17 @@ export default defineEventHandler(async (event) => {
                 stack: itemError.stack
               })
             });
+          }
+        }
+
+        // 배치로 DB에 데이터 저장/업데이트 (upsert)
+        if (welfareDataList.length > 0) {
+          console.log(`[${new Date().toISOString()}] Batch upserting ${welfareDataList.length} welfare services`);
+          const batchResult = await welfareServiceDAO.batchUpsertWelfareServices(welfareDataList);
+          if (batchResult.error) {
+            console.error(`[${new Date().toISOString()}] Batch upsert failed:`, batchResult.error);
+          } else {
+            console.log(`[${new Date().toISOString()}] Batch upsert successful: ${batchResult.insertedCount} welfare services processed`);
           }
         }
 

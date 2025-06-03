@@ -79,7 +79,9 @@ export default defineEventHandler(async (event) => {
 
         console.log(`[${new Date().toISOString()}] Fetched total ${allRawDataItems.length} items from external API.`);
 
-        // 2. 가져온 데이터를 DB 스키마에 맞게 매핑
+        // 2. 가져온 데이터를 DB 스키마에 맞게 매핑 (배치 처리)
+        const festivalDataList: festivalDAO.Festival[] = [];
+
         for (const item of allRawDataItems) {
           try {
             // 주어진 DB 스키마에 맞게 데이터 매핑
@@ -95,10 +97,7 @@ export default defineEventHandler(async (event) => {
               is_exposed: false // 기본적으로 노출하지 않음
             };
 
-            // 3. DAO를 사용하여 DB에 데이터 저장/업데이트 (upsert)
-            const result = await festivalDAO.upsertFestival(festivalData);
-
-            // 신규 또는 업데이트 항목 카운트 (Supabase에서는 upsert 결과로 판단하기 어려우므로 모두 처리된 것으로 간주)
+            festivalDataList.push(festivalData);
             processedCount++;
           } catch (itemError: any) {
             console.error(`[${new Date().toISOString()}] Error processing item:`, itemError.message);
@@ -112,6 +111,17 @@ export default defineEventHandler(async (event) => {
                 stack: itemError.stack
               })
             });
+          }
+        }
+
+        // 3. 배치로 DB에 데이터 저장/업데이트 (upsert)
+        if (festivalDataList.length > 0) {
+          console.log(`[${new Date().toISOString()}] Batch upserting ${festivalDataList.length} festivals`);
+          const batchResult = await festivalDAO.batchUpsertFestivals(festivalDataList);
+          if (batchResult.error) {
+            console.error(`[${new Date().toISOString()}] Batch upsert failed:`, batchResult.error);
+          } else {
+            console.log(`[${new Date().toISOString()}] Batch upsert successful: ${batchResult.insertedCount} festivals processed`);
           }
         }
 
