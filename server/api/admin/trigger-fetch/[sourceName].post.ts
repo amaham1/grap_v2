@@ -72,7 +72,7 @@ export default defineEventHandler(async (event) => {
             'x-admin-trigger': 'true',
             'x-cron-source': 'admin-manual'
           },
-          timeout: 60000 // 1분 타임아웃 (Cloudflare Workers 제한 고려)
+          timeout: 180000 // 3분 타임아웃 (주유소 API는 좌표 변환으로 인해 시간이 더 필요)
         });
         resultMessage = `Gas station data fetch triggered successfully via /api/cron/gas-stations.`;
         break;

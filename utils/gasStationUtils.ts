@@ -62,13 +62,17 @@ const WGS84_PROJ = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
 const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY || 'd806ae809740b6a6e114067f7326bd38';
 const KAKAO_COORD_CONVERT_URL = 'https://dapi.kakao.com/v2/local/geo/transcoord.json';
 
+// 좌표 변환 캐시 (메모리 기반, 세션 동안 유지)
+const coordinateCache = new Map<string, { latitude: number; longitude: number } | null>();
+
 /**
  * Kakao API를 사용하여 KATEC 좌표를 WGS84로 변환하는 함수
  * @param katecX KATEC X 좌표
  * @param katecY KATEC Y 좌표
+ * @param timeout 타임아웃 시간 (밀리초, 기본값: 5000ms)
  * @returns WGS84 좌표 또는 null
  */
-const convertWithKakaoAPI = async (katecX: number, katecY: number): Promise<{ latitude: number; longitude: number } | null> => {
+const convertWithKakaoAPI = async (katecX: number, katecY: number, timeout: number = 5000): Promise<{ latitude: number; longitude: number } | null> => {
   try {
     const url = new URL(KAKAO_COORD_CONVERT_URL);
     url.searchParams.append('x', katecX.toString());
@@ -76,13 +80,20 @@ const convertWithKakaoAPI = async (katecX: number, katecY: number): Promise<{ la
     url.searchParams.append('input_coord', 'KTM');
     url.searchParams.append('output_coord', 'WGS84');
 
+    // AbortController를 사용한 타임아웃 처리
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
         'Authorization': `KakaoAK ${KAKAO_REST_API_KEY}`,
         'Content-Type': 'application/json'
-      }
+      },
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       console.warn(`[KAKAO-API] HTTP 오류: ${response.status} ${response.statusText}`);
@@ -111,8 +122,12 @@ const convertWithKakaoAPI = async (katecX: number, katecY: number): Promise<{ la
       console.warn(`[KAKAO-API] 변환 결과 없음: (${katecX}, ${katecY})`);
       return null;
     }
-  } catch (error) {
-    console.error(`[KAKAO-API] 좌표 변환 실패:`, error, `좌표: (${katecX}, ${katecY})`);
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      console.warn(`[KAKAO-API] 타임아웃 (${timeout}ms): (${katecX}, ${katecY})`);
+    } else {
+      console.error(`[KAKAO-API] 좌표 변환 실패:`, error, `좌표: (${katecX}, ${katecY})`);
+    }
     return null;
   }
 };
@@ -177,8 +192,11 @@ const convertWithProj4Fallback = (katecX: number, katecY: number): { latitude: n
  * 2차: proj4 라이브러리 폴백 (Kakao API 실패 시)
  *
  * 제주도 API에서 제공하는 KATEC 좌표를 정확히 WGS84로 변환
+ * @param katecX KATEC X 좌표
+ * @param katecY KATEC Y 좌표
+ * @param timeout Kakao API 타임아웃 시간 (밀리초, 기본값: 5000ms)
  */
-export const convertKatecToWgs84 = async (katecX: number, katecY: number): Promise<{ latitude: number; longitude: number } | null> => {
+export const convertKatecToWgs84 = async (katecX: number, katecY: number, timeout: number = 5000): Promise<{ latitude: number; longitude: number } | null> => {
   try {
     // 좌표가 유효하지 않은 경우
     if (!katecX || !katecY || katecX === 0 || katecY === 0) {
@@ -186,12 +204,24 @@ export const convertKatecToWgs84 = async (katecX: number, katecY: number): Promi
       return null;
     }
 
+    // 캐시 키 생성
+    const cacheKey = `${katecX},${katecY}`;
+
+    // 캐시에서 확인
+    if (coordinateCache.has(cacheKey)) {
+      const cachedResult = coordinateCache.get(cacheKey);
+      console.log(`[COORD-CONVERT] 캐시에서 좌표 반환: (${katecX}, ${katecY})`);
+      return cachedResult || null;
+    }
+
     console.log(`[COORD-CONVERT] 좌표변환 시작: (${katecX}, ${katecY})`);
 
-    // 1차 시도: Kakao API 사용
+    // 1차 시도: Kakao API 사용 (타임아웃 적용)
     try {
-      const kakaoResult = await convertWithKakaoAPI(katecX, katecY);
+      const kakaoResult = await convertWithKakaoAPI(katecX, katecY, timeout);
       if (kakaoResult) {
+        // 캐시에 저장
+        coordinateCache.set(cacheKey, kakaoResult);
         return kakaoResult;
       }
     } catch (error) {
@@ -200,6 +230,10 @@ export const convertKatecToWgs84 = async (katecX: number, katecY: number): Promi
 
     // 2차 시도: proj4 폴백
     const proj4Result = convertWithProj4Fallback(katecX, katecY);
+
+    // 결과를 캐시에 저장 (실패한 경우도 캐시하여 재시도 방지)
+    coordinateCache.set(cacheKey, proj4Result);
+
     if (proj4Result) {
       return proj4Result;
     }

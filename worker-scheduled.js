@@ -22,7 +22,9 @@ export default {
             'User-Agent': 'Cloudflare-Workers-Scheduled',
             'X-Cron-Source': 'cloudflare-scheduled',
             'CF-Scheduled': 'true'
-          }
+          },
+          // 3분 타임아웃 설정 (좌표 변환 시간 고려)
+          signal: AbortSignal.timeout(180000)
         });
         
         if (!response.ok) {

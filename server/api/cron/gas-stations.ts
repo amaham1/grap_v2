@@ -10,8 +10,9 @@ const GAS_INFO_API_URL = `http://api.jejuits.go.kr/api/infoGasInfoList?code=${AP
 const GAS_PRICE_API_URL = `http://api.jejuits.go.kr/api/infoGasPriceList?code=${API_KEY}`;
 
 // Cloudflare Workers 최적화 설정
-const BATCH_SIZE = 50; // 배치 처리 크기 (Cloudflare Workers CPU 시간 제한 고려)
-const PROCESSING_TIMEOUT = 25000; // 25초 타임아웃 (Cloudflare Workers 30초 제한 고려)
+const BATCH_SIZE = 30; // 배치 처리 크기 감소 (좌표 변환 시간 고려)
+const PROCESSING_TIMEOUT = 150000; // 2.5분 타임아웃 (좌표 변환으로 인한 시간 증가 고려)
+const COORDINATE_CONVERSION_TIMEOUT = 5000; // 개별 좌표 변환 타임아웃 5초
 
 export default defineEventHandler(async (event) => {
   // 보안 검증: GitHub Actions, Cloudflare Workers Scheduled, 또는 관리자만 접근 가능
@@ -71,79 +72,98 @@ export default defineEventHandler(async (event) => {
 
           console.log(`[${new Date().toISOString()}] Processing ${infoResponse.info.length} gas stations with coordinate conversion`);
 
-          for (let i = 0; i < infoResponse.info.length; i++) {
-            const item = infoResponse.info[i];
-
-            try {
-              // 타임아웃 체크 (매 10개 아이템마다)
-              if (i % 10 === 0 && Date.now() - startTime > PROCESSING_TIMEOUT) {
-                console.warn(`[${new Date().toISOString()}] Processing timeout reached during station processing at item ${i}`);
-                break;
-              }
-
-              // KATEC 좌표를 WGS84 좌표로 변환
-              const katecX = parseFloat(item.gisxcoor) || null;
-              const katecY = parseFloat(item.gisycoor) || null;
-              let latitude = null;
-              let longitude = null;
-
-              if (katecX && katecY) {
-                try {
-                  const convertedCoords = await convertKatecToWgs84(katecX, katecY);
-                  if (convertedCoords) {
-                    latitude = convertedCoords.latitude;
-                    longitude = convertedCoords.longitude;
-                    coordConvertSuccess++;
-
-                    // 처음 5개만 상세 로그 출력
-                    if (coordConvertSuccess <= 5) {
-                      console.log(`[${new Date().toISOString()}] 좌표 변환 성공: ${item.osnm} - KATEC(${katecX}, ${katecY}) → WGS84(${latitude}, ${longitude})`);
-                    }
-                  } else {
-                    coordConvertFailed++;
-                    if (coordConvertFailed <= 3) {
-                      console.warn(`[${new Date().toISOString()}] 좌표 변환 실패: ${item.osnm} - KATEC(${katecX}, ${katecY})`);
-                    }
-                  }
-                } catch (coordError) {
-                  console.error(`[${new Date().toISOString()}] 좌표 변환 중 오류: ${item.osnm} - KATEC(${katecX}, ${katecY})`, coordError);
-                  coordConvertFailed++;
-                }
-              }
-
-              const gasStationData: gasStationDAO.GasStation = {
-                opinet_id: item.id || '',
-                station_name: item.osnm || '',
-                brand_code: item.poll || '',
-                brand_name: item.poll || '',
-                gas_brand_code: item.gpoll || '',
-                gas_brand_name: item.gpoll || '',
-                zip_code: item.zip || '',
-                address: item.adr || '',
-                phone: item.tel || '',
-                station_type: item.lpgyn === 'Y' ? 'Y' : 'N',
-                katec_x: katecX,
-                katec_y: katecY,
-                latitude: latitude,
-                longitude: longitude,
-                api_raw_data: JSON.stringify(item),
-                is_exposed: latitude !== null && longitude !== null // 좌표 변환이 성공한 경우에만 노출
-              };
-
-              gasStationDataList.push(gasStationData);
-            } catch (itemError: any) {
-              console.error(`[${new Date().toISOString()}] Error processing gas station item ${i}:`, itemError.message);
-              await logDAO.createSystemErrorLog({
-                error_type: 'ITEM_PROCESSING_ERROR',
-                error_message: `Error processing gas station item: ${itemError.message}`,
-                error_details: JSON.stringify({
-                  item_id: item.id,
-                  item_index: i,
-                  error: itemError.message,
-                  stack: itemError.stack
-                })
-              });
+          // 배치 단위로 병렬 처리
+          for (let batchStart = 0; batchStart < infoResponse.info.length; batchStart += BATCH_SIZE) {
+            // 타임아웃 체크
+            if (Date.now() - startTime > PROCESSING_TIMEOUT) {
+              console.warn(`[${new Date().toISOString()}] Processing timeout reached during batch processing at item ${batchStart}`);
+              break;
             }
+
+            const batchEnd = Math.min(batchStart + BATCH_SIZE, infoResponse.info.length);
+            const batch = infoResponse.info.slice(batchStart, batchEnd);
+
+            console.log(`[${new Date().toISOString()}] Processing batch ${Math.floor(batchStart / BATCH_SIZE) + 1}: items ${batchStart + 1}-${batchEnd}`);
+
+            // 배치 내에서 병렬 좌표 변환 처리
+            const batchPromises = batch.map(async (item, index) => {
+              try {
+                const katecX = parseFloat(item.gisxcoor) || null;
+                const katecY = parseFloat(item.gisycoor) || null;
+                let latitude = null;
+                let longitude = null;
+
+                if (katecX && katecY) {
+                  try {
+                    const convertedCoords = await convertKatecToWgs84(katecX, katecY, COORDINATE_CONVERSION_TIMEOUT);
+                    if (convertedCoords) {
+                      latitude = convertedCoords.latitude;
+                      longitude = convertedCoords.longitude;
+                      coordConvertSuccess++;
+
+                      // 처음 5개만 상세 로그 출력
+                      if (coordConvertSuccess <= 5) {
+                        console.log(`[${new Date().toISOString()}] 좌표 변환 성공: ${item.osnm} - KATEC(${katecX}, ${katecY}) → WGS84(${latitude}, ${longitude})`);
+                      }
+                    } else {
+                      coordConvertFailed++;
+                      if (coordConvertFailed <= 3) {
+                        console.warn(`[${new Date().toISOString()}] 좌표 변환 실패: ${item.osnm} - KATEC(${katecX}, ${katecY})`);
+                      }
+                    }
+                  } catch (coordError) {
+                    console.error(`[${new Date().toISOString()}] 좌표 변환 중 오류: ${item.osnm} - KATEC(${katecX}, ${katecY})`, coordError);
+                    coordConvertFailed++;
+                  }
+                }
+
+                const gasStationData: gasStationDAO.GasStation = {
+                  opinet_id: item.id || '',
+                  station_name: item.osnm || '',
+                  brand_code: item.poll || '',
+                  brand_name: item.poll || '',
+                  gas_brand_code: item.gpoll || '',
+                  gas_brand_name: item.gpoll || '',
+                  zip_code: item.zip || '',
+                  address: item.adr || '',
+                  phone: item.tel || '',
+                  station_type: item.lpgyn === 'Y' ? 'Y' : 'N',
+                  katec_x: katecX,
+                  katec_y: katecY,
+                  latitude: latitude,
+                  longitude: longitude,
+                  api_raw_data: JSON.stringify(item),
+                  is_exposed: latitude !== null && longitude !== null // 좌표 변환이 성공한 경우에만 노출
+                };
+
+                return gasStationData;
+              } catch (itemError: any) {
+                console.error(`[${new Date().toISOString()}] Error processing gas station item ${batchStart + index}:`, itemError.message);
+                await logDAO.createSystemErrorLog({
+                  error_type: 'ITEM_PROCESSING_ERROR',
+                  error_message: `Error processing gas station item: ${itemError.message}`,
+                  error_details: JSON.stringify({
+                    item_id: item.id,
+                    item_index: batchStart + index,
+                    error: itemError.message,
+                    stack: itemError.stack
+                  })
+                });
+                return null;
+              }
+            });
+
+            // 배치 처리 완료 대기
+            const batchResults = await Promise.allSettled(batchPromises);
+
+            // 성공한 결과만 추가
+            batchResults.forEach((result) => {
+              if (result.status === 'fulfilled' && result.value) {
+                gasStationDataList.push(result.value);
+              }
+            });
+
+            console.log(`[${new Date().toISOString()}] Batch ${Math.floor(batchStart / BATCH_SIZE) + 1} completed. Total processed: ${gasStationDataList.length}`);
           }
 
           console.log(`[${new Date().toISOString()}] Coordinate conversion summary: ${coordConvertSuccess} success, ${coordConvertFailed} failed`);
