@@ -158,7 +158,7 @@ export async function batchUpsertGasStations(gasStations: GasStation[]) {
     updated_at: new Date().toISOString()
   }))
 
-  return await batchUpsert('gas_stations', data, 500, 'opinet_id') // Cloudflare Workers 최적화를 위해 배치 크기 감소
+  return await batchUpsert('gas_stations', data, 100, 'opinet_id') // Cloudflare Workers 최적화를 위해 배치 크기 더 감소
 }
 
 /**
@@ -275,7 +275,7 @@ export async function batchUpsertGasPrices(gasPrices: GasPrice[]) {
     updated_at: new Date().toISOString()
   }))
 
-  return await batchUpsert('gas_prices', data, 500, 'opinet_id,price_date') // Cloudflare Workers 최적화를 위해 배치 크기 감소
+  return await batchUpsert('gas_prices', data, 100, 'opinet_id,price_date') // Cloudflare Workers 최적화를 위해 배치 크기 더 감소
 }
 
 /**

@@ -1,6 +1,7 @@
 // server/api/admin/manual-sync-gas-stations.post.ts
 import { defineEventHandler, createError, getHeader } from 'h3';
 import { gasStationDAO, logDAO } from '~/server/dao/supabase';
+import { convertKatecToWgs84 } from '~/utils/gasStationUtils';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -41,7 +42,24 @@ export default defineEventHandler(async (event) => {
         for (const station of stationData.info) {
           try {
             syncResults.stationsProcessed++;
-            
+
+            // KATEC 좌표를 WGS84 좌표로 변환
+            const katecX = parseFloat(station.gisxcoor) || null;
+            const katecY = parseFloat(station.gisycoor) || null;
+            let latitude = null;
+            let longitude = null;
+
+            if (katecX && katecY) {
+              const convertedCoords = convertKatecToWgs84(katecX, katecY);
+              if (convertedCoords) {
+                latitude = convertedCoords.latitude;
+                longitude = convertedCoords.longitude;
+                console.log(`[MANUAL-SYNC] 좌표 변환 성공: ${station.osnm} - KATEC(${katecX}, ${katecY}) → WGS84(${latitude}, ${longitude})`);
+              } else {
+                console.warn(`[MANUAL-SYNC] 좌표 변환 실패: ${station.osnm} - KATEC(${katecX}, ${katecY})`);
+              }
+            }
+
             const gasStationData = {
               opinet_id: station.id,
               station_name: station.osnm,
@@ -53,10 +71,10 @@ export default defineEventHandler(async (event) => {
               address: station.adr,
               phone: station.tel,
               station_type: station.lpgyn === 'Y' ? 'Y' : 'N',
-              katec_x: parseFloat(station.gisxcoor) || null,
-              katec_y: parseFloat(station.gisycoor) || null,
-              latitude: null,
-              longitude: null,
+              katec_x: katecX,
+              katec_y: katecY,
+              latitude: latitude,
+              longitude: longitude,
               is_exposed: true,
               fetched_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
