@@ -1,9 +1,12 @@
 // server/api/cron/exhibitions.ts - Supabase DAO 사용
 import { defineEventHandler, getHeader, createError } from 'h3';
 import { exhibitionDAO, logDAO } from '~/server/dao/supabase';
+import { callHttpApi } from '~/server/utils/httpApiClient';
 
 const MAX_RETRIES = 2;
 const SOURCE_NAME = 'exhibitions';
+
+// HTTP API URL - 서버 사이드에서만 호출 (클라우드플레어에서 Mixed Content 차단 방지)
 const API_URL = 'http://www.jeju.go.kr/rest/JejuExhibitionService/getJejucultureExhibitionList';
 
 export default defineEventHandler(async (event) => {
@@ -52,7 +55,14 @@ export default defineEventHandler(async (event) => {
           console.log(`[${new Date().toISOString()}] Fetching page ${currentPage} from ${API_URL}`);
           const apiUrlWithPage = `${API_URL}?page=${currentPage}&pageSize=${PAGE_SIZE}`;
 
-          const response = await $fetch(apiUrlWithPage, { method: 'GET' });
+          // HTTP API 안전 호출
+          const apiResult = await callHttpApi(apiUrlWithPage);
+
+          if (!apiResult.success) {
+            throw new Error(`Exhibitions API failed: ${apiResult.error}`);
+          }
+
+          const response = apiResult.data;
 
           if (response && response.items && Array.isArray(response.items)) {
             console.log(`[${new Date().toISOString()}] Received ${response.items.length} items from page ${currentPage}`);

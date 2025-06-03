@@ -37,6 +37,27 @@ npm install
 cp .env.example .env
 ```
 
+## 🔒 보안 및 Mixed Content 해결
+
+### Cloudflare Mixed Content 정책
+
+클라우드플레어에서는 HTTPS 사이트에서 HTTP API를 직접 호출하는 것을 차단합니다. 이 프로젝트에서는 다음과 같이 해결했습니다:
+
+#### 1. 서버 사이드 HTTP API 호출
+- 모든 제주도 HTTP API 호출을 서버 사이드(`/server/api/cron/`)에서만 수행
+- 전용 HTTP API 클라이언트(`server/utils/httpApiClient.ts`) 사용
+- 타임아웃, 재시도, 에러 핸들링 포함
+
+#### 2. 클라이언트 안전성
+- 클라이언트는 HTTPS를 통해 내부 API(`/api/`)만 호출
+- 외부 HTTP API 직접 호출 금지
+- CSP(Content Security Policy) 헤더로 추가 보안
+
+#### 3. API 구조
+```
+클라이언트 (HTTPS) → 내부 API (HTTPS) → 외부 HTTP API (서버 사이드)
+```
+
 필요한 환경 변수:
 - `SUPABASE_URL`: Supabase 프로젝트 URL
 - `SUPABASE_ANON_KEY`: Supabase 익명 키

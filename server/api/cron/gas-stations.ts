@@ -2,10 +2,13 @@
 import { defineEventHandler, getHeader, createError } from 'h3';
 import { gasStationDAO, logDAO } from '~/server/dao/supabase';
 import { convertKatecToWgs84 } from '~/utils/gasStationUtils';
+import { callJejuApi } from '~/server/utils/httpApiClient';
 
 const MAX_RETRIES = 2; // 최대 재시도 횟수
 const SOURCE_NAME = 'gas_stations'; // 데이터 소스명
 const API_KEY = '860665'; // 제주도 API 키
+
+// HTTP API URLs - 서버 사이드에서만 호출 (클라우드플레어에서 Mixed Content 차단 방지)
 const GAS_INFO_API_URL = `http://api.jejuits.go.kr/api/infoGasInfoList?code=${API_KEY}`;
 const GAS_PRICE_API_URL = `http://api.jejuits.go.kr/api/infoGasPriceList?code=${API_KEY}`;
 
@@ -58,9 +61,15 @@ export default defineEventHandler(async (event) => {
           throw new Error('Processing timeout reached');
         }
 
-        // 1. 주유소 기본 정보 가져오기
+        // 1. 주유소 기본 정보 가져오기 (HTTP API 안전 호출)
         console.log(`[${new Date().toISOString()}] Fetching gas station info from ${GAS_INFO_API_URL}`);
-        const infoResponse = await $fetch(GAS_INFO_API_URL, { method: 'GET' });
+        const infoApiResult = await callJejuApi(GAS_INFO_API_URL.replace(`?code=${API_KEY}`, ''), API_KEY);
+
+        if (!infoApiResult.success) {
+          throw new Error(`Gas station info API failed: ${infoApiResult.error}`);
+        }
+
+        const infoResponse = infoApiResult.data;
 
         if (infoResponse && infoResponse.info && Array.isArray(infoResponse.info)) {
           console.log(`[${new Date().toISOString()}] Received ${infoResponse.info.length} gas station info items`);
@@ -182,9 +191,15 @@ export default defineEventHandler(async (event) => {
           }
         }
 
-        // 2. 주유소 가격 정보 가져오기
+        // 2. 주유소 가격 정보 가져오기 (HTTP API 안전 호출)
         console.log(`[${new Date().toISOString()}] Fetching gas price info from ${GAS_PRICE_API_URL}`);
-        const priceResponse = await $fetch(GAS_PRICE_API_URL, { method: 'GET' });
+        const priceApiResult = await callJejuApi(GAS_PRICE_API_URL.replace(`?code=${API_KEY}`, ''), API_KEY);
+
+        if (!priceApiResult.success) {
+          throw new Error(`Gas price info API failed: ${priceApiResult.error}`);
+        }
+
+        const priceResponse = priceApiResult.data;
 
         if (priceResponse && priceResponse.info && Array.isArray(priceResponse.info)) {
           console.log(`[${new Date().toISOString()}] Received ${priceResponse.info.length} gas price items`);

@@ -2,6 +2,7 @@
 import { defineEventHandler, createError, getHeader } from 'h3';
 import { gasStationDAO, logDAO } from '~/server/dao/supabase';
 import { convertKatecToWgs84 } from '~/utils/gasStationUtils';
+import { callJejuApi } from '~/server/utils/httpApiClient';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -31,10 +32,15 @@ export default defineEventHandler(async (event) => {
     };
 
     try {
-      // 1. 주유소 정보 가져오기
+      // 1. 주유소 정보 가져오기 (HTTP API 안전 호출)
       console.log('[MANUAL-SYNC] 주유소 정보 API 호출...');
-      const stationResponse = await fetch(GAS_INFO_API_URL);
-      const stationData = await stationResponse.json();
+      const stationApiResult = await callJejuApi(GAS_INFO_API_URL.replace(`?code=${API_KEY}`, ''), API_KEY);
+
+      if (!stationApiResult.success) {
+        throw new Error(`Gas station info API failed: ${stationApiResult.error}`);
+      }
+
+      const stationData = stationApiResult.data;
 
       if (stationData && stationData.info && Array.isArray(stationData.info)) {
         console.log(`[MANUAL-SYNC] ${stationData.info.length}개 주유소 정보 수신`);
@@ -94,10 +100,15 @@ export default defineEventHandler(async (event) => {
         }
       }
 
-      // 2. 가격 정보 가져오기
+      // 2. 가격 정보 가져오기 (HTTP API 안전 호출)
       console.log('[MANUAL-SYNC] 가격 정보 API 호출...');
-      const priceResponse = await fetch(GAS_PRICE_API_URL);
-      const priceData = await priceResponse.json();
+      const priceApiResult = await callJejuApi(GAS_PRICE_API_URL.replace(`?code=${API_KEY}`, ''), API_KEY);
+
+      if (!priceApiResult.success) {
+        throw new Error(`Gas price info API failed: ${priceApiResult.error}`);
+      }
+
+      const priceData = priceApiResult.data;
 
       if (priceData && priceData.info && Array.isArray(priceData.info)) {
         console.log(`[MANUAL-SYNC] ${priceData.info.length}개 가격 정보 수신`);
