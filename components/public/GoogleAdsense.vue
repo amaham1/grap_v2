@@ -4,8 +4,7 @@
          :style="adStyle"
          data-ad-client="ca-pub-6491895061878011"
          data-ad-slot="5895025788"
-         :data-ad-format="adFormat"
-         :data-full-width-responsive="fullWidthResponsive"></ins>
+         :data-ad-format="adFormat"></ins>
   </div>
 </template>
 

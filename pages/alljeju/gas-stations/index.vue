@@ -218,7 +218,8 @@
       <div class="gas-station-ad-wrapper">
         <GoogleAdsense
           format="auto"
-          full-width-responsive="true"
+          width="320"
+          height="50"
           container-class="gas-station-ad-content" />
       </div>
     </div>
@@ -713,63 +714,75 @@ declare global {
   }
 }
 
-/* 하단 광고 스타일 - 강제 크기 제한 */
+/* 하단 광고 스타일 - Google 권장사항에 따른 명시적 크기 설정 */
 .gas-station-ad-container {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  width: 100%;
+  width: 100vw !important; /* 뷰포트 전체 너비 */
+  min-width: 320px !important; /* 최소 너비 보장 */
   background: white;
   border-top: 1px solid #d1d5db;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 50;
-  padding: 0 8px;
+  padding: 8px;
+  height: 66px !important; /* 50px 광고 + 16px 패딩 */
+  box-sizing: border-box;
   overflow: hidden !important;
 }
 
 .gas-station-ad-wrapper {
-  width: 100%;
-  max-width: 320px;
-  height: 50px !important;
-  max-height: 50px !important;
+  width: 320px !important; /* 광고 크기에 맞는 명시적 너비 */
+  height: 50px !important; /* 광고 크기에 맞는 명시적 높이 */
+  min-width: 320px !important;
   min-height: 50px !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden !important;
-}
-
-.gas-station-ad-content {
-  width: 100% !important;
-  height: 50px !important;
+  max-width: 320px !important;
   max-height: 50px !important;
-  min-height: 50px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   overflow: hidden !important;
+  box-sizing: border-box;
+}
+
+.gas-station-ad-content {
+  width: 320px !important; /* 명시적 너비 설정 */
+  height: 50px !important; /* 명시적 높이 설정 */
+  min-width: 320px !important;
+  min-height: 50px !important;
+  max-width: 320px !important;
+  max-height: 50px !important;
+  display: block !important;
+  overflow: hidden !important;
+  box-sizing: border-box;
 }
 
 /* AdSense 광고 요소 강제 크기 제한 */
 .gas-station-ad-content .adsbygoogle {
-  width: 100% !important;
+  width: 320px !important;
   height: 50px !important;
-  max-height: 50px !important;
+  min-width: 320px !important;
   min-height: 50px !important;
+  max-width: 320px !important;
+  max-height: 50px !important;
   overflow: hidden !important;
   display: block !important;
+  box-sizing: border-box;
 }
 
 /* AdSense가 동적으로 추가하는 iframe 크기 제한 */
 .gas-station-ad-content iframe {
-  width: 100% !important;
+  width: 320px !important;
   height: 50px !important;
-  max-height: 50px !important;
+  min-width: 320px !important;
   min-height: 50px !important;
+  max-width: 320px !important;
+  max-height: 50px !important;
   overflow: hidden !important;
+  box-sizing: border-box;
 }
 
 /* 모바일 하단 탭 스타일 */
@@ -960,24 +973,6 @@ declare global {
 
 /* 모바일에서 추가 보장 */
 @media (max-width: 768px) {
-  .gas-station-ad-container {
-  }
-
-  .gas-station-ad-wrapper {
-    height: 50px !important;
-    max-height: 50px !important;
-  }
-
-  .gas-station-ad-content {
-    height: 50px !important;
-    max-height: 50px !important;
-  }
-
-  .gas-station-ad-content .adsbygoogle,
-  .gas-station-ad-content iframe {
-    height: 50px !important;
-    max-height: 50px !important;
-  }
 
   /* 모바일에서 기존 우측 패널 숨기기 */
   .station-list-panel {

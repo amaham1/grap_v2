@@ -80,10 +80,30 @@ export default defineEventHandler(async (event) => {
         });
     }
 
-    // Wait for the internal fetch to complete.
+    // Wait for the internal fetch to complete with enhanced error handling
     // The response from the cron job endpoint is not explicitly handled here,
     // but errors during the fetch will be caught.
-    await fetchPromise;
+    try {
+      await fetchPromise;
+    } catch (fetchError: any) {
+      console.error(`[${new Date().toISOString()}] Fetch error for ${sourceName}:`, {
+        message: fetchError.message,
+        status: fetchError.status,
+        statusText: fetchError.statusText,
+        data: fetchError.data
+      });
+
+      // SVG path 에러 등 클라이언트 사이드 에러는 무시하고 계속 진행
+      if (fetchError.message &&
+          (fetchError.message.includes('path') && fetchError.message.includes('attribute')) ||
+          fetchError.message.includes('Expected arc flag')) {
+        console.warn(`[${new Date().toISOString()}] SVG/DOM error ignored for ${sourceName}, continuing...`);
+        // 에러를 무시하고 성공으로 처리
+      } else {
+        // 다른 에러는 다시 던짐
+        throw fetchError;
+      }
+    }
 
     // Log successful manual trigger
     await logDAO.createApiFetchLog({

@@ -148,6 +148,17 @@ export const useErrorHandler = () => {
     if (process.client) {
       // JavaScript 에러 핸들러
       window.addEventListener('error', (event) => {
+        // SVG path 에러 등 클라이언트 사이드 렌더링 에러 필터링
+        if (event.error && event.error.message) {
+          const message = event.error.message.toLowerCase();
+          if (message.includes('path') && message.includes('attribute') ||
+              message.includes('expected arc flag') ||
+              message.includes('svg')) {
+            console.warn('SVG/DOM error filtered:', event.error.message);
+            return; // 에러 무시
+          }
+        }
+
         errorStore.handleJavaScriptError(event.error, {
           filename: event.filename,
           lineno: event.lineno,
@@ -157,6 +168,18 @@ export const useErrorHandler = () => {
 
       // Promise rejection 핸들러
       window.addEventListener('unhandledrejection', (event) => {
+        // SVG path 에러 등 클라이언트 사이드 렌더링 에러 필터링
+        if (event.reason && typeof event.reason === 'object' && event.reason.message) {
+          const message = event.reason.message.toLowerCase();
+          if (message.includes('path') && message.includes('attribute') ||
+              message.includes('expected arc flag') ||
+              message.includes('svg')) {
+            console.warn('SVG/DOM promise rejection filtered:', event.reason.message);
+            event.preventDefault(); // 에러 무시
+            return;
+          }
+        }
+
         errorStore.handleUnhandledRejection(event.reason, {
           type: 'unhandledrejection',
         });

@@ -80,9 +80,14 @@ const props = defineProps<{
 // 이미지 로드 오류 처리
 function handleImageError(e: Event) {
   if (import.meta.client) {
-    const target = e.target as HTMLImageElement;
-    target.src = '/images/no-image.svg';
-    target.onerror = null;
+    try {
+      const target = e.target as HTMLImageElement;
+      // 1x1 투명 PNG 데이터 URL 사용 (Cloudflare Workers 호환성)
+      target.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+      target.onerror = null;
+    } catch (error) {
+      console.warn('Image error handling failed:', error);
+    }
   }
 }
 
