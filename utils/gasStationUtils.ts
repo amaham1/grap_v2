@@ -35,7 +35,7 @@ export const getStationPrice = (station: GasStation, selectedFuel: string): numb
 // 좌표계 정의 - 제주도 지역 특화
 // 여러 좌표계를 시도해보기 위한 정의들
 const COORDINATE_SYSTEMS = {
-  BESSEL_WEST: '+proj=tmerc +lat_0=37.0918 +lon_0=125.8478 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +towgs84=-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43 +units=m +no_defs'
+  BESSEL_WEST: '+proj=tmerc +lat_0=37.0917999 +lon_0=125.8477911 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +towgs84=-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43 +units=m +no_defs'
 };
 
 const WGS84_PROJ = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
@@ -80,8 +80,8 @@ export const convertKatecToWgs84 = (katecX: number, katecY: number): { latitude:
 
 
         return {
-          latitude: Math.round(latitude * 1000000) / 1000000, // 소수점 6자리로 반올림
-          longitude: Math.round(longitude * 1000000) / 1000000
+          latitude: latitude, 
+          longitude: longitude
         };
       } catch (err) {
         // 이 좌표계로는 변환 실패, 다음 좌표계 시도
