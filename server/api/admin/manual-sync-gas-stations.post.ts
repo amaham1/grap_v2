@@ -50,13 +50,17 @@ export default defineEventHandler(async (event) => {
             let longitude = null;
 
             if (katecX && katecY) {
-              const convertedCoords = convertKatecToWgs84(katecX, katecY);
-              if (convertedCoords) {
-                latitude = convertedCoords.latitude;
-                longitude = convertedCoords.longitude;
-                console.log(`[MANUAL-SYNC] 좌표 변환 성공: ${station.osnm} - KATEC(${katecX}, ${katecY}) → WGS84(${latitude}, ${longitude})`);
-              } else {
-                console.warn(`[MANUAL-SYNC] 좌표 변환 실패: ${station.osnm} - KATEC(${katecX}, ${katecY})`);
+              try {
+                const convertedCoords = await convertKatecToWgs84(katecX, katecY);
+                if (convertedCoords) {
+                  latitude = convertedCoords.latitude;
+                  longitude = convertedCoords.longitude;
+                  console.log(`[MANUAL-SYNC] 좌표 변환 성공: ${station.osnm} - KATEC(${katecX}, ${katecY}) → WGS84(${latitude}, ${longitude})`);
+                } else {
+                  console.warn(`[MANUAL-SYNC] 좌표 변환 실패: ${station.osnm} - KATEC(${katecX}, ${katecY})`);
+                }
+              } catch (coordError) {
+                console.error(`[MANUAL-SYNC] 좌표 변환 중 오류: ${station.osnm} - KATEC(${katecX}, ${katecY})`, coordError);
               }
             }
 

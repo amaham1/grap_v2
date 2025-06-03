@@ -88,21 +88,26 @@ export default defineEventHandler(async (event) => {
               let longitude = null;
 
               if (katecX && katecY) {
-                const convertedCoords = convertKatecToWgs84(katecX, katecY);
-                if (convertedCoords) {
-                  latitude = convertedCoords.latitude;
-                  longitude = convertedCoords.longitude;
-                  coordConvertSuccess++;
+                try {
+                  const convertedCoords = await convertKatecToWgs84(katecX, katecY);
+                  if (convertedCoords) {
+                    latitude = convertedCoords.latitude;
+                    longitude = convertedCoords.longitude;
+                    coordConvertSuccess++;
 
-                  // 처음 5개만 상세 로그 출력
-                  if (coordConvertSuccess <= 5) {
-                    console.log(`[${new Date().toISOString()}] 좌표 변환 성공: ${item.osnm} - KATEC(${katecX}, ${katecY}) → WGS84(${latitude}, ${longitude})`);
+                    // 처음 5개만 상세 로그 출력
+                    if (coordConvertSuccess <= 5) {
+                      console.log(`[${new Date().toISOString()}] 좌표 변환 성공: ${item.osnm} - KATEC(${katecX}, ${katecY}) → WGS84(${latitude}, ${longitude})`);
+                    }
+                  } else {
+                    coordConvertFailed++;
+                    if (coordConvertFailed <= 3) {
+                      console.warn(`[${new Date().toISOString()}] 좌표 변환 실패: ${item.osnm} - KATEC(${katecX}, ${katecY})`);
+                    }
                   }
-                } else {
+                } catch (coordError) {
+                  console.error(`[${new Date().toISOString()}] 좌표 변환 중 오류: ${item.osnm} - KATEC(${katecX}, ${katecY})`, coordError);
                   coordConvertFailed++;
-                  if (coordConvertFailed <= 3) {
-                    console.warn(`[${new Date().toISOString()}] 좌표 변환 실패: ${item.osnm} - KATEC(${katecX}, ${katecY})`);
-                  }
                 }
               }
 

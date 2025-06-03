@@ -33,42 +33,114 @@ export const getStationPrice = (station: GasStation, selectedFuel: string): numb
 };
 
 // 좌표계 정의 - 제주도 지역 특화
-// 여러 좌표계를 시도해보기 위한 정의들
+// 제주도 API에서 사용하는 정확한 좌표계
+// Y좌표 범위에 따라 다른 False Northing 값 사용
 const COORDINATE_SYSTEMS = {
-  BESSEL_WEST: '+proj=tmerc +lat_0=37.0917999 +lon_0=125.8477911 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +towgs84=-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43 +units=m +no_defs'
+  // 제주도 전용 좌표계 (중앙경선 126.5도, False Northing 0)
+  JEJU_126_5_Y0: '+proj=tmerc +lat_0=38 +lon_0=126.5 +k=1 +x_0=200000 +y_0=0 +ellps=GRS80 +units=m +no_defs',
+  // 제주도 전용 좌표계 (중앙경선 126.5도, False Northing 500000)
+  JEJU_126_5_Y500: '+proj=tmerc +lat_0=38 +lon_0=126.5 +k=1 +x_0=200000 +y_0=500000 +ellps=GRS80 +units=m +no_defs',
+  // 제주도 전용 좌표계 (중앙경선 126.5도, False Northing 550000)
+  JEJU_126_5_Y550: '+proj=tmerc +lat_0=38 +lon_0=126.5 +k=1 +x_0=200000 +y_0=550000 +ellps=GRS80 +units=m +no_defs',
+  // 제주도 전용 좌표계 (중앙경선 126도, False Northing 0)
+  JEJU_126_Y0: '+proj=tmerc +lat_0=38 +lon_0=126 +k=1 +x_0=200000 +y_0=0 +ellps=GRS80 +units=m +no_defs',
+  // 제주도 전용 좌표계 (중앙경선 126도, False Northing 500000)
+  JEJU_126_Y500: '+proj=tmerc +lat_0=38 +lon_0=126 +k=1 +x_0=200000 +y_0=500000 +ellps=GRS80 +units=m +no_defs',
+  // 제주도 전용 좌표계 (중앙경선 126도, False Northing 550000)
+  JEJU_126_Y550: '+proj=tmerc +lat_0=38 +lon_0=126 +k=1 +x_0=200000 +y_0=550000 +ellps=GRS80 +units=m +no_defs',
+  // Bessel 타원체 버전들
+  JEJU_126_5_BESSEL_Y0: '+proj=tmerc +lat_0=38 +lon_0=126.5 +k=1 +x_0=200000 +y_0=0 +ellps=bessel +towgs84=-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43 +units=m +no_defs',
+  JEJU_126_5_BESSEL_Y500: '+proj=tmerc +lat_0=38 +lon_0=126.5 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +towgs84=-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43 +units=m +no_defs',
+  // 기존 좌표계들 (백업용)
+  JEJU_CENTRAL: '+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=550000 +ellps=GRS80 +units=m +no_defs',
+  JEJU_ORIGIN: '+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=500000 +ellps=GRS80 +units=m +no_defs'
 };
 
 const WGS84_PROJ = '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs';
 
+// Kakao API 설정
+const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY || 'd806ae809740b6a6e114067f7326bd38';
+const KAKAO_COORD_CONVERT_URL = 'https://dapi.kakao.com/v2/local/geo/transcoord.json';
+
 /**
- * 제주도 API의 gisxcoor, gisycoor 좌표를 WGS84 좌표계로 변환하는 함수
- * proj4 라이브러리를 사용하여 여러 좌표계를 순차적으로 시도
- *
- * 제주도 API에서 제공하는 좌표계를 정확히 파악하기 위해 여러 좌표계를 시도
+ * Kakao API를 사용하여 KATEC 좌표를 WGS84로 변환하는 함수
+ * @param katecX KATEC X 좌표
+ * @param katecY KATEC Y 좌표
+ * @returns WGS84 좌표 또는 null
  */
-export const convertKatecToWgs84 = (katecX: number, katecY: number): { latitude: number; longitude: number } | null => {
+const convertWithKakaoAPI = async (katecX: number, katecY: number): Promise<{ latitude: number; longitude: number } | null> => {
   try {
-    // 좌표가 유효하지 않은 경우
-    if (!katecX || !katecY || katecX === 0 || katecY === 0) {
-      console.warn(`[COORD-CONVERT] 유효하지 않은 좌표: (${katecX}, ${katecY})`);
+    const url = new URL(KAKAO_COORD_CONVERT_URL);
+    url.searchParams.append('x', katecX.toString());
+    url.searchParams.append('y', katecY.toString());
+    url.searchParams.append('input_coord', 'KTM');
+    url.searchParams.append('output_coord', 'WGS84');
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Authorization': `KakaoAK ${KAKAO_REST_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      console.warn(`[KAKAO-API] HTTP 오류: ${response.status} ${response.statusText}`);
       return null;
     }
 
-    // 제주도 지역 좌표 범위 검증 (실제 API 데이터 기반)
-    // 제주도 API 좌표 범위: X(230,000~300,000), Y(70,000~110,000)
-    if (katecX < 200000 || katecX > 350000 || katecY < 50000 || katecY > 150000) {
-      console.warn(`[COORD-CONVERT] 좌표 범위를 벗어남: (${katecX}, ${katecY})`);
+    const data = await response.json();
+
+    if (data.documents && data.documents.length > 0) {
+      const result = data.documents[0];
+      const longitude = parseFloat(result.x);
+      const latitude = parseFloat(result.y);
+
+      // 제주도 영역 검증
+      if (latitude >= 33.0 && latitude <= 33.8 && longitude >= 126.0 && longitude <= 128.2) {
+        console.log(`[KAKAO-API] ✅ 좌표변환 성공: (${katecX}, ${katecY}) → WGS84(${latitude.toFixed(6)}, ${longitude.toFixed(6)})`);
+        return {
+          latitude: Math.round(latitude * 1000000) / 1000000,
+          longitude: Math.round(longitude * 1000000) / 1000000
+        };
+      } else {
+        console.warn(`[KAKAO-API] ❌ 제주도 영역 외부 좌표: (${katecX}, ${katecY}) → WGS84(${latitude.toFixed(6)}, ${longitude.toFixed(6)})`);
+        return null;
+      }
+    } else {
+      console.warn(`[KAKAO-API] 변환 결과 없음: (${katecX}, ${katecY})`);
       return null;
     }
+  } catch (error) {
+    console.error(`[KAKAO-API] 좌표 변환 실패:`, error, `좌표: (${katecX}, ${katecY})`);
+    return null;
+  }
+};
 
-    // 여러 좌표계를 순차적으로 시도
+/**
+ * proj4를 사용한 폴백 좌표 변환 함수
+ * Kakao API 실패 시 사용
+ */
+const convertWithProj4Fallback = (katecX: number, katecY: number): { latitude: number; longitude: number } | null => {
+  try {
+    console.log(`[PROJ4-FALLBACK] Kakao API 실패로 proj4 폴백 시작: (${katecX}, ${katecY})`);
+
+    // 여러 좌표계를 순차적으로 시도 (제주도 전용 좌표계 우선)
     const coordinateSystemsToTry = [
-      { name: 'BESSEL_WEST', proj: COORDINATE_SYSTEMS.BESSEL_WEST },
+      { name: 'JEJU_126_5_Y0', proj: COORDINATE_SYSTEMS.JEJU_126_5_Y0 },
+      { name: 'JEJU_126_5_Y500', proj: COORDINATE_SYSTEMS.JEJU_126_5_Y500 },
+      { name: 'JEJU_126_5_Y550', proj: COORDINATE_SYSTEMS.JEJU_126_5_Y550 },
+      { name: 'JEJU_126_Y0', proj: COORDINATE_SYSTEMS.JEJU_126_Y0 },
+      { name: 'JEJU_126_Y500', proj: COORDINATE_SYSTEMS.JEJU_126_Y500 },
+      { name: 'JEJU_126_Y550', proj: COORDINATE_SYSTEMS.JEJU_126_Y550 },
+      { name: 'JEJU_126_5_BESSEL_Y0', proj: COORDINATE_SYSTEMS.JEJU_126_5_BESSEL_Y0 },
+      { name: 'JEJU_126_5_BESSEL_Y500', proj: COORDINATE_SYSTEMS.JEJU_126_5_BESSEL_Y500 },
+      { name: 'JEJU_CENTRAL', proj: COORDINATE_SYSTEMS.JEJU_CENTRAL },
+      { name: 'JEJU_ORIGIN', proj: COORDINATE_SYSTEMS.JEJU_ORIGIN }
     ];
 
     for (const coordSystem of coordinateSystemsToTry) {
       try {
-        // proj4를 사용한 좌표변환
         const result = proj4(coordSystem.proj, WGS84_PROJ, [katecX, katecY]);
 
         if (!result || result.length !== 2) {
@@ -78,22 +150,87 @@ export const convertKatecToWgs84 = (katecX: number, katecY: number): { latitude:
         const longitude = result[0];
         const latitude = result[1];
 
-
-        return {
-          latitude: latitude, 
-          longitude: longitude
-        };
+        // 제주도 영역 검증
+        if (latitude >= 33.0 && latitude <= 33.8 && longitude >= 126.0 && longitude <= 128.2) {
+          console.log(`[PROJ4-FALLBACK] ✅ 좌표변환 성공 (${coordSystem.name}): (${katecX}, ${katecY}) → WGS84(${latitude.toFixed(6)}, ${longitude.toFixed(6)})`);
+          return {
+            latitude: Math.round(latitude * 1000000) / 1000000,
+            longitude: Math.round(longitude * 1000000) / 1000000
+          };
+        }
       } catch (err) {
-        // 이 좌표계로는 변환 실패, 다음 좌표계 시도
         continue;
       }
     }
 
-    console.warn(`[COORD-CONVERT] 모든 좌표계 시도 실패: (${katecX}, ${katecY})`);
+    console.warn(`[PROJ4-FALLBACK] 모든 좌표계 시도 실패: (${katecX}, ${katecY})`);
+    return null;
+  } catch (error) {
+    console.error('[PROJ4-FALLBACK] 좌표 변환 실패:', error, `좌표: (${katecX}, ${katecY})`);
+    return null;
+  }
+};
+
+/**
+ * 제주도 API의 gisxcoor, gisycoor 좌표를 WGS84 좌표계로 변환하는 함수
+ * 1차: Kakao API 사용 (권장)
+ * 2차: proj4 라이브러리 폴백 (Kakao API 실패 시)
+ *
+ * 제주도 API에서 제공하는 KATEC 좌표를 정확히 WGS84로 변환
+ */
+export const convertKatecToWgs84 = async (katecX: number, katecY: number): Promise<{ latitude: number; longitude: number } | null> => {
+  try {
+    // 좌표가 유효하지 않은 경우
+    if (!katecX || !katecY || katecX === 0 || katecY === 0) {
+      console.warn(`[COORD-CONVERT] 유효하지 않은 좌표: (${katecX}, ${katecY})`);
+      return null;
+    }
+
+    console.log(`[COORD-CONVERT] 좌표변환 시작: (${katecX}, ${katecY})`);
+
+    // 1차 시도: Kakao API 사용
+    try {
+      const kakaoResult = await convertWithKakaoAPI(katecX, katecY);
+      if (kakaoResult) {
+        return kakaoResult;
+      }
+    } catch (error) {
+      console.warn(`[COORD-CONVERT] Kakao API 호출 실패, proj4 폴백으로 전환:`, error);
+    }
+
+    // 2차 시도: proj4 폴백
+    const proj4Result = convertWithProj4Fallback(katecX, katecY);
+    if (proj4Result) {
+      return proj4Result;
+    }
+
+    console.warn(`[COORD-CONVERT] 모든 변환 방법 실패: (${katecX}, ${katecY})`);
     return null;
 
   } catch (error) {
     console.error('[COORD-CONVERT] 좌표 변환 실패:', error, `좌표: (${katecX}, ${katecY})`);
+    return null;
+  }
+};
+
+/**
+ * 동기 버전의 좌표 변환 함수 (proj4만 사용)
+ * 기존 코드와의 호환성을 위해 제공
+ * @deprecated 가능하면 convertKatecToWgs84 (비동기 버전) 사용 권장
+ */
+export const convertKatecToWgs84Sync = (katecX: number, katecY: number): { latitude: number; longitude: number } | null => {
+  try {
+    // 좌표가 유효하지 않은 경우
+    if (!katecX || !katecY || katecX === 0 || katecY === 0) {
+      console.warn(`[COORD-CONVERT-SYNC] 유효하지 않은 좌표: (${katecX}, ${katecY})`);
+      return null;
+    }
+
+    console.log(`[COORD-CONVERT-SYNC] proj4 동기 좌표변환 시작: (${katecX}, ${katecY})`);
+    return convertWithProj4Fallback(katecX, katecY);
+
+  } catch (error) {
+    console.error('[COORD-CONVERT-SYNC] 좌표 변환 실패:', error, `좌표: (${katecX}, ${katecY})`);
     return null;
   }
 };
