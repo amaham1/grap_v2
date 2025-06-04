@@ -162,14 +162,15 @@ export async function callJejuApi<T = any>(
   console.log(`📍 [JEJU-API] 엔드포인트: ${endpoint}`);
   console.log(`🔑 [JEJU-API] API 키: ${apiKey ? `${apiKey.substring(0, 3)}***` : '없음'}`);
   console.log(`🌐 [JEJU-API] 최종 URL: ${url}`);
-  console.log(`⚙️ [JEJU-API] 설정: 타임아웃 45초, 최대 3회 재시도`);
+  console.log(`⚙️ [JEJU-API] 설정: 타임아웃 30초, 최대 2회 재시도 (성능 개선)`);
 
   const result = await callHttpApi<T>(url, {
-    timeout: 45000, // 제주도 API는 응답이 느릴 수 있음
-    retries: 3,
+    timeout: 30000, // 타임아웃 단축 (45초 → 30초)
+    retries: 2, // 재시도 횟수 감소 (3회 → 2회)
     headers: {
       'Accept': 'application/json',
       'Accept-Language': 'ko-KR,ko;q=0.9',
+      'Connection': 'keep-alive', // 연결 재사용
       ...options.headers
     },
     ...options

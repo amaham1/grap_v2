@@ -12,10 +12,10 @@ const API_KEY = '860665'; // 제주도 API 키
 const GAS_INFO_API_URL = `http://api.jejuits.go.kr/api/infoGasInfoList?code=${API_KEY}`;
 const GAS_PRICE_API_URL = `http://api.jejuits.go.kr/api/infoGasPriceList?code=${API_KEY}`;
 
-// Cloudflare Workers 최적화 설정
-const BATCH_SIZE = 30; // 배치 처리 크기 감소 (좌표 변환 시간 고려)
-const PROCESSING_TIMEOUT = 150000; // 2.5분 타임아웃 (좌표 변환으로 인한 시간 증가 고려)
-const COORDINATE_CONVERSION_TIMEOUT = 5000; // 개별 좌표 변환 타임아웃 5초
+// Cloudflare Workers 최적화 설정 - 타임아웃 문제 해결
+const BATCH_SIZE = 50; // 배치 처리 크기 증가 (성능 개선)
+const PROCESSING_TIMEOUT = 270000; // 4.5분 타임아웃 (191초 실패 경험 반영)
+const COORDINATE_CONVERSION_TIMEOUT = 3000; // 개별 좌표 변환 타임아웃 3초 (속도 개선)
 
 export default defineEventHandler(async (event) => {
   // 보안 검증: GitHub Actions, Cloudflare Workers Scheduled, 또는 관리자만 접근 가능

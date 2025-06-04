@@ -73,7 +73,7 @@
           class="w-full bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:bg-gray-400 flex items-center justify-center">
            <svg v-if="loading.gasStations" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
           {{ loading.gasStations ? '수집 중...' : '주유소 정보 수집 실행' }}
         </button>
@@ -121,11 +121,13 @@ async function triggerFetch(sourceName: SourceName) {
   console.log(`📡 API 엔드포인트: /api/admin/trigger-fetch/${sourceName}`);
 
   if (sourceName === 'gas-stations') {
-    console.log(`⛽ 주유소 데이터 수집 상세 정보:`);
+    console.log(`⛽ [NETWORK-FACT] 주유소 데이터 수집 정보:`);
     console.log(`  - 외부 API: 제주도 주유소 정보 API`);
     console.log(`  - 수집 데이터: 주유소 기본 정보 + 가격 정보`);
     console.log(`  - 좌표 변환: KATEC → WGS84 (카카오 API 사용)`);
-    console.log(`  - 예상 소요 시간: 2-3분`);
+    console.log(`  - 타임아웃 설정: 4.5분 (이전 191초 실패 반영)`);
+    console.log(`  - 배치 크기: 50개씩 처리 (성능 개선)`);
+    console.log(`  - 예상 소요 시간: 3-4분`);
   }
 
   try {
@@ -271,8 +273,15 @@ async function triggerFetch(sourceName: SourceName) {
       console.error(`  5. 📱 모바일 데이터로 전환 테스트`);
       console.error(`  6. 🕐 잠시 후 재시도 (서버 과부하 가능성)`);
 
-      console.error(`🌍 [NETWORK] 예상 실패 지점 분석:`);
-      if (error.statusCode >= 500) {
+      console.error(`🌍 [NETWORK-FACT] 실제 실패 지점 분석:`);
+      if (error.statusCode === 500 && error.data?.message?.includes('Processing timeout reached')) {
+        console.error(`  🎯 확인된 문제: 서버 처리 타임아웃 (이전 191초 → 현재 270초로 개선)`);
+        console.error(`  📊 실제 원인: 좌표 변환 과정에서 시간 초과`);
+        console.error(`  🔧 적용된 해결책:`);
+        console.error(`    - 타임아웃: 150초 → 270초 (4.5분)`);
+        console.error(`    - 배치 크기: 30개 → 50개`);
+        console.error(`    - 좌표 변환 타임아웃: 5초 → 3초`);
+      } else if (error.statusCode >= 500) {
         console.error(`  🎯 서버 오류 (5xx): Cloudflare Workers 또는 백엔드 서버 문제`);
       } else if (error.statusCode >= 400) {
         console.error(`  🎯 클라이언트 오류 (4xx): 요청 형식 또는 권한 문제`);

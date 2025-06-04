@@ -84,7 +84,7 @@ export default defineEventHandler(async (event) => {
             'x-admin-trigger': 'true',
             'x-cron-source': 'admin-manual'
           },
-          timeout: 180000 // 3분 타임아웃 (주유소 API는 좌표 변환으로 인해 시간이 더 필요)
+          timeout: 300000 // 5분 타임아웃 (191초 실패 경험 반영, 서버 270초 + 여유시간)
         });
         resultMessage = `Gas station data fetch triggered successfully via /api/cron/gas-stations.`;
         break;
