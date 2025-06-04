@@ -114,26 +114,96 @@ async function triggerFetch(sourceName: SourceName) {
   loading.value[key] = true;
   results.value[key] = undefined; // 이전 결과 초기화
 
+  // 상세한 콘솔 로깅 시작
+  const startTime = Date.now();
+  console.group(`🚀 [ADMIN-TRIGGER] ${sourceName.toUpperCase()} 데이터 수집 시작`);
+  console.log(`⏰ 시작 시간: ${new Date().toLocaleString()}`);
+  console.log(`📡 API 엔드포인트: /api/admin/trigger-fetch/${sourceName}`);
+
+  if (sourceName === 'gas-stations') {
+    console.log(`⛽ 주유소 데이터 수집 상세 정보:`);
+    console.log(`  - 외부 API: 제주도 주유소 정보 API`);
+    console.log(`  - 수집 데이터: 주유소 기본 정보 + 가격 정보`);
+    console.log(`  - 좌표 변환: KATEC → WGS84 (카카오 API 사용)`);
+    console.log(`  - 예상 소요 시간: 2-3분`);
+  }
+
   try {
+    console.log(`📤 API 요청 전송 중...`);
+
     const response = await $fetch(`/api/admin/trigger-fetch/${sourceName}`, {
       method: 'POST',
     });
+
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+
+    console.log(`📥 API 응답 수신 완료 (${duration}ms)`);
+    console.log(`📊 응답 데이터:`, response);
+
     // 타입 단언을 사용하여 response의 타입을 명시
-    const typedResponse = response as { success: boolean; message: string; error?: string };
+    const typedResponse = response as {
+      success: boolean;
+      message: string;
+      error?: string;
+      details?: any;
+      timing?: any;
+    };
 
     if (typedResponse.success) {
-      results.value[key] = { success: true, message: typedResponse.message || '데이터 수집이 성공적으로 시작되었습니다.' };
+      console.log(`✅ 데이터 수집 트리거 성공`);
+      if (typedResponse.details) {
+        console.log(`📋 추가 정보:`, typedResponse.details);
+      }
+      if (typedResponse.timing) {
+        console.log(`⏱️ 타이밍 정보:`, typedResponse.timing);
+      }
+
+      results.value[key] = {
+        success: true,
+        message: typedResponse.message || '데이터 수집이 성공적으로 시작되었습니다.'
+      };
+
+      if (sourceName === 'gas-stations') {
+        console.log(`⛽ 주유소 데이터 수집이 백그라운드에서 진행 중입니다.`);
+        console.log(`📝 진행 상황은 서버 로그에서 확인할 수 있습니다.`);
+      }
     } else {
-      results.value[key] = { success: false, message: typedResponse.message || typedResponse.error || '데이터 수집 시작에 실패했습니다.' };
+      console.error(`❌ 데이터 수집 트리거 실패`);
+      console.error(`💬 오류 메시지: ${typedResponse.message || typedResponse.error}`);
+
+      results.value[key] = {
+        success: false,
+        message: typedResponse.message || typedResponse.error || '데이터 수집 시작에 실패했습니다.'
+      };
     }
   } catch (error: any) {
-    console.error(`Error triggering fetch for ${sourceName}:`, error);
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+
+    console.error(`💥 API 요청 실패 (${duration}ms)`);
+    console.error(`🔍 오류 상세 정보:`, error);
+    console.error(`📡 네트워크 상태:`, navigator.onLine ? '온라인' : '오프라인');
+
+    if (error.data) {
+      console.error(`📄 서버 응답 데이터:`, error.data);
+    }
+    if (error.statusCode) {
+      console.error(`🔢 HTTP 상태 코드: ${error.statusCode}`);
+    }
+
     results.value[key] = {
       success: false,
       message: error.data?.message || error.message || `An unexpected error occurred while triggering ${sourceName}.`
     };
+  } finally {
+    const totalTime = Date.now() - startTime;
+    console.log(`⏰ 총 소요 시간: ${totalTime}ms`);
+    console.log(`🏁 ${sourceName.toUpperCase()} 트리거 완료: ${new Date().toLocaleString()}`);
+    console.groupEnd();
+
+    loading.value[key] = false;
   }
-  loading.value[key] = false;
 }
 </script>
 

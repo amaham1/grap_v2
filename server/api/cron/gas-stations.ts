@@ -79,20 +79,28 @@ export default defineEventHandler(async (event) => {
           let coordConvertSuccess = 0;
           let coordConvertFailed = 0;
 
-          console.log(`[${new Date().toISOString()}] Processing ${infoResponse.info.length} gas stations with coordinate conversion`);
+          console.log(`🔄 [GAS-STATIONS] ${infoResponse.info.length}개 주유소 좌표 변환 및 처리 시작`);
+          console.log(`📍 [GAS-STATIONS] 좌표 변환 정보:`);
+          console.log(`  - 원본 좌표계: KATEC (Korean Transverse Mercator)`);
+          console.log(`  - 변환 좌표계: WGS84 (World Geodetic System 1984)`);
+          console.log(`  - 변환 API: 카카오 좌표 변환 API`);
+          console.log(`  - 배치 크기: ${BATCH_SIZE}개씩 처리`);
+          console.log(`  - 변환 타임아웃: ${COORDINATE_CONVERSION_TIMEOUT}ms`);
 
           // 배치 단위로 병렬 처리
           for (let batchStart = 0; batchStart < infoResponse.info.length; batchStart += BATCH_SIZE) {
             // 타임아웃 체크
             if (Date.now() - startTime > PROCESSING_TIMEOUT) {
-              console.warn(`[${new Date().toISOString()}] Processing timeout reached during batch processing at item ${batchStart}`);
+              console.warn(`⏰ [GAS-STATIONS] 전체 처리 타임아웃 도달 (${batchStart}번째 항목에서 중단)`);
               break;
             }
 
             const batchEnd = Math.min(batchStart + BATCH_SIZE, infoResponse.info.length);
             const batch = infoResponse.info.slice(batchStart, batchEnd);
+            const batchNumber = Math.floor(batchStart / BATCH_SIZE) + 1;
+            const totalBatches = Math.ceil(infoResponse.info.length / BATCH_SIZE);
 
-            console.log(`[${new Date().toISOString()}] Processing batch ${Math.floor(batchStart / BATCH_SIZE) + 1}: items ${batchStart + 1}-${batchEnd}`);
+            console.log(`📦 [GAS-STATIONS] 배치 ${batchNumber}/${totalBatches} 처리 중: ${batchStart + 1}-${batchEnd}번째 주유소`);
 
             // 배치 내에서 병렬 좌표 변환 처리
             const batchPromises = batch.map(async (item, index) => {
@@ -104,7 +112,10 @@ export default defineEventHandler(async (event) => {
 
                 if (katecX && katecY) {
                   try {
+                    const convertStartTime = Date.now();
                     const convertedCoords = await convertKatecToWgs84(katecX, katecY, COORDINATE_CONVERSION_TIMEOUT);
+                    const convertDuration = Date.now() - convertStartTime;
+
                     if (convertedCoords) {
                       latitude = convertedCoords.latitude;
                       longitude = convertedCoords.longitude;
@@ -112,18 +123,41 @@ export default defineEventHandler(async (event) => {
 
                       // 처음 5개만 상세 로그 출력
                       if (coordConvertSuccess <= 5) {
-                        console.log(`[${new Date().toISOString()}] 좌표 변환 성공: ${item.osnm} - KATEC(${katecX}, ${katecY}) → WGS84(${latitude}, ${longitude})`);
+                        console.log(`✅ [COORD-CONVERT] ${item.osnm} 좌표 변환 성공 (${convertDuration}ms)`);
+                        console.log(`  📍 KATEC: X=${katecX}, Y=${katecY}`);
+                        console.log(`  🌍 WGS84: 위도=${latitude}, 경도=${longitude}`);
+                        console.log(`  🔗 카카오 API 응답 시간: ${convertDuration}ms`);
+                      } else if (coordConvertSuccess % 50 === 0) {
+                        // 50개마다 진행 상황 로그
+                        console.log(`📊 [COORD-CONVERT] 진행 상황: ${coordConvertSuccess}개 변환 완료`);
                       }
                     } else {
                       coordConvertFailed++;
                       if (coordConvertFailed <= 3) {
-                        console.warn(`[${new Date().toISOString()}] 좌표 변환 실패: ${item.osnm} - KATEC(${katecX}, ${katecY})`);
+                        console.warn(`❌ [COORD-CONVERT] ${item.osnm} 좌표 변환 실패 (${convertDuration}ms)`);
+                        console.warn(`  📍 KATEC: X=${katecX}, Y=${katecY}`);
+                        console.warn(`  🔧 원인: 카카오 API에서 null 응답 반환`);
                       }
                     }
-                  } catch (coordError) {
-                    console.error(`[${new Date().toISOString()}] 좌표 변환 중 오류: ${item.osnm} - KATEC(${katecX}, ${katecY})`, coordError);
+                  } catch (coordError: any) {
                     coordConvertFailed++;
+                    if (coordConvertFailed <= 3) {
+                      console.error(`💥 [COORD-CONVERT] ${item.osnm} 좌표 변환 중 오류`);
+                      console.error(`  📍 KATEC: X=${katecX}, Y=${katecY}`);
+                      console.error(`  🔍 오류 상세: ${coordError.message}`);
+                      console.error(`  🔧 해결 방안:`);
+                      console.error(`    1. 카카오 API 키 확인 (d806ae809740b6a6e114067f7326bd38)`);
+                      console.error(`    2. 네트워크 연결 상태 확인`);
+                      console.error(`    3. 좌표 값 유효성 확인`);
+                    }
                   }
+                } else {
+                  // KATEC 좌표가 없는 경우
+                  if (coordConvertFailed <= 3) {
+                    console.warn(`⚠️ [COORD-CONVERT] ${item.osnm} KATEC 좌표 누락`);
+                    console.warn(`  📍 gisxcoor: ${item.gisxcoor}, gisycoor: ${item.gisycoor}`);
+                  }
+                  coordConvertFailed++;
                 }
 
                 const gasStationData: gasStationDAO.GasStation = {
@@ -172,40 +206,85 @@ export default defineEventHandler(async (event) => {
               }
             });
 
-            console.log(`[${new Date().toISOString()}] Batch ${Math.floor(batchStart / BATCH_SIZE) + 1} completed. Total processed: ${gasStationDataList.length}`);
+            const batchSuccessRate = batchResults.filter(r => r.status === 'fulfilled' && r.value).length;
+            const batchFailureRate = batchResults.length - batchSuccessRate;
+
+            console.log(`✅ [GAS-STATIONS] 배치 ${batchNumber} 완료: 성공 ${batchSuccessRate}개, 실패 ${batchFailureRate}개`);
+            console.log(`📊 [GAS-STATIONS] 전체 진행률: ${gasStationDataList.length}/${infoResponse.info.length} (${Math.round(gasStationDataList.length / infoResponse.info.length * 100)}%)`);
           }
 
-          console.log(`[${new Date().toISOString()}] Coordinate conversion summary: ${coordConvertSuccess} success, ${coordConvertFailed} failed`);
+          // 좌표 변환 최종 요약
+          const totalProcessed = coordConvertSuccess + coordConvertFailed;
+          const successRate = totalProcessed > 0 ? Math.round(coordConvertSuccess / totalProcessed * 100) : 0;
+
+          console.log(`🎯 [COORD-CONVERT] 좌표 변환 최종 요약:`);
+          console.log(`  ✅ 성공: ${coordConvertSuccess}개 (${successRate}%)`);
+          console.log(`  ❌ 실패: ${coordConvertFailed}개 (${100 - successRate}%)`);
+          console.log(`  📊 총 처리: ${totalProcessed}개`);
+          console.log(`  🎯 노출 가능 주유소: ${coordConvertSuccess}개 (좌표 변환 성공한 주유소만 노출)`);
+
+          if (coordConvertFailed > 0) {
+            console.warn(`⚠️ [COORD-CONVERT] 좌표 변환 실패 원인 분석:`);
+            console.warn(`  1. 카카오 API 응답 지연 또는 오류`);
+            console.warn(`  2. 잘못된 KATEC 좌표 값`);
+            console.warn(`  3. 네트워크 연결 문제`);
+            console.warn(`  4. API 키 제한 또는 만료`);
+          }
 
           // 배치로 주유소 정보 저장/업데이트
           if (gasStationDataList.length > 0) {
-            console.log(`[${new Date().toISOString()}] Batch upserting ${gasStationDataList.length} gas stations`);
+            const dbStartTime = Date.now();
+            console.log(`💾 [DATABASE] 주유소 정보 데이터베이스 저장 시작`);
+            console.log(`📊 [DATABASE] 저장할 데이터: ${gasStationDataList.length}개 주유소`);
+            console.log(`🎯 [DATABASE] 노출 설정: 좌표 변환 성공한 ${coordConvertSuccess}개만 노출`);
+
             const batchResult = await gasStationDAO.batchUpsertGasStations(gasStationDataList);
+            const dbDuration = Date.now() - dbStartTime;
+
             if (batchResult.error) {
-              console.error(`[${new Date().toISOString()}] Batch upsert failed:`, batchResult.error);
+              console.error(`❌ [DATABASE] 주유소 정보 저장 실패 (${dbDuration}ms)`);
+              console.error(`🔍 [DATABASE] 오류 상세: ${batchResult.error}`);
+              console.error(`🔧 [DATABASE] 해결 방안:`);
+              console.error(`  1. 데이터베이스 연결 상태 확인`);
+              console.error(`  2. Supabase 서비스 상태 확인`);
+              console.error(`  3. 데이터 형식 유효성 확인`);
+              console.error(`  4. 데이터베이스 용량 확인`);
               throw new Error(`Gas stations batch upsert failed: ${batchResult.error}`);
             } else {
-              console.log(`[${new Date().toISOString()}] Batch upsert successful: ${batchResult.insertedCount} stations processed`);
+              console.log(`✅ [DATABASE] 주유소 정보 저장 성공 (${dbDuration}ms)`);
+              console.log(`📊 [DATABASE] 처리 결과: ${batchResult.insertedCount || gasStationDataList.length}개 주유소 저장/업데이트`);
+              console.log(`⚡ [DATABASE] 저장 속도: ${Math.round((batchResult.insertedCount || gasStationDataList.length) / (dbDuration / 1000))} 건/초`);
               processedStations = batchResult.insertedCount || gasStationDataList.length;
             }
+          } else {
+            console.warn(`⚠️ [DATABASE] 저장할 주유소 데이터가 없습니다.`);
           }
         }
 
         // 2. 주유소 가격 정보 가져오기 (HTTP API 안전 호출)
-        console.log(`[${new Date().toISOString()}] Fetching gas price info from ${GAS_PRICE_API_URL}`);
+        console.log(`⛽ [GAS-PRICES] 주유소 가격 정보 수집 시작`);
+        console.log(`📡 [GAS-PRICES] API 호출: ${GAS_PRICE_API_URL}`);
+
         const priceApiResult = await callJejuApi(GAS_PRICE_API_URL.replace(`?code=${API_KEY}`, ''), API_KEY);
 
         if (!priceApiResult.success) {
+          console.error(`❌ [GAS-PRICES] 가격 정보 API 호출 실패: ${priceApiResult.error}`);
           throw new Error(`Gas price info API failed: ${priceApiResult.error}`);
         }
 
         const priceResponse = priceApiResult.data;
 
         if (priceResponse && priceResponse.info && Array.isArray(priceResponse.info)) {
-          console.log(`[${new Date().toISOString()}] Received ${priceResponse.info.length} gas price items`);
+          console.log(`📊 [GAS-PRICES] ${priceResponse.info.length}개 가격 정보 수신`);
+          console.log(`💰 [GAS-PRICES] 가격 정보 처리 시작:`);
+          console.log(`  - 휘발유 (gasoline) 가격`);
+          console.log(`  - 고급휘발유 (premium_gasoline) 가격`);
+          console.log(`  - 경유 (diesel) 가격`);
+          console.log(`  - LPG 가격`);
 
           // 배치 처리를 위한 데이터 준비
           const gasPriceDataList: gasStationDAO.GasPrice[] = [];
+          let priceProcessingErrors = 0;
 
           for (const item of priceResponse.info) {
             try {
@@ -219,10 +298,31 @@ export default defineEventHandler(async (event) => {
                 api_raw_data: JSON.stringify(item)
               };
 
+              // 처음 3개 가격 정보만 상세 로그 출력
+              if (gasPriceDataList.length < 3) {
+                console.log(`💰 [GAS-PRICES] 가격 정보 처리 예시 (${gasPriceDataList.length + 1}번째):`);
+                console.log(`  🏪 주유소 ID: ${item.id}`);
+                console.log(`  ⛽ 휘발유: ${item.gasoline}원`);
+                console.log(`  🔥 고급휘발유: ${item.premium_gasoline}원`);
+                console.log(`  🚛 경유: ${item.diesel}원`);
+                console.log(`  🔋 LPG: ${item.lpg}원`);
+                console.log(`  📅 가격 기준일: ${item.price_date}`);
+              } else if (gasPriceDataList.length % 100 === 0) {
+                // 100개마다 진행 상황 로그
+                console.log(`📊 [GAS-PRICES] 진행 상황: ${gasPriceDataList.length}개 가격 정보 처리 완료`);
+              }
+
               gasPriceDataList.push(gasPriceData);
               processedPrices++;
             } catch (itemError: any) {
-              console.error(`[${new Date().toISOString()}] Error processing gas price item:`, itemError.message);
+              priceProcessingErrors++;
+              if (priceProcessingErrors <= 3) {
+                console.error(`❌ [GAS-PRICES] 가격 정보 처리 오류 (${priceProcessingErrors}번째)`);
+                console.error(`  🏪 주유소 ID: ${item.id}`);
+                console.error(`  🔍 오류 상세: ${itemError.message}`);
+                console.error(`  📄 원본 데이터:`, JSON.stringify(item).substring(0, 200) + '...');
+              }
+
               await logDAO.createSystemErrorLog({
                 error_type: 'ITEM_PROCESSING_ERROR',
                 error_message: `Error processing gas price item: ${itemError.message}`,
@@ -235,22 +335,53 @@ export default defineEventHandler(async (event) => {
             }
           }
 
+          // 가격 정보 처리 요약
+          console.log(`🎯 [GAS-PRICES] 가격 정보 처리 완료:`);
+          console.log(`  ✅ 성공: ${gasPriceDataList.length}개`);
+          console.log(`  ❌ 실패: ${priceProcessingErrors}개`);
+          console.log(`  📊 총 처리: ${priceResponse.info.length}개`);
+
           // 배치로 가격 정보 저장/업데이트
           if (gasPriceDataList.length > 0) {
-            console.log(`[${new Date().toISOString()}] Batch upserting ${gasPriceDataList.length} gas prices`);
+            const priceDbStartTime = Date.now();
+            console.log(`💾 [DATABASE] 가격 정보 데이터베이스 저장 시작`);
+            console.log(`📊 [DATABASE] 저장할 가격 데이터: ${gasPriceDataList.length}개`);
+
             const batchResult = await gasStationDAO.batchUpsertGasPrices(gasPriceDataList);
+            const priceDbDuration = Date.now() - priceDbStartTime;
+
             if (batchResult.error) {
-              console.error(`[${new Date().toISOString()}] Batch upsert failed:`, batchResult.error);
+              console.error(`❌ [DATABASE] 가격 정보 저장 실패 (${priceDbDuration}ms)`);
+              console.error(`🔍 [DATABASE] 오류 상세: ${batchResult.error}`);
+              console.error(`🔧 [DATABASE] 해결 방안:`);
+              console.error(`  1. 데이터베이스 연결 상태 확인`);
+              console.error(`  2. 가격 데이터 형식 유효성 확인`);
+              console.error(`  3. 중복 키 제약 조건 확인`);
+              console.error(`  4. 데이터베이스 트랜잭션 상태 확인`);
               throw new Error(`Gas prices batch upsert failed: ${batchResult.error}`);
             } else {
-              console.log(`[${new Date().toISOString()}] Batch upsert successful: ${batchResult.insertedCount} prices processed`);
+              console.log(`✅ [DATABASE] 가격 정보 저장 성공 (${priceDbDuration}ms)`);
+              console.log(`📊 [DATABASE] 처리 결과: ${batchResult.insertedCount || gasPriceDataList.length}개 가격 정보 저장/업데이트`);
+              console.log(`⚡ [DATABASE] 저장 속도: ${Math.round((batchResult.insertedCount || gasPriceDataList.length) / (priceDbDuration / 1000))} 건/초`);
               processedPrices = batchResult.insertedCount || gasPriceDataList.length;
             }
+          } else {
+            console.warn(`⚠️ [DATABASE] 저장할 가격 데이터가 없습니다.`);
           }
         }
 
         success = true;
-        console.log(`[${new Date().toISOString()}] ${SOURCE_NAME} data processing successful for attempt ${attempt}.`);
+        const totalDuration = Date.now() - startTime;
+
+        console.log(`🎉 [GAS-STATIONS] 주유소 데이터 수집 완료! (시도 ${attempt})`);
+        console.log(`⏱️ [GAS-STATIONS] 총 소요 시간: ${Math.round(totalDuration / 1000)}초 (${totalDuration}ms)`);
+        console.log(`📊 [GAS-STATIONS] 최종 처리 결과:`);
+        console.log(`  🏪 주유소 정보: ${processedStations}개 처리`);
+        console.log(`  💰 가격 정보: ${processedPrices}개 처리`);
+        console.log(`  📈 총 처리량: ${processedStations + processedPrices}개`);
+        console.log(`⚡ [GAS-STATIONS] 평균 처리 속도: ${Math.round((processedStations + processedPrices) / (totalDuration / 1000))} 건/초`);
+        console.log(`🎯 [GAS-STATIONS] 다음 자동 수집: 매일 새벽 2시 (KST)`);
+        console.log(`📝 [GAS-STATIONS] 수집된 데이터는 주유소 지도에서 확인 가능합니다.`);
 
       } catch (error: any) {
         console.error(`[${new Date().toISOString()}] Error during fetch attempt ${attempt} for ${SOURCE_NAME}:`, error.message);

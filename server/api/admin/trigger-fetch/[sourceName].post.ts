@@ -66,6 +66,18 @@ export default defineEventHandler(async (event) => {
         resultMessage = `Welfare service data fetch triggered successfully via /api/cron/welfare-services.`;
         break;
       case 'gas-stations':
+        console.log(`🚀 [ADMIN-TRIGGER] 주유소 데이터 수집 트리거 시작`);
+        console.log(`📡 외부 API 정보:`);
+        console.log(`  - 주유소 정보 API: http://api.jejuits.go.kr/api/infoGasInfoList`);
+        console.log(`  - 가격 정보 API: http://api.jejuits.go.kr/api/infoGasPriceList`);
+        console.log(`  - API 키: 860665`);
+        console.log(`🔄 처리 과정:`);
+        console.log(`  1. 제주도 주유소 정보 API 호출`);
+        console.log(`  2. KATEC 좌표 → WGS84 좌표 변환 (카카오 API)`);
+        console.log(`  3. 주유소 정보 데이터베이스 저장`);
+        console.log(`  4. 제주도 가격 정보 API 호출`);
+        console.log(`  5. 가격 정보 데이터베이스 저장`);
+
         fetchPromise = $fetch('/api/cron/gas-stations', {
           method: 'GET',
           headers: {
@@ -148,6 +160,16 @@ export default defineEventHandler(async (event) => {
         error_message: `Manual fetch completed successfully for ${sourceName}. Processed: ${processedCount} records (${stationsProcessed} stations, ${pricesProcessed} prices)`,
     });
 
+    // 주유소 데이터 수집 완료 로깅
+    if (sourceName === 'gas-stations') {
+      console.log(`✅ [ADMIN-TRIGGER] 주유소 데이터 수집 완료`);
+      console.log(`📊 처리 결과:`);
+      console.log(`  - 처리된 주유소: ${stationsProcessed}개`);
+      console.log(`  - 처리된 가격 정보: ${pricesProcessed}개`);
+      console.log(`  - 총 처리 시간: ${new Date().getTime() - startTime.getTime()}ms`);
+      console.log(`🎯 다음 단계: 브라우저 개발자 도구에서 상세 로그 확인 가능`);
+    }
+
     return {
       success: true,
       message: resultMessage,
@@ -157,7 +179,27 @@ export default defineEventHandler(async (event) => {
         stationsProcessed: stationsProcessed,
         pricesProcessed: pricesProcessed,
         executionTime: new Date().getTime() - startTime.getTime(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        // 주유소 데이터 수집 시 추가 정보
+        ...(sourceName === 'gas-stations' && {
+          externalApis: {
+            gasInfoApi: 'http://api.jejuits.go.kr/api/infoGasInfoList',
+            gasPriceApi: 'http://api.jejuits.go.kr/api/infoGasPriceList',
+            coordinateConversionApi: 'https://dapi.kakao.com/v2/local/geo/transcoord.json'
+          },
+          processSteps: [
+            '1. 제주도 주유소 정보 API 호출',
+            '2. KATEC → WGS84 좌표 변환',
+            '3. 주유소 정보 DB 저장',
+            '4. 제주도 가격 정보 API 호출',
+            '5. 가격 정보 DB 저장'
+          ]
+        })
+      },
+      timing: {
+        startTime: startTime.toISOString(),
+        endTime: new Date().toISOString(),
+        durationMs: new Date().getTime() - startTime.getTime()
       }
     };
 
