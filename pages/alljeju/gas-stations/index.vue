@@ -11,7 +11,7 @@
     <!-- 클라이언트에서만 렌더링되는 지도 관련 컴포넌트들 -->
     <div v-else class="gas-stations-app">
       <!-- 검색 설정 패널 -->
-      <div class="search-panel">
+      <div v-if="isValidApiKey" class="search-panel">
         <GasStationSearchControls
           :user-location="userLocation"
           :is-getting-location="isGettingLocation"
@@ -24,7 +24,7 @@
       </div>
 
       <!-- 주유소 리스트 -->
-      <div class="station-list-panel">
+      <div v-if="isValidApiKey" class="station-list-panel">
         <GasStationStationList
           :top-lowest-price-stations="topLowestPriceStations"
           :favorite-top3-stations="favoriteTop3Stations"
@@ -34,14 +34,25 @@
 
       <!-- 카카오맵 컨테이너 -->
       <GasStationMapContainer
+        v-if="isValidApiKey"
         :is-map-loaded="isMapLoaded"
         :map-error="mapError"
         :is-searching="isSearching"
         @current-view-search="handleCurrentViewSearch"
         @retry="handleMapRetry" />
 
+      <!-- API 키 오류 상태 -->
+      <div v-else class="w-full h-[calc(100vh-109px)] flex items-center justify-center bg-gray-100">
+        <div class="text-center">
+          <div class="text-red-500 text-6xl mb-4">⚠️</div>
+          <p class="text-gray-600 mb-2">카카오맵 API 키가 설정되지 않았습니다.</p>
+          <p class="text-sm text-gray-500">관리자에게 문의하세요.</p>
+        </div>
+      </div>
+
       <!-- 현재 위치 버튼 -->
       <GasStationLocationButton
+        v-if="isValidApiKey"
         :is-getting-location="isGettingLocation"
         @get-current-location="handleGetCurrentLocation" />
 
@@ -550,6 +561,12 @@ onMounted(() => {
 
 // 초기화 및 자동 검색
 const initializeApp = async () => {
+  // 클라이언트에서만 실행
+  if (!import.meta.client) {
+    console.warn('⚠️ [INIT] 서버 사이드에서 초기화 시도됨 - 무시');
+    return;
+  }
+
   await withErrorHandling(async () => {
     // 환경 정보 로깅 (개발 모드에서만)
     logEnvironmentInfo();
