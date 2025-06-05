@@ -1,5 +1,5 @@
 <template>
-  <div class="map-container-wrapper">
+  <div class="map-container-wrapper relative">
     <!-- 지도 컨테이너 -->
     <div
       id="map"

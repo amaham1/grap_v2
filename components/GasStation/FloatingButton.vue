@@ -1,5 +1,5 @@
 <template>
-  <div class="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-30">
+  <div class="absolute left-1/2 bottom-[4%] transform -translate-x-1/2 z-30">
     <button
       @click="handleSearch"
       :disabled="isSearching"
