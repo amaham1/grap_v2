@@ -1,40 +1,167 @@
 <template>
   <div class="bg-gray-50">
+    <!-- 클라이언트에서만 렌더링되는 지도 관련 컴포넌트들 -->
+    <ClientOnly>
+      <!-- 검색 설정 패널 -->
+      <div class="search-panel">
+        <GasStationSearchControls
+          :user-location="userLocation"
+          :is-getting-location="isGettingLocation"
+          v-model:search-radius="searchRadius"
+          v-model:selected-fuel="selectedFuel"
+          :is-searching="isSearching"
+          :search-stats="searchStats"
+          :price-update-info="priceUpdateInfo"
+          @search="handleNearbySearch" />
+      </div>
 
+      <!-- 주유소 리스트 -->
+      <div class="station-list-panel">
+        <GasStationStationList
+          :top-lowest-price-stations="topLowestPriceStations"
+          :favorite-top3-stations="favoriteTop3Stations"
+          :selected-fuel="selectedFuel"
+          @station-click="handleStationClick" />
+      </div>
 
-    <!-- 검색 설정 패널 -->
-    <div class="search-panel">
-      <GasStationSearchControls
-        :user-location="userLocation"
-        :is-getting-location="isGettingLocation"
-        v-model:search-radius="searchRadius"
-        v-model:selected-fuel="selectedFuel"
+      <!-- 카카오맵 컨테이너 -->
+      <GasStationMapContainer
+        :is-map-loaded="isMapLoaded"
+        :map-error="mapError"
         :is-searching="isSearching"
-        :search-stats="searchStats"
-        :price-update-info="priceUpdateInfo"
-        @search="handleNearbySearch" />
-    </div>
+        @current-view-search="handleCurrentViewSearch"
+        @retry="handleMapRetry" />
 
-    <!-- 주유소 리스트 -->
-    <div class="station-list-panel">
-      <GasStationStationList
-        :top-lowest-price-stations="topLowestPriceStations"
-        :favorite-top3-stations="favoriteTop3Stations"
-        :selected-fuel="selectedFuel"
-        @station-click="handleStationClick" />
-    </div>
+      <!-- 현재 위치 버튼 -->
+      <GasStationLocationButton
+        :is-getting-location="isGettingLocation"
+        @get-current-location="handleGetCurrentLocation" />
 
-    <!-- 카카오맵 컨테이너 -->
-    <GasStationMapContainer
-      :is-map-loaded="isMapLoaded"
-      :map-error="mapError"
-      :is-searching="isSearching"
-      @current-view-search="handleCurrentViewSearch" />
+      <!-- 모바일 하단 탭 (768px 이하에서만 표시) -->
+      <div class="mobile-bottom-tabs md:hidden">
+        <!-- 탭 토글 버튼 -->
+        <div
+          @click="toggleMobileBottomTabs"
+          class="mobile-tab-toggle"
+          :class="{ 'active': isMobileTabsOpen }">
+          <svg
+            class="w-6 h-6 transform transition-transform duration-300"
+            :class="{ 'rotate-180': isMobileTabsOpen }"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+          </svg>
+        </div>
 
-    <!-- 현재 위치 버튼 -->
-    <GasStationLocationButton
-      :is-getting-location="isGettingLocation"
-      @get-current-location="handleGetCurrentLocation" />
+        <!-- 슬라이드업 탭 컨테이너 -->
+        <div
+          class="mobile-tabs-container"
+          :class="{ 'open': isMobileTabsOpen }">
+
+          <!-- 탭 헤더 -->
+          <div class="mobile-tabs-header">
+            <button
+              @click="activeMobileTab = 'lowest'"
+              class="mobile-tab-button"
+              :class="{ 'active': activeMobileTab === 'lowest' }">
+              <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              최저가 TOP
+            </button>
+            <button
+              @click="activeMobileTab = 'favorites'"
+              class="mobile-tab-button"
+              :class="{ 'active': activeMobileTab === 'favorites' }">
+              <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"></path>
+              </svg>
+              좋아요 목록
+            </button>
+          </div>
+
+          <!-- 탭 컨텐츠 -->
+          <div class="mobile-tabs-content">
+            <!-- 최저가 TOP 탭 -->
+            <div v-show="activeMobileTab === 'lowest'" class="mobile-tab-panel">
+              <div v-if="topLowestPriceStations.length > 0" class="space-y-2">
+                <div
+                  v-for="(station, index) in topLowestPriceStations"
+                  :key="`mobile-lowest-${station.opinet_id}`"
+                  @click="handleStationClick(station)"
+                  class="mobile-station-item">
+                  <div class="flex items-center space-x-3 max-w-[200px]">
+                    <div class="mobile-station-rank">
+                      {{ index + 1 }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="mobile-station-name">{{ station.name }}</div>
+                      <div class="mobile-station-address">{{ station.address }}</div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div class="mobile-station-price">
+                      {{ formatPrice(getStationPrice(station, selectedFuel)) }}원/L
+                    </div>
+                    <div v-if="station.distance" class="mobile-station-distance">
+                      {{ station.distance.toFixed(1) }}km
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="mobile-empty-state">
+                <div class="text-gray-400 text-2xl mb-2">🔍</div>
+                <p class="text-gray-600 text-sm">주변 주유소를 검색해보세요.</p>
+              </div>
+            </div>
+
+            <!-- 좋아요 목록 탭 -->
+            <div v-show="activeMobileTab === 'favorites'" class="mobile-tab-panel">
+              <div v-if="favoriteTop3Stations.length > 0" class="space-y-2">
+                <div
+                  v-for="(station, index) in favoriteTop3Stations"
+                  :key="`mobile-favorite-${station.opinet_id}`"
+                  @click="handleStationClick(station)"
+                  class="mobile-station-item favorite">
+                  <div class="flex items-center space-x-3 max-w-[200px]">
+                    <div class="mobile-station-rank favorite">
+                      {{ index + 1 }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="mobile-station-name">{{ station.name }}</div>
+                      <div class="mobile-station-address">{{ station.address }}</div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div class="mobile-station-price favorite">
+                      {{ formatPrice(getStationPrice(station, selectedFuel)) }}원/L
+                    </div>
+                    <div v-if="station.distance" class="mobile-station-distance">
+                      {{ station.distance.toFixed(1) }}km
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="mobile-empty-state">
+                <div class="text-pink-400 text-2xl mb-2">💖</div>
+                <p class="text-gray-600 text-sm">좋아요한 주유소가 없습니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 로딩 상태 표시 (서버 사이드에서) -->
+      <template #fallback>
+        <div class="w-full h-[calc(100vh-109px)] flex items-center justify-center bg-gray-100">
+          <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p class="text-gray-600">지도를 불러오는 중...</p>
+          </div>
+        </div>
+      </template>
+    </ClientOnly>
 
     <!-- 🔧 [DEBUG] 디버그 패널 -->
     <div v-if="showDebugPanel" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-lg shadow-2xl border border-gray-300 w-96 max-h-96 overflow-hidden">
@@ -60,9 +187,9 @@
         <div class="mb-3">
           <h4 class="font-semibold text-gray-700 mb-1">🔍 마지막 검색</h4>
           <p class="text-gray-600">{{ debugInfo.lastSearchTime || '검색 없음' }}</p>
-          <div v-if="debugInfo.lastSearchResults.stationsFound !== undefined" class="mt-1">
-            <span class="text-green-600 font-medium">{{ debugInfo.lastSearchResults.stationsFound }}개 발견</span>
-            <span class="text-gray-500 ml-2">반경 {{ debugInfo.lastSearchResults.searchRadius }}km</span>
+          <div v-if="debugInfo.lastSearchResults && (debugInfo.lastSearchResults as any).stationsFound !== undefined" class="mt-1">
+            <span class="text-green-600 font-medium">{{ (debugInfo.lastSearchResults as any).stationsFound }}개 발견</span>
+            <span class="text-gray-500 ml-2">반경 {{ (debugInfo.lastSearchResults as any).searchRadius }}km</span>
           </div>
         </div>
 
@@ -102,122 +229,6 @@
         DEBUG
       </div>
     </div>
-
-    <!-- 모바일 하단 탭 (768px 이하에서만 표시) -->
-    <div class="mobile-bottom-tabs md:hidden">
-      <!-- 탭 토글 버튼 -->
-      <div
-        @click="toggleMobileBottomTabs"
-        class="mobile-tab-toggle"
-        :class="{ 'active': isMobileTabsOpen }">
-        <svg
-          class="w-6 h-6 transform transition-transform duration-300"
-          :class="{ 'rotate-180': isMobileTabsOpen }"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-        </svg>
-      </div>
-
-      <!-- 슬라이드업 탭 컨테이너 -->
-      <div
-        class="mobile-tabs-container"
-        :class="{ 'open': isMobileTabsOpen }">
-
-        <!-- 탭 헤더 -->
-        <div class="mobile-tabs-header">
-          <button
-            @click="activeMobileTab = 'lowest'"
-            class="mobile-tab-button"
-            :class="{ 'active': activeMobileTab === 'lowest' }">
-            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            최저가 TOP
-          </button>
-          <button
-            @click="activeMobileTab = 'favorites'"
-            class="mobile-tab-button"
-            :class="{ 'active': activeMobileTab === 'favorites' }">
-            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"></path>
-            </svg>
-            좋아요 목록
-          </button>
-        </div>
-
-        <!-- 탭 컨텐츠 -->
-        <div class="mobile-tabs-content">
-          <!-- 최저가 TOP 탭 -->
-          <div v-show="activeMobileTab === 'lowest'" class="mobile-tab-panel">
-            <div v-if="topLowestPriceStations.length > 0" class="space-y-2">
-              <div
-                v-for="(station, index) in topLowestPriceStations"
-                :key="`mobile-lowest-${station.opinet_id}`"
-                @click="handleStationClick(station)"
-                class="mobile-station-item">
-                <div class="flex items-center space-x-3 max-w-[200px]">
-                  <div class="mobile-station-rank">
-                    {{ index + 1 }}
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="mobile-station-name">{{ station.name }}</div>
-                    <div class="mobile-station-address">{{ station.address }}</div>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <div class="mobile-station-price">
-                    {{ formatPrice(getStationPrice(station, selectedFuel)) }}원/L
-                  </div>
-                  <div v-if="station.distance" class="mobile-station-distance">
-                    {{ station.distance.toFixed(1) }}km
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div v-else class="mobile-empty-state">
-              <div class="text-gray-400 text-2xl mb-2">🔍</div>
-              <p class="text-gray-600 text-sm">주변 주유소를 검색해보세요.</p>
-            </div>
-          </div>
-
-          <!-- 좋아요 목록 탭 -->
-          <div v-show="activeMobileTab === 'favorites'" class="mobile-tab-panel">
-            <div v-if="favoriteTop3Stations.length > 0" class="space-y-2">
-              <div
-                v-for="(station, index) in favoriteTop3Stations"
-                :key="`mobile-favorite-${station.opinet_id}`"
-                @click="handleStationClick(station)"
-                class="mobile-station-item favorite">
-                <div class="flex items-center space-x-3 max-w-[200px]">
-                  <div class="mobile-station-rank favorite">
-                    {{ index + 1 }}
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="mobile-station-name">{{ station.name }}</div>
-                    <div class="mobile-station-address">{{ station.address }}</div>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <div class="mobile-station-price favorite">
-                    {{ formatPrice(getStationPrice(station, selectedFuel)) }}원/L
-                  </div>
-                  <div v-if="station.distance" class="mobile-station-distance">
-                    {{ station.distance.toFixed(1) }}km
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div v-else class="mobile-empty-state">
-              <div class="text-pink-400 text-2xl mb-2">💖</div>
-              <p class="text-gray-600 text-sm">좋아요한 주유소가 없습니다.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
 
   </div>
 </template>
@@ -487,6 +498,19 @@ const handleStationClick = (station: GasStation) => {
   moveToStation(station);
 };
 
+// 지도 재시도 핸들러
+const handleMapRetry = async () => {
+  console.log('🔄 [PAGE] 지도 재시도 시작');
+  gasStationStore.setMapError(false);
+  gasStationStore.setMapLoaded(false);
+
+  try {
+    await initializeApp();
+  } catch (error) {
+    console.error('❌ [PAGE] 지도 재시도 실패:', error);
+  }
+};
+
 // 좋아요 토글 핸들러 (컴포저블 래퍼)
 const handleToggleFavoriteWrapper = (station: GasStation) => {
   const result = handleToggleFavorite(station, selectedFuel.value);
@@ -544,10 +568,20 @@ const initializeApp = async () => {
     }
 
     try {
+      console.log('🚀 [INIT] 카카오맵 초기화 시작');
       await waitForKakaoMaps();
+      console.log('✅ [INIT] 카카오맵 API 로드 완료');
+
       await initializeMap();
+      console.log('✅ [INIT] 카카오맵 초기화 완료');
+
       gasStationStore.setMapLoaded(true);
+
+      // 지도 초기화 완료 후 잠시 대기 (DOM 안정화)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('✅ [INIT] 전체 초기화 완료');
     } catch (error) {
+      console.error('❌ [INIT] 초기화 실패:', error);
       gasStationStore.setMapError(true);
       throw error;
     }
@@ -610,12 +644,22 @@ watch(selectedFuel, () => {
   }
 });
 
-onMounted(() => {
+onMounted(async () => {
   // 성능 측정 시작
   measureRender('gas-stations-page');
   startMonitoring();
 
-  initializeApp();
+  // 클라이언트에서만 실행
+  if (import.meta.client) {
+    // DOM이 완전히 준비될 때까지 대기
+    await nextTick();
+
+    // 추가 대기 시간 (Hydration 완료 보장)
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // 앱 초기화
+    await initializeApp();
+  }
 
   // 키보드 이벤트 리스너 추가
   document.addEventListener('keydown', handleKeyPress);

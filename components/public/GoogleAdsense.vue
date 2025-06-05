@@ -57,8 +57,9 @@ onMounted(() => {
     const isProduction = window.location.hostname === 'grap.co.kr';
     const isDevelopment = window.location.hostname === 'localhost';
 
-    // DOM이 완전히 렌더링된 후 초기화
+    // DOM이 완전히 렌더링된 후 초기화 (지연 시간 증가)
     nextTick(() => {
+      // 지도 초기화 후 광고 로드를 위해 더 긴 지연 시간 적용
       setTimeout(() => {
         const initializeAd = () => {
           try {
@@ -191,7 +192,7 @@ onMounted(() => {
             clearInterval(checkAdSense);
           }, 10000);
         }
-      }, 200); // 200ms 지연 후 초기화 시작
+      }, 2000); // 2초 지연 후 초기화 시작 (지도 초기화 완료 후)
     });
   }
 });
