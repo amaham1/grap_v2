@@ -1,7 +1,15 @@
 <template>
   <div class="bg-gray-50">
+    <!-- 서버 사이드 로딩 상태 -->
+    <div v-if="!isClientMounted" class="w-full h-[calc(100vh-109px)] flex items-center justify-center bg-gray-100">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p class="text-gray-600">지도를 불러오는 중...</p>
+      </div>
+    </div>
+
     <!-- 클라이언트에서만 렌더링되는 지도 관련 컴포넌트들 -->
-    <ClientOnly>
+    <div v-else class="gas-stations-app">
       <!-- 검색 설정 패널 -->
       <div class="search-panel">
         <GasStationSearchControls
@@ -151,17 +159,7 @@
           </div>
         </div>
       </div>
-
-      <!-- 로딩 상태 표시 (서버 사이드에서) -->
-      <template #fallback>
-        <div class="w-full h-[calc(100vh-109px)] flex items-center justify-center bg-gray-100">
-          <div class="text-center">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p class="text-gray-600">지도를 불러오는 중...</p>
-          </div>
-        </div>
-      </template>
-    </ClientOnly>
+    </div>
 
     <!-- 🔧 [DEBUG] 디버그 패널 -->
     <div v-if="showDebugPanel" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-lg shadow-2xl border border-gray-300 w-96 max-h-96 overflow-hidden">
@@ -300,6 +298,7 @@ const {
 
 // 로컬 상태 관리 (스토어에 없는 것들만)
 const isInitialLoad = ref(true); // 최초 로드 여부
+const isClientMounted = ref(false); // 클라이언트 마운트 상태
 
 // 모바일 하단 탭 상태
 const isMobileTabsOpen = ref(false); // 모바일 탭 열림 상태
@@ -654,8 +653,11 @@ onMounted(async () => {
     // DOM이 완전히 준비될 때까지 대기
     await nextTick();
 
+    // 클라이언트 마운트 상태 설정
+    isClientMounted.value = true;
+
     // 추가 대기 시간 (Hydration 완료 보장)
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 200));
 
     // 앱 초기화
     await initializeApp();
