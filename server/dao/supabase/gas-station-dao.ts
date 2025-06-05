@@ -279,6 +279,33 @@ export async function batchUpsertGasPrices(gasPrices: GasPrice[]) {
 }
 
 /**
+ * 전체 주유소 가격의 최신 업데이트 날짜 조회 (updated_at 기준)
+ */
+export async function getLatestPriceUpdateDate() {
+  try {
+    const result = await supabase
+      .from('gas_prices')
+      .select('updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(1);
+
+    if (result.error) {
+      console.error('❌ [PRICE-UPDATE-DATE-ERROR] 최신 가격 업데이트 날짜 조회 실패:', result.error);
+      return { data: null, error: result.error };
+    }
+
+    const latestDate = result.data?.[0]?.updated_at || null;
+
+    console.log('📅 [PRICE-UPDATE-DATE-DEBUG] 최신 가격 업데이트 날짜:', latestDate);
+
+    return { data: latestDate, error: null };
+  } catch (error) {
+    console.error('❌ [PRICE-UPDATE-DATE-ERROR] 최신 가격 업데이트 날짜 조회 중 오류:', error);
+    return { data: null, error };
+  }
+}
+
+/**
  * 위치 기반 주유소 검색
  */
 export async function getGasStationsByLocation(

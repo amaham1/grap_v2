@@ -11,7 +11,7 @@
         v-model:selected-fuel="selectedFuel"
         :is-searching="isSearching"
         :search-stats="searchStats"
-        @get-current-location="handleGetCurrentLocation"
+        :price-update-info="priceUpdateInfo"
         @search="handleNearbySearch" />
     </div>
 
@@ -30,6 +30,11 @@
       :map-error="mapError"
       :is-searching="isSearching"
       @current-view-search="handleCurrentViewSearch" />
+
+    <!-- 현재 위치 버튼 -->
+    <GasStationLocationButton
+      :is-getting-location="isGettingLocation"
+      @get-current-location="handleGetCurrentLocation" />
 
     <!-- 🔧 [DEBUG] 디버그 패널 -->
     <div v-if="showDebugPanel" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-lg shadow-2xl border border-gray-300 w-96 max-h-96 overflow-hidden">
@@ -225,6 +230,7 @@ import { updateDebugInfo, logEnvironmentInfo, setupDebugFunctions } from '~/util
 const GasStationMapContainer = defineAsyncComponent(() => import('~/components/GasStation/MapContainer.vue'));
 const GasStationSearchControls = defineAsyncComponent(() => import('~/components/GasStation/SearchControls.vue'));
 const GasStationStationList = defineAsyncComponent(() => import('~/components/GasStation/StationList.vue'));
+const GasStationLocationButton = defineAsyncComponent(() => import('~/components/GasStation/LocationButton.vue'));
 
 
 definePageMeta({
@@ -270,6 +276,7 @@ const { searchNearbyStations, searchCurrentViewStations } = useGasStationSearch(
 const { map, initializeMap, waitForKakaoMaps, moveMapCenter } = useKakaoMap();
 const { currentMarkers, clearMarkers, addUserLocationMarker, addGasStationMarkers, moveToStation, closeCurrentInfoWindow } = useGasStationMarkers(map);
 const { handleToggleFavorite } = useFavoriteStations();
+const { updateInfo: priceUpdateInfo, fetchUpdateInfo } = useGasPriceUpdateInfo();
 
 // 스토어에서 상태 가져오기
 const {
@@ -569,6 +576,14 @@ const initializeApp = async () => {
 
     // 🔧 [DEBUG] 전역 디버깅 함수 설정
     setupDebugFunctions(allStations);
+
+    // 가격 업데이트 정보 조회
+    try {
+      await fetchUpdateInfo();
+      console.log('📅 [INIT] 가격 업데이트 정보 조회 완료:', priceUpdateInfo.value);
+    } catch (error) {
+      console.error('❌ [INIT-ERROR] 가격 업데이트 정보 조회 실패:', error);
+    }
 
     // 최초 로드시 자동으로 현재 위치 가져오기
     if (isInitialLoad.value) {

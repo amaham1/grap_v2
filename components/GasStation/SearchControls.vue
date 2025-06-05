@@ -1,16 +1,25 @@
 <template>
   <div class="bg-white rounded-lg shadow-lg border border-gray-300">
     <!-- 패널 헤더 -->
-    <div class="flex items-center justify-between p-3 border-b border-gray-200">
-      <div class="flex items-center gap-2">
+    <div class="flex items-center justify-between p-2 border-b border-gray-200">
+      <div class="flex items-center gap-1 flex-1">
         <h3 class="text-sm font-semibold text-gray-700">검색 설정</h3>
+
+        <!-- 가격 업데이트 날짜 표시 -->
+        <div v-if="priceUpdateInfo" class="flex items-center gap-1 ml-1">
+          <span class="text-xs text-gray-500">|</span>
+          <span class="text-xs text-gray-500">
+            가격 기준: {{ updateStatusText }}
+          </span>
+        </div>
+
         <!-- 현재 선택된 필터 표시 -->
-        <div v-if="selectedFuel" class="flex items-center gap-1">
+        <div v-if="selectedFuel" class="flex items-center gap-1 ml-auto">
           <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
             {{ selectedFuelLabel }}
           </span>
         </div>
-        <div v-else class="flex items-center gap-1">
+        <div v-else class="flex items-center gap-1 ml-auto">
           <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
             전체
           </span>
@@ -18,7 +27,7 @@
       </div>
       <button
         @click="isCollapsed = !isCollapsed"
-        class="p-1 text-gray-500 hover:text-gray-700 transition-colors">
+        class="p-1 text-gray-500 hover:text-gray-700 transition-colors ml-2">
         <svg class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': !isCollapsed }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
         </svg>
@@ -28,19 +37,19 @@
     <!-- 패널 내용 -->
     <div v-show="!isCollapsed" class="p-3 space-y-4">
       <!-- 위치 정보 -->
-      <div>
+      <div v-if="userLocation">
         <div class="flex items-center justify-between mb-2">
           <span class="text-sm font-medium text-gray-700">내 위치 기준 검색</span>
-          <button
-            @click="$emit('getCurrentLocation')"
-            :disabled="isGettingLocation"
-            class="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400">
-            {{ isGettingLocation ? '위치 확인 중...' : '현재 위치' }}
-          </button>
         </div>
-        <div v-if="userLocation" class="text-xs text-gray-600">
+        <div class="text-xs text-gray-600">
           위도: {{ userLocation.latitude.toFixed(6) }}, 경도: {{ userLocation.longitude.toFixed(6) }}
         </div>
+      </div>
+
+      <!-- 위치 정보가 없을 때 안내 -->
+      <div v-else class="text-center py-4">
+        <div class="text-sm text-gray-500 mb-2">위치 정보가 필요합니다</div>
+        <div class="text-xs text-gray-400">오른쪽 하단의 위치 버튼을 눌러주세요</div>
       </div>
 
       <!-- 반경 설정 -->
@@ -110,12 +119,12 @@ interface Props {
   selectedFuel: string;
   isSearching: boolean;
   searchStats: SearchStats | null;
+  priceUpdateInfo?: any; // 가격 업데이트 정보
 }
 
 interface Emits {
   (e: 'update:searchRadius', value: number): void;
   (e: 'update:selectedFuel', value: string): void;
-  (e: 'getCurrentLocation'): void;
   (e: 'search'): void;
 }
 
@@ -138,5 +147,16 @@ const selectedFuel = computed({
 const selectedFuelLabel = computed(() => {
   const fuelType = fuelTypes.find(fuel => fuel.value === props.selectedFuel);
   return fuelType ? fuelType.label : '전체';
+});
+
+// 가격 업데이트 정보 (부모에서 전달받은 정보 사용)
+const priceUpdateInfo = computed(() => props.priceUpdateInfo);
+
+// 업데이트 상태 텍스트 계산 (DB의 실제 시간 표시)
+const updateStatusText = computed(() => {
+  if (!priceUpdateInfo.value?.latest_update_date) return '업데이트 정보 없음';
+
+  // API에서 포맷된 날짜시간을 그대로 사용
+  return priceUpdateInfo.value.formatted_date || priceUpdateInfo.value.latest_update_date;
 });
 </script>
