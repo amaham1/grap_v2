@@ -4,15 +4,11 @@ import { gasStationDAO } from '~/server/dao/supabase';
 
 export default defineEventHandler(async (event) => {
   try {
-    console.log('[DEBUG] 주유소 데이터 확인 시작...');
-
     // 1. 전체 주유소 개수 확인
     const totalStations = await gasStationDAO.getGasStationsCount();
-    console.log(`[DEBUG] 전체 주유소 개수: ${totalStations}`);
 
     // 2. 노출 상태인 주유소 개수 확인
     const exposedStations = await gasStationDAO.getGasStationsCount({ isExposed: 'true' });
-    console.log(`[DEBUG] 노출 상태 주유소 개수: ${exposedStations}`);
 
     // 3. 좌표가 있는 주유소 확인
     const stationsResult = await gasStationDAO.getGasStations({ 

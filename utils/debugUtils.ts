@@ -20,30 +20,32 @@ export const getDebugInfo = (key?: string) => {
   return debugInfo.value;
 };
 
-// 환경 정보 로깅
+// 환경 정보 로깅 (개발 모드에서만)
 export const logEnvironmentInfo = () => {
-  console.log('🌐 [DEBUG] 환경 정보:', {
-    userAgent: navigator.userAgent,
-    language: navigator.language,
-    platform: navigator.platform,
-    cookieEnabled: navigator.cookieEnabled,
-    onLine: navigator.onLine,
-    screen: {
-      width: screen.width,
-      height: screen.height,
-      colorDepth: screen.colorDepth
-    },
-    viewport: {
-      width: window.innerWidth,
-      height: window.innerHeight
-    },
-    location: {
-      href: window.location.href,
-      protocol: window.location.protocol,
-      host: window.location.host
-    },
-    timestamp: new Date().toISOString()
-  });
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🌐 [DEBUG] 환경 정보:', {
+      userAgent: navigator.userAgent,
+      language: navigator.language,
+      platform: navigator.platform,
+      cookieEnabled: navigator.cookieEnabled,
+      onLine: navigator.onLine,
+      screen: {
+        width: screen.width,
+        height: screen.height,
+        colorDepth: screen.colorDepth
+      },
+      viewport: {
+        width: window.innerWidth,
+        height: window.innerHeight
+      },
+      location: {
+        href: window.location.href,
+        protocol: window.location.protocol,
+        host: window.location.host
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
 };
 
 // 디버그 함수들을 전역에 설정
@@ -117,14 +119,9 @@ export const setupDebugFunctions = (allStations: Ref<GasStation[]>) => {
       }
     };
 
-    console.log('✅ [DEBUG-SETUP] window.debugGasStations 설정 완료');
-    console.log('💡 [DEBUG-TIP] 사용 가능한 명령어:');
-    console.log('  - debugGasStations.getState() : 현재 상태');
-    console.log('  - debugGasStations.listStations() : 주유소 목록');
-    console.log('  - debugGasStations.showDebugInfo() : 디버그 정보');
-    console.log('  - debugGasStations.findStation("이름") : 주유소 검색');
-    console.log('  - debugGasStations.priceStats("gasoline") : 가격 통계');
   } catch (error) {
-    console.error('❌ [DEBUG-SETUP-ERROR] 디버그 함수 설정 실패:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('❌ [DEBUG-SETUP-ERROR] 디버그 함수 설정 실패:', error);
+    }
   }
 };

@@ -51,18 +51,29 @@ export default defineEventHandler(async (event) => {
 });
 
 /**
- * 날짜시간을 한국어 형식으로 포맷팅
+ * 날짜시간을 한국어 형식으로 포맷팅 (KST 시간대 적용)
  * @param dateTimeString - ISO 형식의 날짜시간 문자열
  * @returns 한국어 형식의 날짜시간 문자열 (예: "2024년 1월 15일 14시 30분")
  */
 function formatKoreanDateTime(dateTimeString: string): string {
   try {
     const date = new Date(dateTimeString);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
+
+    // 한국 시간대(KST, UTC+9)로 변환
+    const kstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
+
+    const year = kstDate.getUTCFullYear();
+    const month = kstDate.getUTCMonth() + 1;
+    const day = kstDate.getUTCDate();
+    const hours = kstDate.getUTCHours();
+    const minutes = kstDate.getUTCMinutes();
+
+    console.log('📅 [DATE-FORMAT-DEBUG] 시간대 변환:', {
+      original: dateTimeString,
+      utc: date.toISOString(),
+      kst: kstDate.toISOString(),
+      formatted: `${year}년 ${month}월 ${day}일 ${hours}시 ${minutes.toString().padStart(2, '0')}분`
+    });
 
     return `${year}년 ${month}월 ${day}일 ${hours}시 ${minutes.toString().padStart(2, '0')}분`;
   } catch (error) {

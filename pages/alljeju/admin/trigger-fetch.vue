@@ -114,21 +114,9 @@ async function triggerFetch(sourceName: SourceName) {
   loading.value[key] = true;
   results.value[key] = undefined; // 이전 결과 초기화
 
-  // 상세한 콘솔 로깅 시작
+  // 데이터 수집 시작
   const startTime = Date.now();
-  console.group(`🚀 [ADMIN-TRIGGER] ${sourceName.toUpperCase()} 데이터 수집 시작`);
-  console.log(`⏰ 시작 시간: ${new Date().toLocaleString()}`);
-  console.log(`📡 API 엔드포인트: /api/admin/trigger-fetch/${sourceName}`);
-
-  if (sourceName === 'gas-stations') {
-    console.log(`⛽ [NETWORK-FACT] 주유소 데이터 수집 정보:`);
-    console.log(`  - 외부 API: 제주도 주유소 정보 API`);
-    console.log(`  - 수집 데이터: 주유소 기본 정보 + 가격 정보`);
-    console.log(`  - 좌표 변환: KATEC → WGS84 (카카오 API 사용)`);
-    console.log(`  - 타임아웃 설정: 4.5분 (이전 191초 실패 반영)`);
-    console.log(`  - 배치 크기: 50개씩 처리 (성능 개선)`);
-    console.log(`  - 예상 소요 시간: 3-4분`);
-  }
+  console.log(`🚀 [ADMIN-TRIGGER] ${sourceName.toUpperCase()} 데이터 수집 시작`);
 
   try {
     if (sourceName === 'gas-stations') {

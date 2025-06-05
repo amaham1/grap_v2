@@ -154,7 +154,6 @@ export const useErrorHandler = () => {
           if (message.includes('path') && message.includes('attribute') ||
               message.includes('expected arc flag') ||
               message.includes('svg')) {
-            console.warn('SVG/DOM error filtered:', event.error.message);
             return; // 에러 무시
           }
         }

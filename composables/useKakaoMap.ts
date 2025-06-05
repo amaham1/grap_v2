@@ -4,32 +4,26 @@ export const useKakaoMap = () => {
   const isMapLoaded = ref(false);
   const mapError = ref(false);
 
+
+
   // 카카오맵 초기화
   const initializeMap = (containerId: string = 'map'): Promise<any> => {
     return new Promise((resolve, reject) => {
-      console.log('[DEBUG] 지도 초기화 시작');
-
       window.kakao.maps.load(() => {
         try {
-          console.log('[DEBUG] 카카오맵 API 로드 완료');
-
           const container = document.getElementById(containerId);
-          console.log('[DEBUG] 지도 컨테이너 요소:', container);
 
           if (!container) {
             throw new Error('지도 컨테이너를 찾을 수 없습니다.');
           }
 
           const options = {
-            center: new window.kakao.maps.LatLng(33.3617, 126.5292), // 제주도 중심 좌표 (임시)
+            center: new window.kakao.maps.LatLng(33.3617, 126.5292), // 제주도 중심 좌표
             level: 9 // 지도 확대 레벨
           };
 
-          console.log('[DEBUG] 지도 옵션:', options);
-
           // 지도 생성
           map.value = new window.kakao.maps.Map(container, options);
-          console.log('[DEBUG] 지도 객체 생성 완료:', map.value);
 
           // 지도 타입 컨트롤 추가
           const mapTypeControl = new window.kakao.maps.MapTypeControl();
@@ -39,11 +33,8 @@ export const useKakaoMap = () => {
           const zoomControl = new window.kakao.maps.ZoomControl();
           map.value.addControl(zoomControl, window.kakao.maps.ControlPosition.RIGHT);
 
-          console.log('[DEBUG] 지도 컨트롤 추가 완료');
-
           // 지도 로딩 완료
           isMapLoaded.value = true;
-          console.log('[DEBUG] 지도 초기화 완료');
 
           resolve(map.value);
         } catch (error) {
@@ -70,7 +61,7 @@ export const useKakaoMap = () => {
           setTimeout(checkKakao, 100);
         } else {
           mapError.value = true;
-          console.error('카카오맵 API 로드 실패');
+          console.error('❌ [KAKAO-MAP] 카카오맵 API 로드 실패');
           reject(new Error('카카오맵 API 로드 실패'));
         }
       };
@@ -78,6 +69,8 @@ export const useKakaoMap = () => {
       checkKakao();
     });
   };
+
+
 
   // 지도 중심 이동
   const moveMapCenter = (lat: number, lng: number, level?: number) => {

@@ -51,37 +51,7 @@ export default defineEventHandler(async (event) => {
     // 연료 필터
     const fuelType = query.fuel as string; // gasoline, diesel, lpg
 
-    // 🔍 [DEBUG] 환경 및 요청 정보 로깅 (강제 출력)
-    const debugLog = (...args: any[]) => {
-      // 프로덕션에서도 강제로 출력
-      if (typeof console !== 'undefined') {
-        console.log(...args);
-      }
-    };
 
-    debugLog('🌍 [ENV-DEBUG] 환경 정보:', {
-      nodeEnv: process.env.NODE_ENV,
-      supabaseUrl: process.env.SUPABASE_URL?.substring(0, 30) + '...',
-      timestamp: new Date().toISOString(),
-      userAgent: event.node.req.headers['user-agent']?.substring(0, 50) + '...',
-      host: event.node.req.headers.host,
-      origin: event.node.req.headers.origin
-    });
-
-    debugLog('📍 [PARAMS-DEBUG] API 요청 파라미터:', {
-      page,
-      pageSize,
-      searchQuery,
-      brandCode,
-      stationType,
-      sortBy,
-      sortOrder,
-      userLat,
-      userLng,
-      radius,
-      fuelType,
-      isLocationBased: !isNaN(userLat) && !isNaN(userLng)
-    });
 
     // 유효성 검사
     if (page < 1) {
@@ -104,18 +74,7 @@ export default defineEventHandler(async (event) => {
     const isLocationBased = !isNaN(userLat) && !isNaN(userLng);
     const fetchPageSize = isLocationBased ? 500 : pageSize; // 위치 기반 검색 시 더 많이 가져옴
 
-    console.log('🗃️ [DB-DEBUG] 데이터베이스 쿼리 파라미터:', {
-      isLocationBased,
-      fetchPageSize,
-      queryPage: isLocationBased ? 1 : page,
-      queryLimit: fetchPageSize,
-      searchTerm: searchQuery,
-      brandCode,
-      stationType,
-      userLat,
-      userLng,
-      radius
-    });
+
 
     const result = await gasStationDAO.getGasStationsWithPrices({
       page: isLocationBased ? 1 : page,
@@ -134,88 +93,35 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    console.log(`📊 [DB-DEBUG] 데이터베이스에서 ${result.data.length}개 주유소 조회됨 (총 개수: ${result.count || 'unknown'})`);
-
     // 좌표가 있는 주유소 개수 확인
     const stationsWithCoords = result.data.filter(station =>
       station.latitude && station.longitude
     );
 
-    console.log(`📍 [COORDS-DEBUG] 좌표가 있는 주유소: ${stationsWithCoords.length}/${result.data.length}개`);
-
     // 가격 정보가 있는 주유소 개수 확인
     const stationsWithPrices = result.data.filter(station => station.latest_price);
-    console.log(`💰 [PRICE-DEBUG] 가격 정보가 있는 주유소: ${stationsWithPrices.length}/${result.data.length}개`);
 
     let filteredItems = result.data;
 
     // 위치 기반 필터링
     if (isLocationBased) {
-      console.log(`📍 [LOCATION-DEBUG] 위치 기반 필터링 시작 - 사용자 위치: (${userLat}, ${userLng}), 반경: ${radius}km`);
-
       const stationsWithDistance = result.data
         .map((station, index) => {
           if (station.latitude && station.longitude) {
             const distance = calculateDistance(userLat, userLng, station.latitude, station.longitude);
-
-            // 처음 5개 주유소의 거리 계산 로그
-            if (index < 5) {
-              console.log(`📏 [DISTANCE-CALC-DEBUG] ${index + 1}. ${station.station_name}: (${station.latitude}, ${station.longitude}) → ${distance.toFixed(2)}km`);
-            }
-
             return { ...station, distance };
           }
           return null;
         })
         .filter(station => station !== null) as any[];
 
-      console.log(`🧮 [DISTANCE-DEBUG] 거리 계산 완료: ${stationsWithDistance.length}개 주유소`);
-
-      // 거리별 분포 확인
-      const distanceRanges = {
-        '0-1km': 0,
-        '1-2km': 0,
-        '2-3km': 0,
-        '3-5km': 0,
-        '5-10km': 0,
-        '10km+': 0
-      };
-
-      stationsWithDistance.forEach(station => {
-        const dist = station.distance;
-        if (dist <= 1) distanceRanges['0-1km']++;
-        else if (dist <= 2) distanceRanges['1-2km']++;
-        else if (dist <= 3) distanceRanges['2-3km']++;
-        else if (dist <= 5) distanceRanges['3-5km']++;
-        else if (dist <= 10) distanceRanges['5-10km']++;
-        else distanceRanges['10km+']++;
-      });
-
-      console.log(`📏 [DISTANCE-RANGE-DEBUG] 거리별 분포:`, distanceRanges);
-
       filteredItems = stationsWithDistance.filter(station => station.distance <= radius);
-      console.log(`🎯 [RADIUS-DEBUG] 반경 ${radius}km 내 주유소: ${filteredItems.length}개`);
-
-      // 반경 내 주유소 목록 (처음 10개)
-      const nearbyStations = filteredItems.slice(0, 10).map(station => ({
-        name: station.station_name,
-        distance: station.distance.toFixed(2) + 'km',
-        hasPrice: !!station.latest_price
-      }));
-      console.log(`🏪 [NEARBY-STATIONS-DEBUG] 반경 내 주유소 (상위 10개):`, nearbyStations);
     }
 
     // 연료 타입 필터링 (가격 정보가 있는 주유소만)
     if (fuelType && filteredItems.length > 0) {
-      console.log(`⛽ [FUEL-DEBUG] 연료 타입 필터링 시작: ${fuelType}, 대상: ${filteredItems.length}개`);
-
-      const beforeFuelFilter = filteredItems.length;
-      let noPriceCount = 0;
-      let noTargetFuelCount = 0;
-
       filteredItems = filteredItems.filter(station => {
         if (!station.latest_price) {
-          noPriceCount++;
           return false;
         }
 
@@ -238,30 +144,12 @@ export default defineEventHandler(async (event) => {
             hasTargetFuel = true;
         }
 
-        if (!hasTargetFuel) {
-          noTargetFuelCount++;
-        }
-
         return hasTargetFuel;
       });
-
-      console.log(`⛽ [FUEL-RESULT-DEBUG] 연료 타입 필터링 완료:`, {
-        before: beforeFuelFilter,
-        after: filteredItems.length,
-        removed: beforeFuelFilter - filteredItems.length,
-        noPriceInfo: noPriceCount,
-        noTargetFuel: noTargetFuelCount
-      });
     } else if (filteredItems.length > 0) {
-      console.log(`💰 [GENERAL-PRICE-DEBUG] 일반 가격 필터링 시작: ${filteredItems.length}개`);
-
-      const beforeGeneralFilter = filteredItems.length;
-      let noPriceCount = 0;
-
       // 연료 타입이 선택되지 않은 경우에도 가격 정보가 있는 주유소만 필터링
       filteredItems = filteredItems.filter(station => {
         if (!station.latest_price) {
-          noPriceCount++;
           return false;
         }
 
@@ -271,13 +159,6 @@ export default defineEventHandler(async (event) => {
                            (station.latest_price.lpg_price && station.latest_price.lpg_price > 0);
 
         return hasAnyPrice;
-      });
-
-      console.log(`💰 [GENERAL-PRICE-RESULT-DEBUG] 일반 가격 필터링 완료:`, {
-        before: beforeGeneralFilter,
-        after: filteredItems.length,
-        removed: beforeGeneralFilter - filteredItems.length,
-        noPriceInfo: noPriceCount
       });
     }
 
@@ -423,17 +304,7 @@ export default defineEventHandler(async (event) => {
       }
     };
 
-    // 🎯 [FINAL-DEBUG] 최종 응답 요약
-    console.log(`🎯 [FINAL-DEBUG] 최종 응답 요약:`, {
-      totalItemsReturned: response.items.length,
-      totalInRadius: response.stats.total_in_radius,
-      lowestPriceCount: response.stats.lowest_price_count,
-      pagination: response.pagination,
-      hasLocationFilter: !!response.filters.location,
-      hasFuelFilter: !!response.filters.fuel,
-      processingTime: Date.now() - new Date(response.filters.location ?
-        new Date().toISOString() : new Date().toISOString()).getTime()
-    });
+
 
     return response;
 

@@ -243,13 +243,7 @@ const config = useRuntimeConfig();
 const kakaoMapApiKey = config.public.kakaoMapApiKey;
 const isValidApiKey = kakaoMapApiKey && kakaoMapApiKey !== 'f7c0b5b7e8a4c5d6e7f8a9b0c1d2e3f4';
 
-// 디버그 정보 출력
-console.log('🗝️ [KAKAO-API-KEY]', {
-  hasKey: !!kakaoMapApiKey,
-  isValid: isValidApiKey,
-  keyPreview: kakaoMapApiKey ? `${kakaoMapApiKey.substring(0, 8)}...` : 'NOT_SET',
-  environment: process.env.NODE_ENV
-});
+// 카카오맵 API 키 검증
 
 // 페이지 제목 설정
 useHead({
@@ -336,7 +330,6 @@ const handleKeyPress = (event: KeyboardEvent) => {
 
   if (keySequence.value.includes('ddebb')) {
     showDebugButton.value = true;
-    console.log('🔧 [DEBUG] 디버그 모드 활성화됨');
     keySequence.value = ''; // 시퀀스 초기화
   }
 };
@@ -408,7 +401,6 @@ const handleNearbySearch = async () => {
         timestamp: new Date().toISOString()
       };
 
-      console.log(`🔍 [PAGE-NEARBY-DEBUG] 주변 검색 시작:`, searchParams);
       updateDebugInfo('search-start', searchParams);
 
       clearMarkers();
@@ -437,7 +429,6 @@ const handleNearbySearch = async () => {
         userLocation: userLocation.value
       };
 
-      console.log(`🎯 [PAGE-NEARBY-RESULT-DEBUG] 주변 검색 결과:`, searchResults);
       updateDebugInfo('search-result', searchResults);
 
       addGasStationMarkers(stations, selectedFuel.value);
@@ -537,7 +528,7 @@ onMounted(() => {
 // 초기화 및 자동 검색
 const initializeApp = async () => {
   await withErrorHandling(async () => {
-    // 🌐 [DEBUG] 환경 정보 로깅
+    // 환경 정보 로깅 (개발 모드에서만)
     logEnvironmentInfo();
 
     // 전역 에러 핸들러 설정
@@ -574,13 +565,12 @@ const initializeApp = async () => {
       }
     };
 
-    // 🔧 [DEBUG] 전역 디버깅 함수 설정
+    // 전역 디버깅 함수 설정 (개발 모드에서만)
     setupDebugFunctions(allStations);
 
     // 가격 업데이트 정보 조회
     try {
       await fetchUpdateInfo();
-      console.log('📅 [INIT] 가격 업데이트 정보 조회 완료:', priceUpdateInfo.value);
     } catch (error) {
       console.error('❌ [INIT-ERROR] 가격 업데이트 정보 조회 실패:', error);
     }
@@ -646,7 +636,6 @@ onUnmounted(() => {
 // 전역 타입 선언
 declare global {
   interface Window {
-    kakao: any;
     closeInfoWindow?: () => void;
     debugGasStations?: {
       logEnv: () => void;

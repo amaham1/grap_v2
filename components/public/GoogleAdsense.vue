@@ -57,16 +57,6 @@ onMounted(() => {
     const isProduction = window.location.hostname === 'grap.co.kr';
     const isDevelopment = window.location.hostname === 'localhost';
 
-    console.log('🎯 [ADSENSE-INIT]', {
-      hostname: window.location.hostname,
-      isProduction,
-      isDevelopment,
-      hasAdSenseScript: !!document.querySelector('script[src*="adsbygoogle"]'),
-      format: props.format,
-      width: props.width,
-      height: props.height
-    });
-
     // DOM이 완전히 렌더링된 후 초기화
     nextTick(() => {
       setTimeout(() => {

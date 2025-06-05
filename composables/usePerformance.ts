@@ -42,23 +42,20 @@ export const usePerformance = () => {
   // 성능 측정 종료
   const endMeasure = (name: string): number | null => {
     const metric = metrics.value.find(m => m.name === name && !m.endTime);
-    
+
     if (!metric) {
-      console.warn(`Performance metric "${name}" not found or already ended`);
       return null;
     }
-    
+
     metric.endTime = performance.now();
     metric.duration = metric.endTime - metric.startTime;
-    
+
     // Performance API 마크 및 측정 생성
     if (typeof performance.mark === 'function' && typeof performance.measure === 'function') {
       performance.mark(`${name}-end`);
       performance.measure(name, `${name}-start`, `${name}-end`);
     }
-    
-    console.log(`[Performance] ${name}: ${metric.duration.toFixed(2)}ms`, metric.metadata);
-    
+
     return metric.duration;
   };
 
@@ -146,7 +143,7 @@ export const usePerformance = () => {
         // 메모리 사용량이 임계치를 넘으면 경고
         const usagePercent = (memory.usedJSHeapSize / memory.jsHeapSizeLimit!) * 100;
         if (usagePercent > 80) {
-          console.warn(`[Performance] High memory usage: ${usagePercent.toFixed(1)}%`);
+          // 높은 메모리 사용량 감지됨
         }
       }
     }, 10000); // 10초마다 체크

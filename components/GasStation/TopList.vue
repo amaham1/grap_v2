@@ -73,11 +73,11 @@ const handleStationClick = (station: GasStation) => {
 
 // 컴포넌트 마운트 확인
 onMounted(() => {
-  console.log('[DEBUG] TopList 컴포넌트 마운트됨, topStations 길이:', props.topStations.length);
+  // TopList 컴포넌트 마운트됨
 });
 
 // topStations 변경 감지
 watch(() => props.topStations, (newStations) => {
-  console.log('[DEBUG] TopList topStations 변경됨:', newStations.length);
+  // topStations 변경됨
 });
 </script>

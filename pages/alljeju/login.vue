@@ -36,17 +36,8 @@ const login = async () => {
       },
     });
 
-    // --- 디버깅 로그 추가 ---
-    console.log('Login.vue - API response received:', JSON.stringify(response, null, 2));
-    console.log('Login.vue - Type of response:', typeof response);
-    if (response) {
-        console.log('Login.vue - response.success:', response.success);
-    }
-    // --- 디버깅 로그 끝 ---
-
     // API 응답에서 success 플래그와 메시지를 확인 (login.post.ts 참조)
     if (response && response.success) {
-      console.log('로그인 성공:', response.message);
       // HttpOnly 쿠키는 서버에서 자동으로 설정됨.
       // 브라우저가 쿠키를 확실히 설정하고 다음 요청에 포함하도록 전체 페이지 이동을 사용합니다.
       window.location.href = '/alljeju/admin';

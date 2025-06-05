@@ -38,13 +38,11 @@ export const useGasPriceUpdateInfo = () => {
     error.value = null;
 
     try {
-      console.log('📅 [COMPOSABLE] 가격 업데이트 정보 조회 시작');
 
       const response = await $fetch<GasPriceUpdateInfoResponse>('/api/public/gas-price-update-info');
 
       if (response.success && response.data) {
         updateInfo.value = response.data;
-        console.log('📅 [COMPOSABLE] 가격 업데이트 정보 조회 성공:', response.data);
       } else {
         throw new Error('Invalid response format');
       }

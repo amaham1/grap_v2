@@ -6,6 +6,7 @@ declare global {
   interface Window {
     kakao: {
       maps: {
+        load: (callback: () => void) => void;
         Map: any;
         LatLng: any;
         Marker: any;
@@ -14,6 +15,9 @@ declare global {
         Size: any;
         Point: any;
         CustomOverlay: any;
+        MapTypeControl: any;
+        ZoomControl: any;
+        ControlPosition: any;
         event: {
           addListener: (target: any, type: string, handler: Function) => void;
           removeListener: (target: any, type: string, handler: Function) => void;

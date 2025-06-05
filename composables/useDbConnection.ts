@@ -5,22 +5,6 @@ export const useDbConnection = () => {
       
       const response = await $fetch('/api/debug/db-connection');
       
-      if (response.success) {
-        console.log('✅ [DB 연결 성공]', {
-          message: response.message,
-          timestamp: response.timestamp,
-          config: response.config,
-          details: response.details
-        });
-      } else {
-        console.error('❌ [DB 연결 실패]', {
-          message: response.message,
-          timestamp: response.timestamp,
-          config: response.config,
-          details: response.details
-        });
-      }
-      
       return response;
     } catch (error) {
       console.error('🚨 [DB 연결 확인 오류]', {

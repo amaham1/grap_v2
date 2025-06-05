@@ -74,18 +74,11 @@ const coordinateCache = new Map<string, { latitude: number; longitude: number } 
  */
 const convertWithKakaoAPI = async (katecX: number, katecY: number, timeout: number = 5000): Promise<{ latitude: number; longitude: number } | null> => {
   try {
-    const requestStartTime = Date.now();
-    console.log(`🗺️ [KAKAO-API] 좌표 변환 요청 시작: KATEC(${katecX}, ${katecY})`);
-
     const url = new URL(KAKAO_COORD_CONVERT_URL);
     url.searchParams.append('x', katecX.toString());
     url.searchParams.append('y', katecY.toString());
     url.searchParams.append('input_coord', 'KTM');
     url.searchParams.append('output_coord', 'WGS84');
-
-    console.log(`📡 [KAKAO-API] 요청 URL: ${url.toString()}`);
-    console.log(`🔑 [KAKAO-API] API 키: ${KAKAO_REST_API_KEY.substring(0, 10)}...`);
-    console.log(`⏰ [KAKAO-API] 타임아웃 설정: ${timeout}ms`);
 
     // AbortController를 사용한 타임아웃 처리
     const controller = new AbortController();
@@ -101,26 +94,12 @@ const convertWithKakaoAPI = async (katecX: number, katecY: number, timeout: numb
     });
 
     clearTimeout(timeoutId);
-    const requestDuration = Date.now() - requestStartTime;
-
-    console.log(`📥 [KAKAO-API] 응답 수신: ${response.status} ${response.statusText} (${requestDuration}ms)`);
 
     if (!response.ok) {
-      console.warn(`❌ [KAKAO-API] HTTP 오류: ${response.status} ${response.statusText}`);
-      console.warn(`🔧 [KAKAO-API] 해결 방안:`);
-      console.warn(`  1. API 키 유효성 확인: ${KAKAO_REST_API_KEY.substring(0, 10)}...`);
-      console.warn(`  2. 카카오 API 서비스 상태 확인`);
-      console.warn(`  3. 요청 제한 확인 (일일/월간 한도)`);
-      console.warn(`  4. 네트워크 연결 상태 확인`);
       return null;
     }
 
     const data = await response.json();
-    console.log(`📊 [KAKAO-API] 응답 데이터:`, {
-      documentsCount: data.documents?.length || 0,
-      meta: data.meta,
-      hasResult: !!(data.documents && data.documents.length > 0)
-    });
 
     if (data.documents && data.documents.length > 0) {
       const result = data.documents[0];
@@ -159,28 +138,6 @@ const convertWithKakaoAPI = async (katecX: number, katecY: number, timeout: numb
       return null;
     }
   } catch (error: any) {
-    if (error.name === 'AbortError') {
-      console.warn(`⏰ [KAKAO-API] 요청 타임아웃 (${timeout}ms)`);
-      console.warn(`  📍 좌표: KATEC(${katecX}, ${katecY})`);
-      console.warn(`  🔧 해결 방안:`);
-      console.warn(`    1. 타임아웃 시간 증가 (현재: ${timeout}ms)`);
-      console.warn(`    2. 네트워크 연결 상태 확인`);
-      console.warn(`    3. 카카오 API 서버 상태 확인`);
-    } else {
-      console.error(`💥 [KAKAO-API] 좌표 변환 실패`);
-      console.error(`  📍 좌표: KATEC(${katecX}, ${katecY})`);
-      console.error(`  🔍 오류 상세:`, {
-        name: error.name,
-        message: error.message,
-        code: error.code,
-        stack: error.stack?.split('\n').slice(0, 3).join('\n')
-      });
-      console.error(`  🔧 해결 방안:`);
-      console.error(`    1. API 키 확인: ${KAKAO_REST_API_KEY.substring(0, 10)}...`);
-      console.error(`    2. 네트워크 연결 확인`);
-      console.error(`    3. 카카오 API 서비스 상태 확인`);
-      console.error(`    4. 요청 형식 확인`);
-    }
     return null;
   }
 };
@@ -191,8 +148,6 @@ const convertWithKakaoAPI = async (katecX: number, katecY: number, timeout: numb
  */
 const convertWithProj4Fallback = (katecX: number, katecY: number): { latitude: number; longitude: number } | null => {
   try {
-    console.log(`[PROJ4-FALLBACK] Kakao API 실패로 proj4 폴백 시작: (${katecX}, ${katecY})`);
-
     // 여러 좌표계를 순차적으로 시도 (제주도 전용 좌표계 우선)
     const coordinateSystemsToTry = [
       { name: 'JEJU_126_5_Y0', proj: COORDINATE_SYSTEMS.JEJU_126_5_Y0 },
@@ -220,7 +175,6 @@ const convertWithProj4Fallback = (katecX: number, katecY: number): { latitude: n
 
         // 제주도 영역 검증
         if (latitude >= 33.0 && latitude <= 33.8 && longitude >= 126.0 && longitude <= 128.2) {
-          console.log(`[PROJ4-FALLBACK] ✅ 좌표변환 성공 (${coordSystem.name}): (${katecX}, ${katecY}) → WGS84(${latitude.toFixed(6)}, ${longitude.toFixed(6)})`);
           return {
             latitude: Math.round(latitude * 1000000) / 1000000,
             longitude: Math.round(longitude * 1000000) / 1000000
@@ -231,10 +185,8 @@ const convertWithProj4Fallback = (katecX: number, katecY: number): { latitude: n
       }
     }
 
-    console.warn(`[PROJ4-FALLBACK] 모든 좌표계 시도 실패: (${katecX}, ${katecY})`);
     return null;
   } catch (error) {
-    console.error('[PROJ4-FALLBACK] 좌표 변환 실패:', error, `좌표: (${katecX}, ${katecY})`);
     return null;
   }
 };
@@ -251,13 +203,8 @@ const convertWithProj4Fallback = (katecX: number, katecY: number): { latitude: n
  */
 export const convertKatecToWgs84 = async (katecX: number, katecY: number, timeout: number = 5000): Promise<{ latitude: number; longitude: number } | null> => {
   try {
-    const conversionStartTime = Date.now();
-
     // 좌표가 유효하지 않은 경우
     if (!katecX || !katecY || katecX === 0 || katecY === 0) {
-      console.warn(`⚠️ [COORD-CONVERT] 유효하지 않은 좌표 입력`);
-      console.warn(`  📍 입력값: X=${katecX}, Y=${katecY}`);
-      console.warn(`  🔧 원인: null, undefined, 또는 0 값`);
       return null;
     }
 
@@ -267,81 +214,35 @@ export const convertKatecToWgs84 = async (katecX: number, katecY: number, timeou
     // 캐시에서 확인
     if (coordinateCache.has(cacheKey)) {
       const cachedResult = coordinateCache.get(cacheKey);
-      const cacheHitTime = Date.now() - conversionStartTime;
-      console.log(`💾 [COORD-CONVERT] 캐시 히트! (${cacheHitTime}ms)`);
-      console.log(`  📍 좌표: KATEC(${katecX}, ${katecY})`);
-      console.log(`  🎯 캐시된 결과: ${cachedResult ? `WGS84(${cachedResult.latitude}, ${cachedResult.longitude})` : 'null (변환 실패 기록)'}`);
       return cachedResult || null;
     }
 
-    console.log(`🔄 [COORD-CONVERT] 새로운 좌표 변환 시작`);
-    console.log(`  📍 입력 좌표: KATEC(${katecX}, ${katecY})`);
-    console.log(`  ⏰ 타임아웃 설정: ${timeout}ms`);
-    console.log(`  🎯 변환 목표: WGS84 (GPS 좌표계)`);
-    console.log(`  📊 캐시 상태: ${coordinateCache.size}개 좌표 캐시됨`);
-
     // 1차 시도: Kakao API 사용 (타임아웃 적용)
-    console.log(`🥇 [COORD-CONVERT] 1차 시도: 카카오 API 사용`);
     try {
-      const kakaoStartTime = Date.now();
       const kakaoResult = await convertWithKakaoAPI(katecX, katecY, timeout);
-      const kakaoDuration = Date.now() - kakaoStartTime;
 
       if (kakaoResult) {
-        const totalDuration = Date.now() - conversionStartTime;
-        console.log(`✅ [COORD-CONVERT] 카카오 API 변환 성공! (${totalDuration}ms)`);
-        console.log(`  📍 결과: WGS84(${kakaoResult.latitude}, ${kakaoResult.longitude})`);
-        console.log(`  💾 캐시에 저장 완료`);
-
         // 캐시에 저장
         coordinateCache.set(cacheKey, kakaoResult);
         return kakaoResult;
-      } else {
-        console.warn(`❌ [COORD-CONVERT] 카카오 API 변환 실패 (${kakaoDuration}ms)`);
-        console.warn(`  🔄 proj4 폴백으로 전환합니다...`);
       }
     } catch (error: any) {
-      console.warn(`💥 [COORD-CONVERT] 카카오 API 호출 중 예외 발생`);
-      console.warn(`  🔍 오류: ${error.message}`);
-      console.warn(`  🔄 proj4 폴백으로 전환합니다...`);
+      // Kakao API 실패 시 proj4 폴백으로 진행
     }
 
     // 2차 시도: proj4 폴백
-    console.log(`🥈 [COORD-CONVERT] 2차 시도: proj4 라이브러리 폴백`);
     const proj4Result = convertWithProj4Fallback(katecX, katecY);
 
     // 결과를 캐시에 저장 (실패한 경우도 캐시하여 재시도 방지)
     coordinateCache.set(cacheKey, proj4Result);
 
     if (proj4Result) {
-      const totalDuration = Date.now() - conversionStartTime;
-      console.log(`✅ [COORD-CONVERT] proj4 폴백 변환 성공! (${totalDuration}ms)`);
-      console.log(`  📍 결과: WGS84(${proj4Result.latitude}, ${proj4Result.longitude})`);
-      console.log(`  💾 캐시에 저장 완료`);
       return proj4Result;
     }
 
-    const totalDuration = Date.now() - conversionStartTime;
-    console.error(`❌ [COORD-CONVERT] 모든 변환 방법 실패 (${totalDuration}ms)`);
-    console.error(`  📍 입력 좌표: KATEC(${katecX}, ${katecY})`);
-    console.error(`  🔧 시도한 방법:`);
-    console.error(`    1. 카카오 API (KTM → WGS84)`);
-    console.error(`    2. proj4 라이브러리 (다중 좌표계 시도)`);
-    console.error(`  💡 권장 사항:`);
-    console.error(`    1. 원본 좌표 데이터 확인`);
-    console.error(`    2. 좌표계 형식 재검토`);
-    console.error(`    3. 네트워크 연결 상태 확인`);
     return null;
 
   } catch (error: any) {
-    const totalDuration = Date.now() - (Date.now() - 5000); // 대략적인 시간
-    console.error(`💥 [COORD-CONVERT] 좌표 변환 중 예외 발생 (${totalDuration}ms)`);
-    console.error(`  📍 좌표: KATEC(${katecX}, ${katecY})`);
-    console.error(`  🔍 오류 상세:`, {
-      name: error.name,
-      message: error.message,
-      stack: error.stack?.split('\n').slice(0, 3).join('\n')
-    });
     return null;
   }
 };
@@ -355,15 +256,12 @@ export const convertKatecToWgs84Sync = (katecX: number, katecY: number): { latit
   try {
     // 좌표가 유효하지 않은 경우
     if (!katecX || !katecY || katecX === 0 || katecY === 0) {
-      console.warn(`[COORD-CONVERT-SYNC] 유효하지 않은 좌표: (${katecX}, ${katecY})`);
       return null;
     }
 
-    console.log(`[COORD-CONVERT-SYNC] proj4 동기 좌표변환 시작: (${katecX}, ${katecY})`);
     return convertWithProj4Fallback(katecX, katecY);
 
   } catch (error) {
-    console.error('[COORD-CONVERT-SYNC] 좌표 변환 실패:', error, `좌표: (${katecX}, ${katecY})`);
     return null;
   }
 };
@@ -481,8 +379,6 @@ const migrateFavoriteData = (): void => {
 
     // 첫 번째 항목에 fuelType이 없으면 마이그레이션 필요
     if (favorites[0] && !favorites[0].fuelType) {
-      console.log('좋아요 데이터 마이그레이션 시작...');
-
       // 기존 데이터를 휘발유 기준으로 마이그레이션
       const migratedFavorites = favorites.map((fav: any) => ({
         ...fav,
@@ -490,7 +386,6 @@ const migrateFavoriteData = (): void => {
       }));
 
       localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(migratedFavorites));
-      console.log('좋아요 데이터 마이그레이션 완료');
     }
   } catch (error) {
     console.error('좋아요 데이터 마이그레이션 실패:', error);

@@ -68,13 +68,11 @@ export const useGasStationMarkers = (map: Ref<any>) => {
   // 주유소 마커 생성
   const createGasStationMarker = (station: GasStation, selectedFuel: string): any => {
     if (!map.value || !station.location?.latitude || !station.location?.longitude) {
-      console.log(`[DEBUG] 마커 생성 불가 - 지도 또는 좌표 없음: ${station.name}`);
       return null;
     }
 
     // 가격 정보가 없는 주유소는 마커 생성하지 않음
     if (!station.prices) {
-      console.log(`[DEBUG] 마커 생성 불가 - 가격 정보 없음: ${station.name}`);
       return null;
     }
 
@@ -206,16 +204,12 @@ export const useGasStationMarkers = (map: Ref<any>) => {
 
     // 마커 클릭 이벤트
     window.kakao.maps.event.addListener(marker, 'click', () => {
-      console.log(`[DEBUG] 마커 클릭됨: ${station.name}`);
-
       // 기존 열린 인포윈도우 닫기
       closeCurrentInfoWindow();
 
       // 새 인포윈도우 열기
       infowindow.open(map.value, marker);
       currentOpenInfoWindow.value = infowindow;
-
-      console.log(`[DEBUG] 인포윈도우 열림: ${station.name}`);
     });
 
     return marker;
@@ -223,59 +217,24 @@ export const useGasStationMarkers = (map: Ref<any>) => {
 
   // 주유소 마커들 추가
   const addGasStationMarkers = (stations: GasStation[], selectedFuel: string) => {
-    // 🗺️ [MARKERS-DEBUG] 마커 생성 시작
-    console.log(`🗺️ [MARKERS-DEBUG] 마커 생성 시작:`, {
-      totalStations: stations.length,
-      selectedFuel,
-      mapExists: !!map.value,
-      timestamp: new Date().toISOString()
-    });
-
     if (!map.value) {
       console.error('❌ [MARKERS-ERROR] 지도 객체가 없습니다. 마커를 생성할 수 없습니다.');
       return;
     }
 
-    let markersCreated = 0;
-    let markersSkipped = 0;
-    const skipReasons: Record<string, number> = {};
-
     stations.forEach((station, index) => {
       // 좌표와 가격 정보가 있는 주유소만 마커 생성
       if (station.location?.latitude && station.location?.longitude && station.prices) {
-        console.log(`[DEBUG] 마커 생성 중 ${index + 1}/${stations.length}: ${station.name} (${station.location.latitude}, ${station.location.longitude})`);
-
         try {
           const marker = createGasStationMarker(station, selectedFuel);
           if (marker) {
             // 마커를 배열에 저장 (나중에 제거하기 위해)
             currentMarkers.value.push(marker);
-            markersCreated++;
-          } else {
-            console.log(`[DEBUG] 마커 생성 실패 (null 반환): ${station.name}`);
-            markersSkipped++;
           }
         } catch (error) {
           console.error(`[ERROR] 마커 생성 실패: ${station.name}`, error);
-          markersSkipped++;
         }
-      } else {
-        const reason = !station.location?.latitude || !station.location?.longitude
-          ? '좌표 없음'
-          : '가격 정보 없음';
-        skipReasons[reason] = (skipReasons[reason] || 0) + 1;
-        markersSkipped++;
       }
-    });
-
-    // 🗺️ [MARKERS-RESULT-DEBUG] 마커 생성 완료
-    console.log(`🗺️ [MARKERS-RESULT-DEBUG] 마커 생성 완료:`, {
-      created: markersCreated,
-      skipped: markersSkipped,
-      total: stations.length,
-      skipReasons,
-      successRate: ((markersCreated / stations.length) * 100).toFixed(1) + '%',
-      currentMarkersTotal: currentMarkers.value.length
     });
   };
 

@@ -153,7 +153,6 @@ export const useGasStationStore = defineStore('gasStation', {
     // 에러 설정
     setError(error: string) {
       this.lastError = error;
-      console.error('[GasStation Store Error]:', error);
     },
 
     // 에러 클리어
