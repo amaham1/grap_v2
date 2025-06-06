@@ -120,6 +120,16 @@ import ErrorDisplay from '~/components/common/ErrorDisplay.vue';
 const isMobileMenuOpen = ref(false);
 const route = useRoute();
 
+// Canonical URL 설정
+useHead({
+  link: [
+    {
+      rel: 'canonical',
+      href: `https://grap.co.kr${route.path}`
+    }
+  ]
+});
+
 // DB 연결 확인
 const { checkConnectionOnMount } = useDbConnection();
 checkConnectionOnMount();

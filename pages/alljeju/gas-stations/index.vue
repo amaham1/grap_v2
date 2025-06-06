@@ -265,24 +265,97 @@ const isValidApiKey = kakaoMapApiKey && kakaoMapApiKey !== 'f7c0b5b7e8a4c5d6e7f8
 
 // 카카오맵 API 키 검증
 
-// 페이지 제목 설정
+// SEO 최적화된 페이지 메타 정보 설정
 useHead({
-  title: '최저가 주유소 - Grap',
+  title: '제주도 주유소 최저가 정보 | 실시간 유가 비교 - Grap',
   meta: [
-    { name: 'description', content: '제주도 최저가 주유소 정보를 카카오맵으로 확인하세요.' }
+    // 기본 메타 태그
+    { name: 'description', content: '제주도 주유소 최저가 정보를 실시간으로 확인하세요. 카카오맵으로 내 주변 주유소 위치와 휘발유, 경유, LPG 가격을 한눈에 비교할 수 있습니다.' },
+    { name: 'keywords', content: '제주도 주유소, 제주 주유소, 제주도 유가, 최저가 주유소, 제주 휘발유 가격, 제주 경유 가격, 제주 LPG 가격, 주유소 위치, 실시간 유가' },
+    { name: 'author', content: 'Grap' },
+    { name: 'robots', content: 'index, follow' },
+
+    // Open Graph 메타 태그
+    { property: 'og:title', content: '제주도 주유소 최저가 정보 | 실시간 유가 비교 - Grap' },
+    { property: 'og:description', content: '제주도 주유소 최저가 정보를 실시간으로 확인하세요. 카카오맵으로 내 주변 주유소 위치와 휘발유, 경유, LPG 가격을 한눈에 비교할 수 있습니다.' },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: 'https://grap.co.kr/alljeju/gas-stations' },
+    { property: 'og:site_name', content: 'Grap - 제주도 생활정보' },
+    { property: 'og:locale', content: 'ko_KR' },
+
+    // Twitter Card 메타 태그
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: '제주도 주유소 최저가 정보 | 실시간 유가 비교 - Grap' },
+    { name: 'twitter:description', content: '제주도 주유소 최저가 정보를 실시간으로 확인하세요. 카카오맵으로 내 주변 주유소 위치와 휘발유, 경유, LPG 가격을 한눈에 비교할 수 있습니다.' },
+
+    // 지역 SEO
+    { name: 'geo.region', content: 'KR-49' }, // 제주특별자치도
+    { name: 'geo.placename', content: '제주특별자치도' },
+    { name: 'geo.position', content: '33.3617;126.5292' }, // 제주도 중심 좌표
+    { name: 'ICBM', content: '33.3617, 126.5292' }
   ],
-  script: isValidApiKey ? [
-    {
+  script: [
+    // 카카오맵 스크립트
+    ...(isValidApiKey ? [{
       src: `//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapApiKey}&autoload=false`,
       defer: true
+    }] : []),
+    // 구조화된 데이터 (JSON-LD)
+    {
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: '제주도 주유소 최저가 정보',
+        description: '제주도 주유소 최저가 정보를 실시간으로 확인하세요. 카카오맵으로 내 주변 주유소 위치와 휘발유, 경유, LPG 가격을 한눈에 비교할 수 있습니다.',
+        url: 'https://grap.co.kr/alljeju/gas-stations',
+        mainEntity: {
+          '@type': 'Service',
+          name: '제주도 주유소 정보 서비스',
+          description: '제주도 내 모든 주유소의 실시간 가격 정보와 위치를 제공하는 서비스',
+          provider: {
+            '@type': 'Organization',
+            name: 'Grap',
+            url: 'https://grap.co.kr'
+          },
+          areaServed: {
+            '@type': 'State',
+            name: '제주특별자치도',
+            containedInPlace: {
+              '@type': 'Country',
+              name: '대한민국'
+            }
+          },
+          serviceType: '주유소 정보 제공',
+          category: '교통 및 연료'
+        },
+        breadcrumb: {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: '홈',
+              item: 'https://grap.co.kr/alljeju'
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: '최저가 주유소',
+              item: 'https://grap.co.kr/alljeju/gas-stations'
+            }
+          ]
+        }
+      })
     }
-  ] : []
+  ]
 });
 
 // Pinia 스토어 사용
 const gasStationStore = useGasStationStore();
 const { handleApiError, withErrorHandling, setupGlobalErrorHandlers } = useErrorHandler();
 const { measureFunction, measureRender, startMonitoring, stopMonitoring } = usePerformance();
+const { generateGasStationStructuredData, generateJejuRegionKeywords, addStructuredData } = useSEO();
 
 // 컴포저블 사용
 const { getCurrentLocation } = useUserLocation();
@@ -464,6 +537,22 @@ const handleNearbySearch = async () => {
 
       // 스토어에 데이터 저장
       gasStationStore.setStations(stations);
+
+      // SEO: 구조화된 데이터 및 동적 키워드 추가
+      if (stations.length > 0) {
+        const structuredData = generateGasStationStructuredData(stations);
+        if (structuredData) {
+          addStructuredData(structuredData);
+        }
+
+        // 동적 키워드 업데이트
+        const dynamicKeywords = generateJejuRegionKeywords(stations);
+        useHead({
+          meta: [
+            { name: 'keywords', content: dynamicKeywords }
+          ]
+        });
+      }
     } finally {
       gasStationStore.setSearching(false);
     }
@@ -498,6 +587,22 @@ const handleCurrentViewSearch = async () => {
 
       // 스토어에 데이터 저장
       gasStationStore.setStations(stations);
+
+      // SEO: 구조화된 데이터 및 동적 키워드 추가
+      if (stations.length > 0) {
+        const structuredData = generateGasStationStructuredData(stations);
+        if (structuredData) {
+          addStructuredData(structuredData);
+        }
+
+        // 동적 키워드 업데이트
+        const dynamicKeywords = generateJejuRegionKeywords(stations);
+        useHead({
+          meta: [
+            { name: 'keywords', content: dynamicKeywords }
+          ]
+        });
+      }
     } finally {
       gasStationStore.setSearching(false);
     }

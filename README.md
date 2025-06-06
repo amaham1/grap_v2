@@ -20,6 +20,7 @@
 - 👨‍💼 관리자 대시보드
 - 📱 반응형 웹 디자인
 - 🔍 검색 및 필터링 기능
+- 🔍 SEO 최적화 (Google, Naver 검색 엔진 최적화)
 
 ## 🛠️ 설치 및 설정
 
@@ -36,6 +37,32 @@ npm install
 ```bash
 cp .env.example .env
 ```
+
+## 🔍 SEO 최적화
+
+### 검색 엔진 최적화 기능
+
+- **메타 태그 최적화**: 각 페이지별 맞춤형 title, description, keywords 설정
+- **구조화된 데이터**: JSON-LD 스키마를 통한 검색 엔진 이해도 향상
+- **동적 Sitemap**: 실시간 콘텐츠 반영하는 XML 사이트맵 자동 생성
+- **Open Graph & Twitter Card**: 소셜 미디어 공유 최적화
+- **Canonical URL**: 중복 콘텐츠 방지
+- **지역 SEO**: 제주도 지역 특화 키워드 최적화
+
+### 주요 타겟 키워드
+
+- **주유소**: "제주도 주유소", "제주 주유소", "제주도 최저가 주유소"
+- **지역별**: "제주시 주유소", "서귀포시 주유소", "애월 주유소" 등
+- **브랜드별**: "SK에너지 제주", "GS칼텍스 제주", "S-OIL 제주" 등
+- **연료별**: "제주도 휘발유", "제주 경유", "제주도 LPG" 등
+
+### SEO 관련 파일
+
+- `server/api/sitemap.xml.get.ts`: 동적 사이트맵 생성
+- `composables/useSEO.ts`: SEO 최적화 컴포저블
+- `public/robots.txt`: 검색 엔진 크롤링 가이드
+- `public/google-site-verification.html`: Google Search Console 인증
+- `public/naver-site-verification.html`: Naver 웹마스터 도구 인증
 
 ## 🔒 보안 및 Mixed Content 해결
 

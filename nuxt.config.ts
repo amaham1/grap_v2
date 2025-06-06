@@ -6,12 +6,45 @@ export default defineNuxtConfig({
   app: {
     baseURL: '/',
     head: {
+      htmlAttrs: {
+        lang: 'ko'
+      },
+      title: 'Grap - 제주도 생활정보 플랫폼',
+      meta: [
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'description', content: '제주도 주유소 최저가 정보, 축제, 전시회, 복지서비스 정보를 한곳에서 확인하세요. 실시간 유가 비교와 카카오맵 연동으로 편리한 제주도 생활정보를 제공합니다.' },
+        { name: 'keywords', content: '제주도, 제주 주유소, 제주도 축제, 제주도 전시회, 제주도 복지서비스, 제주 유가, 제주도 생활정보' },
+        { name: 'author', content: 'Grap' },
+        { name: 'robots', content: 'index, follow' },
+        { property: 'og:site_name', content: 'Grap - 제주도 생활정보' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:locale', content: 'ko_KR' },
+        { name: 'format-detection', content: 'telephone=no' }
+      ],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'canonical', href: 'https://grap.co.kr' }
+      ],
       script: [
         {
           async: true,
           src: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6491895061878011',
           crossorigin: 'anonymous'
-        }
+        },
+        // Google Analytics (GA4) - 실제 사용 시 측정 ID를 설정하세요
+        // {
+        //   async: true,
+        //   src: 'https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX'
+        // },
+        // {
+        //   innerHTML: `
+        //     window.dataLayer = window.dataLayer || [];
+        //     function gtag(){dataLayer.push(arguments);}
+        //     gtag('js', new Date());
+        //     gtag('config', 'G-XXXXXXXXXX');
+        //   `
+        // }
       ]
     }
   },

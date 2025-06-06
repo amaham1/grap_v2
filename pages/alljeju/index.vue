@@ -184,6 +184,68 @@ definePageMeta({
   layout: 'public'
 });
 
+// SEO 최적화된 홈페이지 메타 정보
+useHead({
+  title: 'Grap - 제주도 생활정보 플랫폼 | 주유소, 축제, 전시회, 복지서비스',
+  meta: [
+    { name: 'description', content: '제주도 생활에 필요한 모든 정보를 한곳에서! 실시간 주유소 최저가 정보, 축제 및 행사, 전시회, 복지서비스 정보를 제공하는 제주도 대표 생활정보 플랫폼입니다.' },
+    { name: 'keywords', content: '제주도, 제주 생활정보, 제주도 주유소, 제주 축제, 제주도 전시회, 제주 복지서비스, 제주도 여행, 제주 관광, 제주도 정보' },
+    { property: 'og:title', content: 'Grap - 제주도 생활정보 플랫폼' },
+    { property: 'og:description', content: '제주도 생활에 필요한 모든 정보를 한곳에서! 실시간 주유소 최저가 정보, 축제 및 행사, 전시회, 복지서비스 정보를 제공하는 제주도 대표 생활정보 플랫폼입니다.' },
+    { property: 'og:url', content: 'https://grap.co.kr/alljeju' },
+    { name: 'twitter:title', content: 'Grap - 제주도 생활정보 플랫폼' },
+    { name: 'twitter:description', content: '제주도 생활에 필요한 모든 정보를 한곳에서! 실시간 주유소 최저가 정보, 축제 및 행사, 전시회, 복지서비스 정보를 제공합니다.' }
+  ],
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'Grap - 제주도 생활정보 플랫폼',
+        description: '제주도 생활에 필요한 모든 정보를 한곳에서! 실시간 주유소 최저가 정보, 축제 및 행사, 전시회, 복지서비스 정보를 제공하는 제주도 대표 생활정보 플랫폼입니다.',
+        url: 'https://grap.co.kr',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: 'https://grap.co.kr/alljeju/gas-stations?q={search_term_string}',
+          'query-input': 'required name=search_term_string'
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Grap',
+          url: 'https://grap.co.kr'
+        },
+        mainEntity: [
+          {
+            '@type': 'Service',
+            name: '제주도 주유소 정보',
+            description: '제주도 내 모든 주유소의 실시간 가격 정보와 위치 제공',
+            url: 'https://grap.co.kr/alljeju/gas-stations'
+          },
+          {
+            '@type': 'Service',
+            name: '제주도 축제 정보',
+            description: '제주도에서 열리는 다양한 축제와 행사 정보 제공',
+            url: 'https://grap.co.kr/alljeju/festivals'
+          },
+          {
+            '@type': 'Service',
+            name: '제주도 전시회 정보',
+            description: '제주도 내 공연 및 전시회 정보 제공',
+            url: 'https://grap.co.kr/alljeju/exhibitions'
+          },
+          {
+            '@type': 'Service',
+            name: '제주도 복지서비스 정보',
+            description: '제주도 복지서비스 및 지원 프로그램 정보 제공',
+            url: 'https://grap.co.kr/alljeju/welfare-services'
+          }
+        ]
+      })
+    }
+  ]
+});
+
 // 복지 서비스 데이터 로드
 const {
   data: welfareServicesData,

@@ -95,6 +95,55 @@ definePageMeta({
   layout: 'public'
 });
 
+// SEO 최적화된 축제 페이지 메타 정보
+useHead({
+  title: '제주도 축제 및 행사 정보 | 실시간 업데이트 - Grap',
+  meta: [
+    { name: 'description', content: '제주도에서 열리는 다양한 축제와 행사 정보를 실시간으로 확인하세요. 제주도 대표 축제부터 지역 소규모 행사까지 모든 정보를 한곳에서 제공합니다.' },
+    { name: 'keywords', content: '제주도 축제, 제주 행사, 제주도 이벤트, 제주 축제 일정, 제주도 문화행사, 제주 관광축제, 제주도 지역축제' },
+    { property: 'og:title', content: '제주도 축제 및 행사 정보 | 실시간 업데이트 - Grap' },
+    { property: 'og:description', content: '제주도에서 열리는 다양한 축제와 행사 정보를 실시간으로 확인하세요. 제주도 대표 축제부터 지역 소규모 행사까지 모든 정보를 한곳에서 제공합니다.' },
+    { property: 'og:url', content: 'https://grap.co.kr/alljeju/festivals' },
+    { name: 'twitter:title', content: '제주도 축제 및 행사 정보 | 실시간 업데이트 - Grap' },
+    { name: 'twitter:description', content: '제주도에서 열리는 다양한 축제와 행사 정보를 실시간으로 확인하세요.' }
+  ],
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: '제주도 축제 및 행사 정보',
+        description: '제주도에서 열리는 다양한 축제와 행사 정보를 실시간으로 확인하세요. 제주도 대표 축제부터 지역 소규모 행사까지 모든 정보를 한곳에서 제공합니다.',
+        url: 'https://grap.co.kr/alljeju/festivals',
+        mainEntity: {
+          '@type': 'ItemList',
+          name: '제주도 축제 목록',
+          description: '제주도에서 개최되는 축제와 행사들의 목록',
+          itemListElement: []
+        },
+        breadcrumb: {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: '홈',
+              item: 'https://grap.co.kr/alljeju'
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: '행사/축제',
+              item: 'https://grap.co.kr/alljeju/festivals'
+            }
+          ]
+        }
+      })
+    }
+  ]
+});
+
 // 페이지 상태 관리 composable 사용
 const pageStateManager = usePageState({
   key: 'festivals',

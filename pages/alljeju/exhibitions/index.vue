@@ -125,6 +125,55 @@ definePageMeta({
   layout: 'public'
 });
 
+// SEO 최적화된 전시회 페이지 메타 정보
+useHead({
+  title: '제주도 공연 및 전시회 정보 | 문화예술 행사 - Grap',
+  meta: [
+    { name: 'description', content: '제주도에서 열리는 다양한 공연과 전시회 정보를 확인하세요. 미술 전시, 음악 공연, 연극, 뮤지컬 등 제주도 문화예술 행사를 한곳에서 제공합니다.' },
+    { name: 'keywords', content: '제주도 전시회, 제주 공연, 제주도 미술전시, 제주 음악공연, 제주도 연극, 제주 뮤지컬, 제주도 문화행사, 제주 예술' },
+    { property: 'og:title', content: '제주도 공연 및 전시회 정보 | 문화예술 행사 - Grap' },
+    { property: 'og:description', content: '제주도에서 열리는 다양한 공연과 전시회 정보를 확인하세요. 미술 전시, 음악 공연, 연극, 뮤지컬 등 제주도 문화예술 행사를 한곳에서 제공합니다.' },
+    { property: 'og:url', content: 'https://grap.co.kr/alljeju/exhibitions' },
+    { name: 'twitter:title', content: '제주도 공연 및 전시회 정보 | 문화예술 행사 - Grap' },
+    { name: 'twitter:description', content: '제주도에서 열리는 다양한 공연과 전시회 정보를 확인하세요.' }
+  ],
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: '제주도 공연 및 전시회 정보',
+        description: '제주도에서 열리는 다양한 공연과 전시회 정보를 확인하세요. 미술 전시, 음악 공연, 연극, 뮤지컬 등 제주도 문화예술 행사를 한곳에서 제공합니다.',
+        url: 'https://grap.co.kr/alljeju/exhibitions',
+        mainEntity: {
+          '@type': 'ItemList',
+          name: '제주도 공연 및 전시회 목록',
+          description: '제주도에서 개최되는 공연과 전시회들의 목록',
+          itemListElement: []
+        },
+        breadcrumb: {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: '홈',
+              item: 'https://grap.co.kr/alljeju'
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: '공연/전시',
+              item: 'https://grap.co.kr/alljeju/exhibitions'
+            }
+          ]
+        }
+      })
+    }
+  ]
+});
+
 // 페이지 상태 관리 composable 사용
 const pageStateManager = usePageState({
   key: 'exhibitions',

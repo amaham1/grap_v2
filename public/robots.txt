@@ -2,10 +2,19 @@ User-Agent: *
 Disallow: /admin/
 Disallow: /api/
 Allow: /api/public/
+Allow: /api/sitemap.xml
 
 # Google AdSense
 User-Agent: Mediapartners-Google
 Disallow:
 
+# Naver Search Bot
+User-Agent: Yeti
+Allow: /
+
+# Google Search Bot
+User-Agent: Googlebot
+Allow: /
+
 # Sitemap
-Sitemap: https://your-site.pages.dev/sitemap.xml
+Sitemap: https://grap.co.kr/api/sitemap.xml

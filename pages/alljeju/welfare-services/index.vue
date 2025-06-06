@@ -82,6 +82,55 @@ definePageMeta({
   layout: 'public'
 });
 
+// SEO 최적화된 복지서비스 페이지 메타 정보
+useHead({
+  title: '제주도 복지서비스 정보 | 지원 프로그램 안내 - Grap',
+  meta: [
+    { name: 'description', content: '제주도 복지서비스 및 지원 프로그램 정보를 확인하세요. 생활지원, 의료지원, 교육지원, 주거지원 등 다양한 제주도 복지혜택을 한곳에서 제공합니다.' },
+    { name: 'keywords', content: '제주도 복지서비스, 제주 지원프로그램, 제주도 생활지원, 제주 의료지원, 제주도 교육지원, 제주 주거지원, 제주도 복지혜택' },
+    { property: 'og:title', content: '제주도 복지서비스 정보 | 지원 프로그램 안내 - Grap' },
+    { property: 'og:description', content: '제주도 복지서비스 및 지원 프로그램 정보를 확인하세요. 생활지원, 의료지원, 교육지원, 주거지원 등 다양한 제주도 복지혜택을 한곳에서 제공합니다.' },
+    { property: 'og:url', content: 'https://grap.co.kr/alljeju/welfare-services' },
+    { name: 'twitter:title', content: '제주도 복지서비스 정보 | 지원 프로그램 안내 - Grap' },
+    { name: 'twitter:description', content: '제주도 복지서비스 및 지원 프로그램 정보를 확인하세요.' }
+  ],
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: '제주도 복지서비스 정보',
+        description: '제주도 복지서비스 및 지원 프로그램 정보를 확인하세요. 생활지원, 의료지원, 교육지원, 주거지원 등 다양한 제주도 복지혜택을 한곳에서 제공합니다.',
+        url: 'https://grap.co.kr/alljeju/welfare-services',
+        mainEntity: {
+          '@type': 'ItemList',
+          name: '제주도 복지서비스 목록',
+          description: '제주도에서 제공하는 복지서비스와 지원 프로그램들의 목록',
+          itemListElement: []
+        },
+        breadcrumb: {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: '홈',
+              item: 'https://grap.co.kr/alljeju'
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: '복지 서비스',
+              item: 'https://grap.co.kr/alljeju/welfare-services'
+            }
+          ]
+        }
+      })
+    }
+  ]
+});
+
 // 페이지 상태 관리 composable 사용
 const pageStateManager = usePageState({
   key: 'welfare-services',
