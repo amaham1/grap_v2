@@ -1,7 +1,7 @@
 <template>
   <div class="bottom-ad-banner">
-    <!-- 모바일 광고 (768px 이하) -->
-    <div class="mobile-ad md:hidden">
+    <!-- 모바일 광고 (768px 이하에서만 표시) -->
+    <div v-if="isMobile" class="mobile-ad">
       <GoogleAdsense
         format="rectangle"
         width="320"
@@ -10,8 +10,8 @@
         container-class="mobile-ad-content" />
     </div>
 
-    <!-- PC 광고 (768px 이상) -->
-    <div class="desktop-ad hidden md:flex">
+    <!-- PC 광고 (768px 이상에서만 표시) -->
+    <div v-if="!isMobile" class="desktop-ad">
       <GoogleAdsense
         format="rectangle"
         width="728"
@@ -25,6 +25,34 @@
 <script setup lang="ts">
 // Google AdSense 컴포넌트 lazy loading
 const GoogleAdsense = defineAsyncComponent(() => import('~/components/public/GoogleAdsense.vue'));
+
+// 반응형 화면 크기 감지
+const isMobile = ref(false);
+
+// 화면 크기 확인 함수
+const checkScreenSize = () => {
+  if (import.meta.client) {
+    isMobile.value = window.innerWidth < 768;
+  }
+};
+
+// 클라이언트에서만 실행
+onMounted(() => {
+  if (import.meta.client) {
+    // 초기 화면 크기 확인
+    checkScreenSize();
+
+    // 화면 크기 변경 감지
+    window.addEventListener('resize', checkScreenSize);
+  }
+});
+
+// 컴포넌트 언마운트 시 이벤트 리스너 제거
+onUnmounted(() => {
+  if (import.meta.client) {
+    window.removeEventListener('resize', checkScreenSize);
+  }
+});
 </script>
 
 <style scoped>
@@ -50,6 +78,8 @@ const GoogleAdsense = defineAsyncComponent(() => import('~/components/public/Goo
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  /* 모바일에서만 표시 보장 */
+  visibility: visible;
 }
 
 .mobile-ad-content {
@@ -73,6 +103,8 @@ const GoogleAdsense = defineAsyncComponent(() => import('~/components/public/Goo
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  /* PC에서만 표시 보장 */
+  visibility: visible;
 }
 
 .desktop-ad-content {

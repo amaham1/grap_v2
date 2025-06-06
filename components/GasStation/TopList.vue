@@ -1,5 +1,5 @@
 <template>
-  <div v-if="topStations.length > 0" class="absolute top-2 right-2 z-40 bg-white rounded-lg shadow-lg w-72 md:w-80 border border-gray-300" style="background-color: white !important;">
+  <div v-if="topStations.length > 0" class="top-list-container">
     <!-- 패널 헤더 (항상 표시) -->
     <div class="flex items-center justify-between p-3 border-b border-gray-200">
       <h3 class="text-sm font-semibold text-gray-700 flex items-center">
@@ -81,3 +81,60 @@ watch(() => props.topStations, (newStations) => {
   // topStations 변경됨
 });
 </script>
+
+<style scoped>
+.top-list-container {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 40;
+  background-color: white !important;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid #d1d5db;
+  width: 18rem; /* w-72 */
+}
+
+/* 데스크톱에서 더 넓게 */
+@media (min-width: 768px) {
+  .top-list-container {
+    width: 20rem; /* md:w-80 */
+  }
+}
+
+/* 모바일에서 반응형 조정 */
+@media (max-width: 767px) {
+  .top-list-container {
+    position: fixed;
+    top: 1rem;
+    right: 0.5rem;
+    left: 0.5rem;
+    width: auto;
+    max-width: calc(100vw - 1rem);
+    z-index: 45;
+    /* 모바일에서 기본적으로 접힌 상태로 시작 */
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+}
+
+/* 매우 작은 화면에서 추가 조정 */
+@media (max-width: 480px) {
+  .top-list-container {
+    top: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .top-list-container h3 {
+    font-size: 0.75rem;
+  }
+
+  .top-list-container .text-sm {
+    font-size: 0.75rem;
+  }
+
+  .top-list-container .text-xs {
+    font-size: 0.625rem;
+  }
+}
+</style>

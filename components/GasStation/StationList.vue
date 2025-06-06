@@ -1,7 +1,7 @@
 <template>
-  <div class="space-y-4">
+  <div class="station-list-container">
     <!-- 최저가 TOP10 목록 -->
-    <div v-if="topLowestPriceStations.length > 0" class="bg-white rounded-lg shadow-sm border border-gray-200">
+    <div v-if="topLowestPriceStations.length > 0" class="station-list-item">
       <div class="flex items-center justify-between p-3 border-b border-gray-200">
         <h3 class="text-sm font-semibold text-gray-700 flex items-center">
           <svg class="w-4 h-4 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
@@ -48,7 +48,7 @@
     </div>
 
     <!-- 즐겨찾기 TOP3 목록 -->
-    <div v-if="favoriteTop3Stations.length > 0" class="bg-white rounded-lg shadow-sm border border-gray-200">
+    <div v-if="favoriteTop3Stations.length > 0" class="station-list-item">
       <div class="flex items-center justify-between p-3 border-b border-gray-200">
         <h3 class="text-sm font-semibold text-gray-700 flex items-center">
           <svg class="w-4 h-4 mr-2 text-pink-500" fill="currentColor" viewBox="0 0 20 20">
@@ -95,8 +95,8 @@
     </div>
 
     <!-- 검색 결과가 없을 때 -->
-    <div v-if="topLowestPriceStations.length === 0 && favoriteTop3Stations.length === 0" 
-         class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+    <div v-if="topLowestPriceStations.length === 0 && favoriteTop3Stations.length === 0"
+         class="station-list-item p-8 text-center">
       <div class="text-gray-400 text-4xl mb-4">🔍</div>
       <p class="text-gray-600 text-sm">주변 주유소를 검색해보세요.</p>
     </div>
@@ -130,3 +130,67 @@ const selectedFuelLabel = computed(() => {
   return fuelType ? fuelType.label : '전체';
 });
 </script>
+
+<style scoped>
+.station-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.station-list-item {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+}
+
+/* 모바일에서 반응형 조정 */
+@media (max-width: 767px) {
+  .station-list-container {
+    position: fixed;
+    top: 12rem; /* TopList 아래에 위치 */
+    left: 0.5rem;
+    right: 0.5rem;
+    z-index: 44;
+    max-height: calc(100vh - 16rem);
+    overflow-y: auto;
+    /* 모바일 하단 탭과 겹치지 않도록 여백 추가 */
+    bottom: 6rem;
+  }
+
+  .station-list-item {
+    margin-bottom: 0.5rem;
+  }
+
+  .station-list-item h3 {
+    font-size: 0.75rem;
+  }
+
+  .station-list-item .text-sm {
+    font-size: 0.75rem;
+  }
+
+  .station-list-item .text-xs {
+    font-size: 0.625rem;
+  }
+}
+
+/* 매우 작은 화면에서 추가 조정 */
+@media (max-width: 480px) {
+  .station-list-container {
+    top: 10rem;
+    max-height: calc(100vh - 14rem);
+    bottom: 5rem;
+  }
+}
+
+/* 데스크톱에서는 기본 스타일 유지 */
+@media (min-width: 768px) {
+  .station-list-container {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+</style>

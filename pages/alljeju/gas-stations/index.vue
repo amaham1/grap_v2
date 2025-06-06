@@ -9,9 +9,9 @@
     </div>
 
     <!-- 클라이언트에서만 렌더링되는 지도 관련 컴포넌트들 -->
-    <div v-else class="gas-stations-app">
+    <div v-if="isValidApiKey" class="gas-stations-app">
       <!-- 검색 설정 패널 -->
-      <div v-if="isValidApiKey" class="search-panel">
+      <div class="search-panel">
         <GasStationSearchControls
           :user-location="userLocation"
           :is-getting-location="isGettingLocation"
@@ -23,8 +23,16 @@
           @search="handleNearbySearch" />
       </div>
 
+      <!-- 최저가 TOP 박스 (데스크톱 우측 상단) -->
+      <div class="top-list-panel">
+        <GasStationTopList
+          :top-stations="topLowestPriceStations"
+          :selected-fuel="selectedFuel"
+          @station-click="handleStationClick" />
+      </div>
+
       <!-- 주유소 리스트 -->
-      <div v-if="isValidApiKey" class="station-list-panel">
+      <div class="station-list-panel">
         <GasStationStationList
           :top-lowest-price-stations="topLowestPriceStations"
           :favorite-top3-stations="favoriteTop3Stations"
@@ -33,142 +41,34 @@
       </div>
 
       <!-- 카카오맵 컨테이너 -->
-      <GasStationMapContainer
-        v-if="isValidApiKey"
-        :is-map-loaded="isMapLoaded"
-        :map-error="mapError"
-        :is-searching="isSearching"
-        @current-view-search="handleCurrentViewSearch"
-        @retry="handleMapRetry" />
+      <div class="relative">
+        <GasStationMapContainer
+          :is-map-loaded="isMapLoaded"
+          :map-error="mapError"
+          :is-searching="isSearching"
+          @current-view-search="handleCurrentViewSearch"
+          @retry="handleMapRetry" />
 
-      <!-- API 키 오류 상태 -->
-      <div v-else class="w-full h-[calc(100vh-109px)] flex items-center justify-center bg-gray-100">
-        <div class="text-center">
-          <div class="text-red-500 text-6xl mb-4">⚠️</div>
-          <p class="text-gray-600 mb-2">카카오맵 API 키가 설정되지 않았습니다.</p>
-          <p class="text-sm text-gray-500">관리자에게 문의하세요.</p>
-        </div>
+        <!-- 모바일 하단 슬라이드업 패널 (768px 이하에서만 표시) -->
+        <GasStationMobileBottomPanel
+          :top-lowest-price-stations="topLowestPriceStations"
+          :favorite-top3-stations="favoriteTop3Stations"
+          :selected-fuel="selectedFuel"
+          @station-click="handleStationClick" />
       </div>
 
       <!-- 현재 위치 버튼 -->
       <GasStationLocationButton
-        v-if="isValidApiKey"
         :is-getting-location="isGettingLocation"
         @get-current-location="handleGetCurrentLocation" />
+    </div>
 
-      <!-- 모바일 하단 탭 (768px 이하에서만 표시) -->
-      <div class="mobile-bottom-tabs md:hidden">
-        <!-- 탭 토글 버튼 -->
-        <div
-          @click="toggleMobileBottomTabs"
-          class="mobile-tab-toggle"
-          :class="{ 'active': isMobileTabsOpen }">
-          <svg
-            class="w-6 h-6 transform transition-transform duration-300"
-            :class="{ 'rotate-180': isMobileTabsOpen }"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-          </svg>
-        </div>
-
-        <!-- 슬라이드업 탭 컨테이너 -->
-        <div
-          class="mobile-tabs-container"
-          :class="{ 'open': isMobileTabsOpen }">
-
-          <!-- 탭 헤더 -->
-          <div class="mobile-tabs-header">
-            <button
-              @click="activeMobileTab = 'lowest'"
-              class="mobile-tab-button"
-              :class="{ 'active': activeMobileTab === 'lowest' }">
-              <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-              최저가 TOP
-            </button>
-            <button
-              @click="activeMobileTab = 'favorites'"
-              class="mobile-tab-button"
-              :class="{ 'active': activeMobileTab === 'favorites' }">
-              <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"></path>
-              </svg>
-              좋아요 목록
-            </button>
-          </div>
-
-          <!-- 탭 컨텐츠 -->
-          <div class="mobile-tabs-content">
-            <!-- 최저가 TOP 탭 -->
-            <div v-show="activeMobileTab === 'lowest'" class="mobile-tab-panel">
-              <div v-if="topLowestPriceStations.length > 0" class="space-y-2">
-                <div
-                  v-for="(station, index) in topLowestPriceStations"
-                  :key="`mobile-lowest-${station.opinet_id}`"
-                  @click="handleStationClick(station)"
-                  class="mobile-station-item">
-                  <div class="flex items-center space-x-3 max-w-[200px]">
-                    <div class="mobile-station-rank">
-                      {{ index + 1 }}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="mobile-station-name">{{ station.name }}</div>
-                      <div class="mobile-station-address">{{ station.address }}</div>
-                    </div>
-                  </div>
-                  <div class="text-right">
-                    <div class="mobile-station-price">
-                      {{ formatPrice(getStationPrice(station, selectedFuel)) }}원/L
-                    </div>
-                    <div v-if="station.distance" class="mobile-station-distance">
-                      {{ station.distance.toFixed(1) }}km
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div v-else class="mobile-empty-state">
-                <div class="text-gray-400 text-2xl mb-2">🔍</div>
-                <p class="text-gray-600 text-sm">주변 주유소를 검색해보세요.</p>
-              </div>
-            </div>
-
-            <!-- 좋아요 목록 탭 -->
-            <div v-show="activeMobileTab === 'favorites'" class="mobile-tab-panel">
-              <div v-if="favoriteTop3Stations.length > 0" class="space-y-2">
-                <div
-                  v-for="(station, index) in favoriteTop3Stations"
-                  :key="`mobile-favorite-${station.opinet_id}`"
-                  @click="handleStationClick(station)"
-                  class="mobile-station-item favorite">
-                  <div class="flex items-center space-x-3 max-w-[200px]">
-                    <div class="mobile-station-rank favorite">
-                      {{ index + 1 }}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="mobile-station-name">{{ station.name }}</div>
-                      <div class="mobile-station-address">{{ station.address }}</div>
-                    </div>
-                  </div>
-                  <div class="text-right">
-                    <div class="mobile-station-price favorite">
-                      {{ formatPrice(getStationPrice(station, selectedFuel)) }}원/L
-                    </div>
-                    <div v-if="station.distance" class="mobile-station-distance">
-                      {{ station.distance.toFixed(1) }}km
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div v-else class="mobile-empty-state">
-                <div class="text-pink-400 text-2xl mb-2">💖</div>
-                <p class="text-gray-600 text-sm">좋아요한 주유소가 없습니다.</p>
-              </div>
-            </div>
-          </div>
-        </div>
+    <!-- API 키 오류 상태 -->
+    <div v-else class="w-full h-[calc(100vh-109px)] flex items-center justify-center bg-gray-100">
+      <div class="text-center">
+        <div class="text-red-500 text-6xl mb-4">⚠️</div>
+        <p class="text-gray-600 mb-2">카카오맵 API 키가 설정되지 않았습니다.</p>
+        <p class="text-sm text-gray-500">관리자에게 문의하세요.</p>
       </div>
     </div>
 
@@ -250,7 +150,9 @@ import { updateDebugInfo, logEnvironmentInfo, setupDebugFunctions } from '~/util
 const GasStationMapContainer = defineAsyncComponent(() => import('~/components/GasStation/MapContainer.vue'));
 const GasStationSearchControls = defineAsyncComponent(() => import('~/components/GasStation/SearchControls.vue'));
 const GasStationStationList = defineAsyncComponent(() => import('~/components/GasStation/StationList.vue'));
+const GasStationTopList = defineAsyncComponent(() => import('~/components/GasStation/TopList.vue'));
 const GasStationLocationButton = defineAsyncComponent(() => import('~/components/GasStation/LocationButton.vue'));
+const GasStationMobileBottomPanel = defineAsyncComponent(() => import('~/components/GasStation/MobileBottomPanel.vue'));
 
 
 definePageMeta({
@@ -384,9 +286,7 @@ const {
 const isInitialLoad = ref(true); // 최초 로드 여부
 const isClientMounted = ref(false); // 클라이언트 마운트 상태
 
-// 모바일 하단 탭 상태
-const isMobileTabsOpen = ref(false); // 모바일 탭 열림 상태
-const activeMobileTab = ref<'lowest' | 'favorites'>('lowest'); // 활성 탭
+
 
 // 🔧 [DEBUG] 디버깅 정보 상태
 const debugInfo = ref({
@@ -402,10 +302,7 @@ const showDebugPanel = ref(false); // 디버그 패널 표시 여부
 const showDebugButton = ref(false); // 디버그 버튼 표시 여부
 const keySequence = ref(''); // 키보드 입력 시퀀스
 
-// 모바일 하단 탭 토글
-const toggleMobileBottomTabs = () => {
-  isMobileTabsOpen.value = !isMobileTabsOpen.value;
-};
+
 
 // 디버그 패널 토글
 const toggleDebugPanel = () => {
@@ -829,6 +726,16 @@ declare global {
   max-width: 20rem; /* max-w-xs */
 }
 
+/* 최저가 TOP 박스 패널 스타일 */
+.top-list-panel {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 41;
+  width: 100%;
+  max-width: 20rem;
+}
+
 /* 주유소 리스트 패널 스타일 */
 .station-list-panel {
   position: absolute;
@@ -845,6 +752,11 @@ declare global {
     max-width: 24rem; /* md:max-w-md */
   }
 
+  .top-list-panel {
+    width: 20rem; /* md:w-80 */
+    max-width: none;
+  }
+
   .station-list-panel {
     width: 20rem; /* md:w-80 */
     max-width: none;
@@ -854,6 +766,10 @@ declare global {
 /* 작은 모바일에서 겹침 방지 */
 @media (max-width: 640px) {
   .search-panel {
+    max-width: calc(50% - 1rem);
+  }
+
+  .top-list-panel {
     max-width: calc(50% - 1rem);
   }
 
@@ -869,8 +785,15 @@ declare global {
     right: 0.5rem;
   }
 
+  .top-list-panel {
+    top: 0.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
+
   .station-list-panel {
-    top: 9rem; /* 검색 패널 아래로 이동 */
+    top: 12rem; /* TopList와 검색 패널 아래로 이동 */
     left: 0.5rem;
     right: 0.5rem;
     max-width: calc(100% - 1rem);
@@ -879,196 +802,14 @@ declare global {
 
 
 
-/* 모바일 하단 탭 스타일 */
-.mobile-bottom-tabs {
-  position: fixed;
-  bottom: 0; /* 이제 광고가 레이아웃에 포함되므로 하단에 위치 */
-  left: 0;
-  right: 0;
-  z-index: 45;
-  pointer-events: none; /* 배경 클릭 방지 */
-}
 
-.mobile-tab-toggle {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  cursor: pointer;
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  pointer-events: auto; /* 버튼은 클릭 가능 */
-  z-index: 10; /* 탭 컨테이너보다 위에 표시 */
-}
 
-.mobile-tab-toggle.active {
-  background: #f3f4f6;
-  bottom: calc(50vh - 150px); /* 탭이 열린 상태에서 탭 컨테이너 위쪽에 위치 */
-  max-height: 376px; /* max-height 400px - 24px */
-}
-
-.mobile-tabs-container {
-  position: absolute;
-  bottom: 0;
-  left: 8px;
-  right: 8px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
-  transform: translateY(100%);
-  transition: transform 0.3s ease;
-  height: 30vh; /* 화면의 30% */
-  max-height: 400px;
-  overflow: hidden;
-  pointer-events: auto; /* 탭 컨테이너는 클릭 가능 */
-}
-
-.mobile-tabs-container.open {
-  transform: translateY(0);
-}
-
-.mobile-tabs-header {
-  display: flex;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
-  border-radius: 16px 16px 0 0;
-}
-
-.mobile-tab-button {
-  flex: 1;
-  padding: 12px 16px;
-  background: transparent;
-  border: none;
-  font-size: 14px;
-  font-weight: 500;
-  color: #6b7280;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.mobile-tab-button.active {
-  color: #3b82f6;
-  background: white;
-  border-bottom: 2px solid #3b82f6;
-}
-
-.mobile-tab-button:first-child.active {
-  border-radius: 16px 0 0 0;
-}
-
-.mobile-tab-button:last-child.active {
-  border-radius: 0 16px 0 0;
-}
-
-.mobile-tabs-content {
-  height: calc(100% - 49px); /* 헤더 높이 제외 */
-  overflow-y: auto;
-  padding: 16px;
-}
-
-.mobile-tab-panel {
-  height: 100%;
-}
-
-.mobile-station-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px;
-  background: #f9fafb;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.mobile-station-item:hover {
-  background: #f3f4f6;
-}
-
-.mobile-station-item.favorite {
-  background: #fdf2f8;
-}
-
-.mobile-station-item.favorite:hover {
-  background: #fce7f3;
-}
-
-.mobile-station-rank {
-  width: 24px;
-  height: 24px;
-  background: #ef4444;
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: bold;
-  flex-shrink: 0;
-}
-
-.mobile-station-rank.favorite {
-  background: #ec4899;
-}
-
-.mobile-station-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mobile-station-address {
-  font-size: 12px;
-  color: #6b7280;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  word-break: keep-all;
-}
-
-.mobile-station-price {
-  font-size: 14px;
-  font-weight: bold;
-  color: #ef4444;
-  margin-bottom: 2px;
-}
-
-.mobile-station-price.favorite {
-  color: #ec4899;
-}
-
-.mobile-station-distance {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.mobile-empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  text-align: center;
-}
-
-/* 모바일에서 추가 보장 */
+/* 모바일에서 기존 TOP 박스들 숨기기 (새로운 하단 패널 사용) */
 @media (max-width: 768px) {
+  .top-list-panel {
+    display: none;
+  }
 
-  /* 모바일에서 기존 우측 패널 숨기기 */
   .station-list-panel {
     display: none;
   }

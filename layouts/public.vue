@@ -105,6 +105,14 @@
       </div>
     </footer>
 
+    <!-- 사이드바 광고 (PC에서만 표시, 주유소 페이지 제외) -->
+    <div v-if="!isGasStationsPage">
+      <!-- 좌측 사이드바 광고 -->
+      <SidebarAd position="left" />
+      <!-- 우측 사이드바 광고 -->
+      <SidebarAd position="right" />
+    </div>
+
     <!-- 하단 광고 배너 (모든 페이지 공통) -->
     <BottomAdBanner />
 
@@ -115,6 +123,7 @@
 
 <script setup lang="ts">
 import BottomAdBanner from '~/components/layout/BottomAdBanner.vue';
+import SidebarAd from '~/components/layout/SidebarAd.vue';
 import ErrorDisplay from '~/components/common/ErrorDisplay.vue';
 
 const isMobileMenuOpen = ref(false);
