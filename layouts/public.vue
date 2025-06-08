@@ -57,11 +57,11 @@
     </header>
 
     <!-- 메인 콘텐츠 -->
-    <main :class="isGasStationsPage ? 'flex-grow' : 'flex-grow xl:mx-[170px]'">
+    <main class="flex-grow">
       <slot />
     </main>
 
-    <!-- 푸터 (최저가 주유소 페이지에서는 숨김) -->
+    <!-- 푸터 (주유소 페이지에서는 숨김) -->
     <footer v-if="!isGasStationsPage" class="bg-gray-50 border-t border-gray-100">
       <div class="max-w-4xl mx-auto px-4 py-8">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -105,16 +105,7 @@
       </div>
     </footer>
 
-    <!-- 사이드바 광고 (PC에서만 표시, 주유소 페이지 제외) -->
-    <div v-if="!isGasStationsPage">
-      <!-- 좌측 사이드바 광고 -->
-      <SidebarAd position="left" />
-      <!-- 우측 사이드바 광고 -->
-      <SidebarAd position="right" />
-    </div>
 
-    <!-- 하단 광고 배너 (모든 페이지 공통) -->
-    <BottomAdBanner />
 
     <!-- 에러 표시 컴포넌트 -->
     <ErrorDisplay />
@@ -122,8 +113,6 @@
 </template>
 
 <script setup lang="ts">
-import BottomAdBanner from '~/components/layout/BottomAdBanner.vue';
-import SidebarAd from '~/components/layout/SidebarAd.vue';
 import ErrorDisplay from '~/components/common/ErrorDisplay.vue';
 
 const isMobileMenuOpen = ref(false);
@@ -143,21 +132,14 @@ useHead({
 const { checkConnectionOnMount } = useDbConnection();
 checkConnectionOnMount();
 
-// 최저가 주유소 페이지인지 확인
+// 주유소 페이지인지 확인
 const isGasStationsPage = computed(() => {
   return route.path.includes('/gas-stations');
 });
 
-// Google AdSense 스크립트 로드
-useHead({
-  script: [
-    {
-      src: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6491895061878011',
-      async: true,
-      crossorigin: 'anonymous'
-    }
-  ]
-});
+
+
+
 
 // 페이지 변경 시 모바일 메뉴 닫기
 watch(() => useRoute().path, () => {
