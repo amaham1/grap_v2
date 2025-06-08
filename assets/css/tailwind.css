@@ -6,19 +6,46 @@
 @tailwind utilities;
 
 :root {
-  --toss-blue: #3182f6;
-  --toss-blue-light: #4593fc;
-  --toss-blue-dark: #1b64da;
-  --toss-gray-50: #f9fafb;
-  --toss-gray-100: #f3f4f6;
-  --toss-gray-200: #e5e7eb;
-  --toss-gray-300: #d1d5db;
-  --toss-gray-400: #9ca3af;
-  --toss-gray-500: #6b7280;
-  --toss-gray-600: #4b5563;
-  --toss-gray-700: #374151;
-  --toss-gray-800: #1f2937;
-  --toss-gray-900: #111827;
+  /* 한국적 감성의 메인 컬러 */
+  --korean-primary: #2563eb;
+  --korean-primary-light: #3b82f6;
+  --korean-primary-dark: #1d4ed8;
+  --korean-secondary: #f59e0b;
+  --korean-secondary-light: #fbbf24;
+  --korean-secondary-dark: #d97706;
+
+  /* 한국적 감성의 그레이 스케일 */
+  --korean-gray-50: #fafafa;
+  --korean-gray-100: #f5f5f5;
+  --korean-gray-200: #e5e5e5;
+  --korean-gray-300: #d4d4d4;
+  --korean-gray-400: #a3a3a3;
+  --korean-gray-500: #737373;
+  --korean-gray-600: #525252;
+  --korean-gray-700: #404040;
+  --korean-gray-800: #262626;
+  --korean-gray-900: #171717;
+
+  /* 한국적 감성의 포인트 컬러 */
+  --korean-accent-red: #ef4444;
+  --korean-accent-green: #22c55e;
+  --korean-accent-orange: #f97316;
+  --korean-accent-purple: #8b5cf6;
+
+  /* 기존 토스 컬러 (호환성 유지) */
+  --toss-blue: var(--korean-primary);
+  --toss-blue-light: var(--korean-primary-light);
+  --toss-blue-dark: var(--korean-primary-dark);
+  --toss-gray-50: var(--korean-gray-50);
+  --toss-gray-100: var(--korean-gray-100);
+  --toss-gray-200: var(--korean-gray-200);
+  --toss-gray-300: var(--korean-gray-300);
+  --toss-gray-400: var(--korean-gray-400);
+  --toss-gray-500: var(--korean-gray-500);
+  --toss-gray-600: var(--korean-gray-600);
+  --toss-gray-700: var(--korean-gray-700);
+  --toss-gray-800: var(--korean-gray-800);
+  --toss-gray-900: var(--korean-gray-900);
 }
 
 body {
@@ -27,23 +54,52 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 토스 스타일 카드 */
+/* 한국적 감성의 카드 스타일 */
 .toss-card {
-  @apply bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200;
+  @apply bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
-/* 토스 스타일 버튼 */
+.toss-card:hover {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-2px);
+}
+
+/* 한국적 감성의 버튼 스타일 */
 .toss-btn-primary {
-  @apply bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md;
+  @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-2xl transition-all duration-300 shadow-md hover:shadow-lg;
+  background: linear-gradient(135deg, var(--korean-primary) 0%, var(--korean-primary-dark) 100%);
+}
+
+.toss-btn-primary:hover {
+  background: linear-gradient(135deg, var(--korean-primary-light) 0%, var(--korean-primary) 100%);
+  transform: translateY(-1px);
 }
 
 .toss-btn-secondary {
-  @apply bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-6 py-3 rounded-xl transition-all duration-200;
+  @apply bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold px-8 py-4 rounded-2xl transition-all duration-300 border border-gray-200 hover:border-gray-300;
 }
 
-/* 토스 스타일 그라데이션 */
+.toss-btn-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
+}
+
+/* 한국적 감성의 그라데이션 */
 .toss-gradient {
-  background: linear-gradient(135deg, #3182f6 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--korean-primary) 0%, var(--korean-primary-dark) 100%);
+}
+
+.korean-gradient-warm {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #92400e 100%);
+}
+
+.korean-gradient-cool {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #1e40af 100%);
+}
+
+.korean-gradient-nature {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
 }
 
 /* 부드러운 애니메이션 */
@@ -51,11 +107,157 @@ body {
   @apply transition-all duration-300 ease-in-out;
 }
 
-/* 토스 스타일 그림자 */
+/* 한국적 감성의 그림자 */
 .toss-shadow {
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
 .toss-shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.korean-shadow-soft {
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+}
+
+.korean-shadow-medium {
+  box-shadow: 0 8px 30px -8px rgba(0, 0, 0, 0.12), 0 4px 16px -4px rgba(0, 0, 0, 0.06);
+}
+
+/* 한국적 감성의 섹션 스타일 */
+.korean-section {
+  @apply py-16 px-4;
+}
+
+.korean-section-title {
+  @apply text-2xl md:text-3xl font-bold text-gray-900 mb-4;
+  font-family: 'Pretendard', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.korean-section-subtitle {
+  @apply text-base md:text-lg text-gray-600 mb-8;
+  font-family: 'Pretendard', sans-serif;
+  line-height: 1.6;
+}
+
+/* 한국적 감성의 카테고리 버튼 */
+.korean-category-btn {
+  @apply bg-white border-2 border-gray-200 text-gray-700 font-semibold px-6 py-4 rounded-2xl transition-all duration-300 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.06);
+}
+
+.korean-category-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(59, 130, 246, 0.15);
+}
+
+.korean-category-btn.active {
+  @apply border-blue-500 text-blue-600 bg-blue-50;
+  box-shadow: 0 8px 20px -4px rgba(59, 130, 246, 0.15);
+}
+
+/* 한국적 감성의 배지 스타일 */
+.korean-badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
+}
+
+.korean-badge-primary {
+  @apply bg-blue-100 text-blue-800;
+}
+
+.korean-badge-secondary {
+  @apply bg-gray-100 text-gray-800;
+}
+
+.korean-badge-success {
+  @apply bg-green-100 text-green-800;
+}
+
+.korean-badge-warning {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.korean-badge-danger {
+  @apply bg-red-100 text-red-800;
+}
+
+/* 한국적 감성의 호버 효과 */
+.korean-hover-lift {
+  @apply transition-all duration-300 ease-out;
+}
+
+.korean-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.12);
+}
+
+/* 한국적 감성의 텍스트 스타일 */
+.korean-text-primary {
+  @apply text-gray-900 font-semibold;
+  font-family: 'Pretendard', sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.korean-text-secondary {
+  @apply text-gray-600;
+  font-family: 'Pretendard', sans-serif;
+  line-height: 1.6;
+}
+
+.korean-text-accent {
+  @apply text-blue-600 font-semibold;
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* 한국적 감성의 입력 필드 */
+.korean-input {
+  @apply w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200;
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* 한국적 감성의 구분선 */
+.korean-divider {
+  @apply border-gray-100;
+  background: linear-gradient(90deg, transparent 0%, #e5e7eb 50%, transparent 100%);
+  height: 1px;
+  border: none;
+}
+
+/* 한국적 감성의 로딩 애니메이션 */
+.korean-loading {
+  @apply animate-spin rounded-full border-4 border-gray-200;
+}
+
+.korean-loading-primary {
+  @apply border-t-blue-600;
+}
+
+.korean-loading-secondary {
+  @apply border-t-orange-500;
+}
+
+.korean-loading-success {
+  @apply border-t-green-500;
+}
+
+/* 한국적 감성의 알림 스타일 */
+.korean-alert {
+  @apply p-4 rounded-2xl border;
+}
+
+.korean-alert-info {
+  @apply bg-blue-50 border-blue-200 text-blue-800;
+}
+
+.korean-alert-success {
+  @apply bg-green-50 border-green-200 text-green-800;
+}
+
+.korean-alert-warning {
+  @apply bg-yellow-50 border-yellow-200 text-yellow-800;
+}
+
+.korean-alert-error {
+  @apply bg-red-50 border-red-200 text-red-800;
 }

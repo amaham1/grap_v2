@@ -1,27 +1,36 @@
 <template>
-  <div class="toss-card overflow-hidden smooth-transition hover:scale-[1.01]">
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-orange-300 hover:shadow-md smooth-transition transform hover:-translate-y-1">
     <!-- 이미지 섹션 -->
-    <div v-if="firstImageUrl" class="h-32 overflow-hidden">
+    <div v-if="firstImageUrl" class="h-40 overflow-hidden relative">
       <img
         :src="firstImageUrl"
         :alt="item.title"
-        class="w-full h-full object-cover smooth-transition hover:scale-105"
+        class="w-full h-full object-cover"
         @error="handleImageError"
       />
+      <div class="absolute top-3 right-3">
+        <span class="px-3 py-1 text-xs bg-white/90 text-orange-700 rounded-full font-medium backdrop-blur-sm">
+          축제
+        </span>
+      </div>
     </div>
-    <div v-else class="h-32 overflow-hidden">
-      <img
-        src="/images/no-image.svg"
-        alt="이미지 없음"
-        class="w-full h-full object-cover"
-      />
+    <div v-else class="h-40 bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center relative">
+      <div class="text-orange-400 text-sm">이미지 없음</div>
+      <div class="absolute top-3 right-3">
+        <span class="px-3 py-1 text-xs bg-white/90 text-orange-700 rounded-full font-medium backdrop-blur-sm">
+          축제
+        </span>
+      </div>
     </div>
 
     <!-- 콘텐츠 섹션 -->
-    <div class="p-4">
-      <h3 class="text-base font-semibold text-gray-900 mb-2 line-clamp-2">
-        {{ item.title }}
-      </h3>
+    <div class="p-5">
+      <div class="flex items-start justify-between mb-3">
+        <h3 class="text-base font-semibold text-gray-900 line-clamp-2 flex-1">
+          {{ item.title }}
+        </h3>
+        <div class="w-2 h-2 bg-orange-500 rounded-full ml-3 mt-2 flex-shrink-0"></div>
+      </div>
 
     <div class="flex flex-wrap gap-1 mb-3">
       <span class="px-2 py-0.5 text-xs font-medium bg-purple-50 text-purple-700 rounded-md">

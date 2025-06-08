@@ -1,56 +1,39 @@
 <template>
-  <div class="toss-card overflow-hidden smooth-transition hover:scale-[1.01]">
-    <!-- 이미지 섹션 -->
-    <div class="h-32 overflow-hidden">
-      <img
-        src="/images/no-image.svg"
-        alt="이미지 없음"
-        class="w-full h-full object-cover"
-      />
-    </div>
-
+  <div class="bg-white border border-gray-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-md smooth-transition transform hover:-translate-y-1">
     <!-- 콘텐츠 섹션 -->
-    <div class="p-4">
-      <h3 class="text-base font-semibold text-gray-900 mb-2 line-clamp-2">
-        {{ item.service_name }}
-      </h3>
-
-    <div class="flex flex-wrap gap-1 mb-3">
-      <span
-        v-if="item.is_all_location"
-        class="px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-md"
-      >
-        전체 지역
-      </span>
-      <span
-        v-if="item.is_jeju_location"
-        class="px-2 py-0.5 text-xs font-medium bg-green-50 text-green-700 rounded-md"
-      >
-        제주시
-      </span>
-      <span
-        v-if="item.is_seogwipo_location"
-        class="px-2 py-0.5 text-xs font-medium bg-purple-50 text-purple-700 rounded-md"
-      >
-        서귀포시
-      </span>
-    </div>
-
-    <p class="text-sm text-gray-600 line-clamp-2 mb-4" v-html="getSummary(item.support_content_html)"></p>
-
-    <div class="flex justify-between items-center">
-      <div class="text-xs text-gray-500">
-        {{ formatDate(item.fetched_at) }}
+    <div>
+      <div class="flex items-start justify-between mb-3">
+        <h3 class="text-base font-semibold text-gray-900 line-clamp-2 flex-1">
+          {{ item.service_name }}
+        </h3>
+        <div class="w-2 h-2 bg-blue-500 rounded-full ml-3 mt-2 flex-shrink-0"></div>
       </div>
+
+      <!-- 지역 정보 -->
+      <div class="flex flex-wrap gap-2 mb-4">
+        <span v-if="item.is_all_location" class="px-3 py-1 text-xs bg-blue-50 text-blue-700 rounded-full font-medium">
+          전체
+        </span>
+        <span v-if="item.is_jeju_location" class="px-3 py-1 text-xs bg-blue-50 text-blue-700 rounded-full font-medium">
+          제주시
+        </span>
+        <span v-if="item.is_seogwipo_location" class="px-3 py-1 text-xs bg-blue-50 text-blue-700 rounded-full font-medium">
+          서귀포시
+        </span>
+      </div>
+
+      <p class="text-sm text-gray-600 line-clamp-2 mb-5 leading-relaxed" v-html="getSummary(item.support_content_html)"></p>
+
+      <div class="flex justify-between items-center pt-3 border-t border-gray-100">
+        <div class="text-xs text-gray-500">
+          {{ formatDate(item.fetched_at) }}
+        </div>
 
         <NuxtLink
           :to="`/alljeju/welfare-services/${item.id}`"
-          class="text-sm text-blue-600 hover:text-blue-700 font-medium smooth-transition flex items-center"
+          class="text-xs text-blue-600 hover:text-blue-800 font-medium smooth-transition"
         >
-          자세히 보기
-          <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-          </svg>
+          자세히 보기 →
         </NuxtLink>
       </div>
     </div>

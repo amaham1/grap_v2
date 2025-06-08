@@ -1,30 +1,34 @@
 <template>
-  <div class="toss-card overflow-hidden smooth-transition hover:scale-[1.01]">
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-purple-300 hover:shadow-md smooth-transition transform hover:-translate-y-1">
     <!-- 커버 이미지 -->
-    <div v-if="item.cover_image_url" class="h-32 overflow-hidden">
+    <div v-if="item.cover_image_url" class="h-40 overflow-hidden relative">
       <img
         :src="item.cover_image_url"
         :alt="item.title"
-        class="w-full h-full object-cover smooth-transition hover:scale-105"
+        class="w-full h-full object-cover"
         @error="handleImageError"
       />
+      <div class="absolute top-3 right-3">
+        <span class="px-3 py-1 text-xs bg-white/90 text-purple-700 rounded-full font-medium backdrop-blur-sm">
+          {{ item.category_name }}
+        </span>
+      </div>
     </div>
-    <div v-else class="h-32 overflow-hidden">
-      <img
-        src="/images/no-image.svg"
-        alt="이미지 없음"
-        class="w-full h-full object-cover"
-      />
+    <div v-else class="h-40 bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center relative">
+      <div class="text-purple-400 text-sm">이미지 없음</div>
+      <div class="absolute top-3 right-3">
+        <span class="px-3 py-1 text-xs bg-white/90 text-purple-700 rounded-full font-medium backdrop-blur-sm">
+          {{ item.category_name }}
+        </span>
+      </div>
     </div>
 
-    <div class="p-4">
-      <div class="flex justify-between items-start mb-2">
+    <div class="p-5">
+      <div class="flex items-start justify-between mb-3">
         <h3 class="text-base font-semibold text-gray-900 line-clamp-2 flex-1">
           {{ item.title }}
         </h3>
-        <span class="px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-md ml-2 whitespace-nowrap">
-          {{ item.category_name }}
-        </span>
+        <div class="w-2 h-2 bg-purple-500 rounded-full ml-3 mt-2 flex-shrink-0"></div>
       </div>
 
       <div class="space-y-1 mb-3">

@@ -13,11 +13,7 @@
     <!-- PC 광고 (768px 이상에서만 표시) -->
     <div v-if="!isMobile" class="desktop-ad">
       <GoogleAdsense
-        format="rectangle"
-        width="728"
-        height="90"
-        full-width-responsive="false"
-        container-class="desktop-ad-content" />
+        full-width-responsive="true" />
     </div>
   </div>
 </template>
