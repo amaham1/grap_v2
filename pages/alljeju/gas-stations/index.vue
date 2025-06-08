@@ -1,7 +1,7 @@
 <template>
-  <div class="bg-gray-50">
+  <div class="bg-gray-50 gas-stations-page">
     <!-- 서버 사이드 로딩 상태 -->
-    <div v-if="!isClientMounted" class="w-full h-[calc(100vh-109px)] flex items-center justify-center bg-gray-100">
+    <div v-if="!isClientMounted" class="w-full flex items-center justify-center bg-gray-100 gas-stations-content">
       <div class="text-center">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
         <p class="text-gray-600">지도를 불러오는 중...</p>
@@ -9,7 +9,7 @@
     </div>
 
     <!-- 클라이언트에서만 렌더링되는 지도 관련 컴포넌트들 -->
-    <div v-if="isValidApiKey" class="gas-stations-app">
+    <div v-else-if="isValidApiKey && isClientMounted" class="gas-stations-app gas-stations-content">
       <!-- 검색 설정 패널 -->
       <div class="search-panel">
         <GasStationSearchControls
@@ -41,7 +41,7 @@
       </div>
 
       <!-- 카카오맵 컨테이너 -->
-      <div class="relative">
+      <div class="relative w-full h-full">
         <GasStationMapContainer
           :is-map-loaded="isMapLoaded"
           :map-error="mapError"
@@ -64,7 +64,7 @@
     </div>
 
     <!-- API 키 오류 상태 -->
-    <div v-else class="w-full h-[calc(100vh-109px)] flex items-center justify-center bg-gray-100">
+    <div v-else class="w-full flex items-center justify-center bg-gray-100 gas-stations-content">
       <div class="text-center">
         <div class="text-red-500 text-6xl mb-4">⚠️</div>
         <p class="text-gray-600 mb-2">카카오맵 API 키가 설정되지 않았습니다.</p>
@@ -156,7 +156,8 @@ const GasStationMobileBottomPanel = defineAsyncComponent(() => import('~/compone
 
 
 definePageMeta({
-  layout: 'public'
+  layout: 'public',
+  ssr: false // 클라이언트 전용 렌더링
 });
 
 const config = useRuntimeConfig();
@@ -672,11 +673,30 @@ onMounted(async () => {
     // DOM이 완전히 준비될 때까지 대기
     await nextTick();
 
+    // 헤더 높이 계산 및 적용
+    const adjustLayoutForHeader = () => {
+      const header = document.querySelector('header');
+      if (header) {
+        const headerHeight = header.offsetHeight;
+        const gasStationsContent = document.querySelector('.gas-stations-content') as HTMLElement;
+        if (gasStationsContent) {
+          gasStationsContent.style.top = `${headerHeight}px`;
+        }
+        console.log('📏 [LAYOUT] 헤더 높이 적용:', headerHeight + 'px');
+      }
+    };
+
     // 클라이언트 마운트 상태 설정
     isClientMounted.value = true;
 
+    // 헤더 높이 조정
+    adjustLayoutForHeader();
+
     // 추가 대기 시간 (Hydration 완료 보장)
     await new Promise(resolve => setTimeout(resolve, 200));
+
+    // 헤더 높이 재조정 (폰트 로딩 등으로 인한 변화 대응)
+    adjustLayoutForHeader();
 
     // 앱 초기화
     await initializeApp();
@@ -716,6 +736,31 @@ declare global {
 </script>
 
 <style scoped>
+/* 주유소 페이지 전체 레이아웃 */
+.gas-stations-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+.gas-stations-content {
+  position: absolute;
+  top: 60px; /* 헤더 고정 높이 */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+.gas-stations-app {
+  width: 100%;
+  height: calc(100% - 53px);
+  position: relative;
+}
+
 /* 검색 패널 스타일 */
 .search-panel {
   position: absolute;
@@ -806,6 +851,24 @@ declare global {
 
 /* 모바일에서 기존 TOP 박스들 숨기기 (새로운 하단 패널 사용) */
 @media (max-width: 768px) {
+  .gas-stations-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+  }
+
+  .gas-stations-content {
+    position: absolute;
+    top: 60px; /* 헤더 고정 높이 */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+  }
+
   .top-list-panel {
     display: none;
   }

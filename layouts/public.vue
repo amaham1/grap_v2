@@ -145,4 +145,20 @@ const isGasStationsPage = computed(() => {
 watch(() => useRoute().path, () => {
   isMobileMenuOpen.value = false;
 });
+
+// 헤더 높이 계산 및 CSS 변수 설정
+onMounted(() => {
+  const header = document.querySelector('header');
+  if (header) {
+    const headerHeight = header.offsetHeight;
+    document.documentElement.style.setProperty('--header-height', `${headerHeight}px`);
+  }
+});
 </script>
+
+<style>
+/* 헤더 높이 CSS 변수 기본값 설정 */
+:root {
+  --header-height: 60px;
+}
+</style>

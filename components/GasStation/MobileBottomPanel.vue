@@ -207,7 +207,7 @@ onUnmounted(() => {
   /* 화살표 토글 버튼 */
   .mobile-toggle-button {
     position: absolute;
-    bottom: 0; /* 모바일 광고 높이(66px) 위에 위치 */
+    bottom: 0; /* 화면 하단에 위치 */
     left: 1rem;
     width: 3rem;
     height: 3rem;
@@ -236,13 +236,13 @@ onUnmounted(() => {
   /* 슬라이드업 패널 */
   .mobile-panel {
     position: absolute;
-    bottom: 66px; /* 광고 위에 위치 */
+    bottom: 48px; /* 토글 버튼(48px) 위에 위치 */
     left: 0;
     right: 0;
     background-color: white;
     border-radius: 1rem 1rem 0 0;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
-    max-height: 50vh;
+    max-height: calc(50vh - 48px);
     overflow: hidden;
     z-index: 51;
   }
@@ -289,7 +289,7 @@ onUnmounted(() => {
 
   /* 패널 내용 */
   .panel-content {
-    height: calc(50vh - 3.5rem);
+    height: calc(50vh - 48px - 3.5rem);
     overflow-y: auto;
   }
 

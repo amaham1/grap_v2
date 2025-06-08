@@ -1,10 +1,10 @@
 <template>
-  <div class="map-container-wrapper relative">
+  <div class="map-container-wrapper relative w-full h-full">
     <!-- 지도 컨테이너 -->
     <div
       id="map"
       ref="mapContainer"
-      class="w-full h-[calc(100vh-109px)] relative"
+      class="w-full h-full relative"
       :style="{ minHeight: '400px' }">
 
       <!-- 로딩 상태 -->
