@@ -52,7 +52,6 @@ export default defineEventHandler(async (event) => {
     const userFromDb = users[0]; // 원본 DB 결과를 다른 변수에 저장
 
     // Buffer를 문자열로 변환 (id, email, role은 VARBINARY/BINARY 타입일 수 있고, password는 해시된 문자열이어야 함)
-    // MySQL VARCHAR/CHAR 등은 보통 문자열로 반환되지만, 연결/테이블 설정에 따라 Buffer로 올 수 있음.
     const user: User = {
       id: userFromDb.id && Buffer.isBuffer(userFromDb.id) ? userFromDb.id.toString('utf-8') : String(userFromDb.id ?? ''),
       email: userFromDb.email && Buffer.isBuffer(userFromDb.email) ? userFromDb.email.toString('utf-8') : String(userFromDb.email ?? ''),

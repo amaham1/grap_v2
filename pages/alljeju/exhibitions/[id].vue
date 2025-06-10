@@ -260,14 +260,6 @@ function formatDateRange(start: Date | string, end: Date | string): string {
 
 // 뒤로가기 버튼 텍스트
 const backButtonText = computed(() => {
-  if (import.meta.client) {
-    const referrer = document.referrer;
-    if (referrer.includes('/alljeju/exhibitions') && !referrer.includes('/alljeju/exhibitions/')) {
-      return '공연/전시 목록으로';
-    } else if (referrer.includes('/alljeju') && !referrer.includes('/alljeju/exhibitions')) {
-      return '이전 페이지로';
-    }
-  }
   return '공연/전시 목록으로';
 });
 
@@ -287,15 +279,7 @@ const pageStateManager = usePageState({
 // 뒤로가기 기능
 function goBack() {
   if (import.meta.client) {
-    const referrer = document.referrer;
-
-    // 메인 페이지에서 직접 접속한 경우
-    if (referrer.includes('/alljeju') && !referrer.includes('/alljeju/exhibitions')) {
-      navigateTo('/alljeju');
-      return;
-    }
-
-    // 공연/전시 목록에서 접속한 경우 또는 기본적으로 공연/전시 목록으로
+    // 항상 공연/전시 목록으로 이동
     // 복원 플래그 설정
     pageStateManager.prepareForReturn();
     navigateTo('/alljeju/exhibitions');

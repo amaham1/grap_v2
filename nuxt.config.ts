@@ -50,7 +50,6 @@ export default defineNuxtConfig({
   },
   css: ['~/assets/css/tailwind.css'],
   alias: {
-    '#mysql': '~/server/utils/mysql',
   },
   compatibilityDate: '2025-05-15',
   devtools: { enabled: true },
@@ -62,7 +61,6 @@ export default defineNuxtConfig({
       wasm: true
     },
     rollupConfig: {
-      external: ['mysql2']
     },
     cloudflare: {
       deployConfig: true,

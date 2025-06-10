@@ -368,7 +368,7 @@ export async function getGasStationBrands() {
 }
 
 /**
- * 주유소와 가격 정보를 함께 조회 (기존 MySQL DAO 호환성) - 배치 최적화 버전
+ * 주유소와 가격 정보를 함께 조회 - 배치 최적화 버전
  */
 export async function getGasStationsWithPrices(options: GetGasStationsOptions = {}) {
   const startTime = Date.now();

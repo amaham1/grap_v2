@@ -190,14 +190,6 @@ function formatDate(date: string | Date): string {
 
 // 뒤로가기 버튼 텍스트
 const backButtonText = computed(() => {
-  if (import.meta.client) {
-    const referrer = document.referrer;
-    if (referrer.includes('/alljeju/festivals') && !referrer.includes('/alljeju/festivals/')) {
-      return '행사/축제 목록으로';
-    } else if (referrer.includes('/alljeju') && !referrer.includes('/alljeju/festivals')) {
-      return '이전 페이지로';
-    }
-  }
   return '행사/축제 목록으로';
 });
 
@@ -214,22 +206,10 @@ const pageStateManager = usePageState({
 
 // 뒤로가기 기능
 function goBack() {
-  if (import.meta.client) {
-    const referrer = document.referrer;
-
-    // 메인 페이지에서 직접 접속한 경우
-    if (referrer.includes('/alljeju') && !referrer.includes('/alljeju/festivals')) {
-      navigateTo('/alljeju');
-      return;
-    }
-
-    // 행사/축제 목록에서 접속한 경우 또는 기본적으로 행사/축제 목록으로
-    // 복원 플래그 설정
-    pageStateManager.prepareForReturn();
-    navigateTo('/alljeju/festivals');
-  } else {
-    navigateTo('/alljeju/festivals');
-  }
+  // 항상 행사/축제 목록으로 이동
+  // 복원 플래그 설정
+  pageStateManager.prepareForReturn();
+  navigateTo('/alljeju/festivals');
 }
 </script>
 

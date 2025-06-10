@@ -35,12 +35,6 @@ SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-# 기존 MySQL 설정 (마이그레이션용)
-DB_HOST=your_mysql_host
-DB_USER=your_mysql_user
-DB_PASSWORD=your_mysql_password
-DB_DATABASE=your_mysql_database
-DB_PORT=3306
 
 # JWT 설정
 JWT_SECRET_KEY=your_jwt_secret_key
