@@ -24,6 +24,38 @@
             <NuxtLink to="/alljeju/gas-stations" class="text-sm text-gray-600 hover:text-gray-900 smooth-transition">
               주유소
             </NuxtLink>
+
+            <!-- 편의 기능 드롭다운 메뉴 -->
+            <div class="relative dropdown-container">
+              <button
+                @mouseenter="isUtilityMenuOpen = true"
+                @click="isUtilityMenuOpen = !isUtilityMenuOpen"
+                class="text-sm text-gray-600 hover:text-gray-900 smooth-transition flex items-center gap-1"
+              >
+                편의 기능
+                <svg class="w-3 h-3 transition-transform duration-200" :class="{ 'rotate-180': isUtilityMenuOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
+
+              <!-- 드롭다운 메뉴 -->
+              <div
+                v-if="isUtilityMenuOpen"
+                @mouseenter="isUtilityMenuOpen = true"
+                @mouseleave="handleDropdownLeave"
+                class="absolute top-full left-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+              >
+                <div class="py-1">
+                  <NuxtLink
+                    to="/alljeju/utilities/text-recognition"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 smooth-transition"
+                    @click="isUtilityMenuOpen = false"
+                  >
+                    글자 인식
+                  </NuxtLink>
+                </div>
+              </div>
+            </div>
           </nav>
 
           <button class="md:hidden p-2 rounded-lg hover:bg-gray-100 smooth-transition" @click="isMobileMenuOpen = !isMobileMenuOpen">
@@ -51,6 +83,14 @@
             <NuxtLink to="/alljeju/gas-stations" class="block py-2 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg font-medium smooth-transition">
               최저가 주유소
             </NuxtLink>
+
+            <!-- 모바일 편의 기능 메뉴 -->
+            <div class="border-t border-gray-100 mt-2 pt-2">
+              <div class="text-xs text-gray-500 px-2 py-1 font-medium">편의 기능</div>
+              <NuxtLink to="/alljeju/utilities/text-recognition" class="block py-2 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded-lg font-medium smooth-transition">
+                글자 인식
+              </NuxtLink>
+            </div>
           </div>
         </div>
       </div>
@@ -116,7 +156,28 @@
 import ErrorDisplay from '~/components/common/ErrorDisplay.vue';
 
 const isMobileMenuOpen = ref(false);
+const isUtilityMenuOpen = ref(false);
 const route = useRoute();
+
+// 드롭다운 메뉴 타이머
+let dropdownTimer: NodeJS.Timeout | null = null;
+
+/**
+ * 드롭다운 메뉴 leave 핸들러
+ */
+const handleDropdownLeave = (): void => {
+  // 약간의 지연을 두어 사용자가 메뉴로 마우스를 이동할 시간을 줌
+  dropdownTimer = setTimeout(() => {
+    isUtilityMenuOpen.value = false;
+  }, 150);
+};
+
+// 컴포넌트 언마운트 시 타이머 정리
+onUnmounted(() => {
+  if (dropdownTimer) {
+    clearTimeout(dropdownTimer);
+  }
+});
 
 // Canonical URL 설정
 useHead({
@@ -160,5 +221,25 @@ onMounted(() => {
 /* 헤더 높이 CSS 변수 기본값 설정 */
 :root {
   --header-height: 60px;
+}
+/* 드롭다운 메뉴 개선 */
+.dropdown-container {
+  position: relative;
+}
+
+.dropdown-container::before {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: -10px;
+  right: -10px;
+  height: 10px;
+  background: transparent;
+  z-index: 49;
+}
+
+.dropdown-container:hover .dropdown-menu,
+.dropdown-container .dropdown-menu:hover {
+  display: block;
 }
 </style>

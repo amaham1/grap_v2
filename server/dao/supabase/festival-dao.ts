@@ -6,6 +6,7 @@ export interface Festival {
   original_api_id: string
   title: string
   content_html: string
+  content?: string // 사용자 입력 원본 텍스트 (새로 추가된 컬럼)
   source_url: string
   writer_name: string
   written_date: string
@@ -124,7 +125,7 @@ export async function getFestivalById(id: number) {
  */
 export async function getPublicFestivalById(id: number) {
   const result = await executeSupabaseQuery<Festival>('festivals', 'select', {
-    select: 'id, title, content_html, source_url, writer_name, written_date, files_info, fetched_at',
+    select: 'id, title, content_html, content, source_url, writer_name, written_date, files_info, fetched_at',
     filters: { id, is_exposed: true }
   })
 
@@ -182,6 +183,21 @@ export async function batchUpsertFestivals(festivals: Festival[]) {
   }))
 
   return await batchUpsert('festivals', data, 1000, 'original_api_id')
+}
+
+/**
+ * 축제 정보 업데이트
+ */
+export async function updateFestival(id: number, updateData: Partial<Festival>) {
+  const data = {
+    ...updateData,
+    updated_at: new Date().toISOString()
+  }
+
+  return await executeSupabaseQuery('festivals', 'update', {
+    data,
+    filters: { id }
+  })
 }
 
 /**

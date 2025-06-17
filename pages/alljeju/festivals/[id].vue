@@ -72,7 +72,12 @@
         <!-- 콘텐츠 -->
         <div class="p-6">
           <!-- 본문 내용 -->
-          <div class="prose prose-blue max-w-none mb-8" v-html="festival.content_html"></div>
+          <div class="mb-8">
+            <PublicContentDisplay
+              :content="festival.content"
+              :content-html="festival.content_html"
+            />
+          </div>
 
           <!-- 첨부 파일 목록 -->
           <div v-if="hasFiles" class="mt-8 p-4 bg-gray-50 rounded-xl">
@@ -145,6 +150,7 @@ interface FestivalDetail {
   id: number;
   title: string;
   content_html: string;
+  content?: string; // 원본 텍스트 내용 추가
   source_url: string;
   writer_name: string;
   written_date: string;
@@ -214,108 +220,5 @@ function goBack() {
 </script>
 
 <style>
-/* 토스 스타일 prose 커스텀 스타일 */
-.prose {
-  color: #374151;
-  line-height: 1.7;
-}
-
-.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
-  color: #1f2937;
-  font-weight: 600;
-  margin-top: 1.5em;
-  margin-bottom: 0.75em;
-}
-
-.prose h1 { font-size: 1.5rem; }
-.prose h2 { font-size: 1.25rem; }
-.prose h3 { font-size: 1.125rem; }
-
-.prose p {
-  margin-bottom: 1em;
-}
-
-.prose table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1.5em 0;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  border: 1px solid #e5e7eb;
-}
-
-.prose table th,
-.prose table td {
-  border: 1px solid #e5e7eb;
-  padding: 0.75rem;
-  text-align: left;
-}
-
-.prose table th {
-  background-color: #f9fafb;
-  font-weight: 600;
-  color: #374151;
-}
-
-.prose table tbody tr:nth-child(even) {
-  background-color: #f9fafb;
-}
-
-.prose a {
-  color: #2563eb;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.prose a:hover {
-  color: #1d4ed8;
-  text-decoration: underline;
-}
-
-.prose ul, .prose ol {
-  padding-left: 1.5em;
-  margin: 1em 0;
-}
-
-.prose li {
-  margin: 0.5em 0;
-}
-
-.prose img {
-  margin: 1.5em auto;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.prose blockquote {
-  border-left: 4px solid #3b82f6;
-  padding-left: 1rem;
-  margin: 1.5em 0;
-  background-color: #f8fafc;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  font-style: italic;
-}
-
-.prose code {
-  background-color: #f1f5f9;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  color: #1e40af;
-}
-
-.prose pre {
-  background-color: #1e293b;
-  color: #e2e8f0;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  overflow-x: auto;
-  margin: 1.5em 0;
-}
-
-.prose strong {
-  font-weight: 600;
-  color: #1f2937;
-}
+/* 기본 스타일만 유지 */
 </style>

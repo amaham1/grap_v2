@@ -12,26 +12,39 @@
 
     <!-- 검색 및 필터 -->
     <div class="mb-6 p-4 bg-white rounded-lg shadow">
-      <h3 class="text-lg font-semibold mb-3">검색 및 필터</h3>
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-lg font-semibold">검색 및 필터</h3>
+        <ClientOnly>
+          <button
+            @click="navigateToCreate"
+            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center"
+          >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            새 축제 등록
+          </button>
+        </ClientOnly>
+      </div>
       <div class="flex flex-col md:flex-row gap-4 items-center">
-        <input 
-          type="text" 
-          v-model="searchQuery" 
+        <input
+          type="text"
+          v-model="searchQuery"
           @keyup.enter="handleSearch"
-          placeholder="축제명 검색..." 
+          placeholder="축제명 검색..."
           class="p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 flex-grow md:w-auto"
         >
-        <select 
-          v-model="filterStatus" 
-          @change="handleFilterChange" 
+        <select
+          v-model="filterStatus"
+          @change="handleFilterChange"
           class="p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 md:w-auto"
         >
           <option value="">노출 상태 (전체)</option>
           <option value="true">노출</option>
           <option value="false">숨김</option>
         </select>
-        <button 
-          @click="handleSearch" 
+        <button
+          @click="handleSearch"
           class="w-full md:w-auto px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
           검색
@@ -79,9 +92,9 @@
                 {{ festival.is_show ? '노출' : '숨김' }}
               </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ new Date(festival.created_at).toLocaleDateString() }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ festival.created_at ? new Date(festival.created_at).toLocaleDateString() : 'N/A' }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-              <button @click="viewDetails(festival)" class="text-indigo-600 hover:text-indigo-800 transition-colors duration-150">상세</button>
+              <button @click="viewDetails(festival)" class="text-indigo-600 hover:text-indigo-800 transition-colors duration-150">수정</button>
               <button @click="toggleVisibility(festival)" 
                       :class="festival.is_show ? 'text-yellow-600 hover:text-yellow-800' : 'text-green-600 hover:text-green-800'" 
                       class="transition-colors duration-150">
@@ -140,7 +153,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import type { Festival } from '~/server/types/entities';
 
 definePageMeta({
@@ -247,8 +260,10 @@ async function toggleVisibility(festival: Festival) {
 }
 
 function viewDetails(festival: Festival) {
-  alert(`상세보기 기능은 아직 구현되지 않았습니다. 축제 ID: ${festival.id}`);
-  // 실제 구현 시: await navigateTo(`/admin/content/festivals/${festival.id}`);
+  console.log('축제 상세/수정 페이지로 이동:', festival.id);
+  if (import.meta.client) {
+    window.location.href = `/admin/content/festivals/${festival.id}`;
+  }
 }
 
 function handleSearch() {
@@ -280,6 +295,22 @@ onMounted(() => {
 
 function dismissToast() {
   toast.value = null;
+}
+
+function navigateToCreate() {
+  console.log('navigateToCreate 함수가 호출되었습니다.');
+
+  // 클라이언트 사이드에서만 실행
+  if (import.meta.client) {
+    try {
+      // 직접 페이지 이동 (가장 안전한 방법)
+      console.log('페이지 이동 중...');
+      window.location.href = '/admin/content/festivals/create';
+    } catch (error) {
+      console.error('Navigation error:', error);
+      toast.value = { message: '페이지 이동 중 오류가 발생했습니다.', type: 'error' };
+    }
+  }
 }
 
 </script>

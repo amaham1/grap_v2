@@ -7,6 +7,7 @@ interface FestivalDetail {
   id: number;
   title: string;
   content_html: string;
+  content: string; // 원본 텍스트 내용 추가
   source_url: string;
   writer_name: string;
   written_date: Date;

@@ -2,8 +2,23 @@
 // 파일이 없다면 새로 생성됩니다.
 
 export interface Festival {
-  id: string; // 원본 API ID 또는 내부 UUID
-  title: string;
+  id?: number; // 데이터베이스 자동 증가 ID
+  original_api_id?: string; // API 원본 ID (UNIQUE)
+  title: string; // 제목 (NOT NULL)
+  content_html?: string; // 내용 HTML
+  content?: string; // 사용자 입력 텍스트 내용
+  source_url?: string; // 원본 URL
+  writer_name?: string; // 작성자명
+  written_date?: string; // 작성일 (ISO datetime string)
+  files_info?: any; // 파일 정보 (JSONB)
+  api_raw_data?: any; // 원본 API 응답 데이터 (JSONB, 수동 등록시 빈 객체)
+  is_exposed?: boolean; // 노출 여부 (기본값: false)
+  admin_memo?: string; // 관리자 메모
+  fetched_at?: string; // 데이터 수집 시간 (ISO datetime string)
+  created_at?: string; // 생성 시간 (ISO datetime string)
+  updated_at?: string; // 수정 시간 (ISO datetime string)
+
+  // 기존 호환성을 위한 필드들 (deprecated)
   region?: string; // 지역
   start_date?: string; // YYYY-MM-DD
   end_date?: string; // YYYY-MM-DD
@@ -11,14 +26,10 @@ export interface Festival {
   main_image_url?: string;
   latitude?: number;
   longitude?: number;
-  is_show: boolean; // 0 또는 1 (tinyint(1))
-  created_at: string; // ISO datetime string
-  updated_at: string; // ISO datetime string
-  original_api_id?: string; // 외부 API 원본 ID (중복 방지용)
+  is_show?: boolean; // is_exposed와 동일
   tel?: string;
   homepage?: string;
   use_fee?: string;
-  // 기타 필요한 필드 추가
 }
 
 export interface Exhibition {

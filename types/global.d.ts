@@ -89,6 +89,38 @@ declare module '#app' {
   }
 }
 
+// OCR 관련 타입 정의
+export interface OCRResult {
+  text: string;
+  confidence: number;
+  boundingBox?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
+export interface OCRResponse {
+  success: boolean;
+  results: OCRResult[];
+  error?: string;
+  processingTime?: number;
+}
+
+export interface CameraConfig {
+  width: number;
+  height: number;
+  facingMode: 'user' | 'environment';
+  quality?: number;
+}
+
+export interface OCRServiceConfig {
+  maxImageSize: number;
+  supportedFormats: string[];
+  timeout: number;
+}
+
 // 환경 변수 타입
 declare module 'process' {
   global {
