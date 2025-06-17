@@ -121,3 +121,27 @@ export const ALLOWED_IMAGE_TYPES = [
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export const MAX_IMAGES_PER_FESTIVAL = 20;
 export const THUMBNAIL_SIZE = 300; // 썸네일 최대 크기 (픽셀)
+
+// 공개 API용 이미지 타입 (민감한 정보 제외)
+export interface PublicFestivalImage {
+  id: number;
+  file_url: string;
+  alt_text: string;
+  description: string;
+  width?: number;
+  height?: number;
+  is_thumbnail: boolean;
+  display_order: number;
+}
+
+// 공개 API 이미지 목록 응답
+export interface PublicImageListResponse {
+  success: boolean;
+  data: {
+    festival_id: number;
+    images: PublicFestivalImage[];
+    total_count: number;
+  };
+  message?: string;
+  error?: string;
+}

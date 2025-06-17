@@ -1,6 +1,7 @@
 // server/api/public/festivals/index.get.ts
 import { defineEventHandler, getQuery, createError } from 'h3';
 import { festivalDAO } from '~/server/dao/supabase';
+import { getFestivalThumbnail } from '~/server/dao/supabase/festival-image-dao';
 import { sanitizeItemsHtmlFields } from '~/server/utils/sanitize';
 
 interface FestivalPublic {
@@ -12,6 +13,7 @@ interface FestivalPublic {
   written_date: Date;
   files_info: any;
   fetched_at: Date;
+  thumbnail_url?: string; // 썸네일 이미지 URL 추가
 }
 
 export default defineEventHandler(async (event) => {
@@ -39,22 +41,34 @@ export default defineEventHandler(async (event) => {
 
     const items = result.data || [];
 
-    // HTML 필드 새니타이징 및 files_info 처리
-    const sanitizedItems = sanitizeItemsHtmlFields(items, ['content_html']).map(item => {
-      let filesInfo;
-      try {
-        // JSON 문자열이면 파싱, 이미 객체면 그대로 사용
-        filesInfo = typeof item.files_info === 'string' ?
-          JSON.parse(item.files_info) : item.files_info;
-      } catch (e) {
-        filesInfo = [];
-      }
+    // HTML 필드 새니타이징 및 files_info 처리, 썸네일 정보 추가
+    const sanitizedItems = await Promise.all(
+      sanitizeItemsHtmlFields(items, ['content_html']).map(async (item) => {
+        let filesInfo;
+        try {
+          // JSON 문자열이면 파싱, 이미 객체면 그대로 사용
+          filesInfo = typeof item.files_info === 'string' ?
+            JSON.parse(item.files_info) : item.files_info;
+        } catch (e) {
+          filesInfo = [];
+        }
 
-      return {
-        ...item,
-        files_info: filesInfo
-      };
-    });
+        // 썸네일 이미지 조회
+        let thumbnailUrl = null;
+        try {
+          const thumbnail = await getFestivalThumbnail(item.id);
+          thumbnailUrl = thumbnail?.file_url || null;
+        } catch (e) {
+          console.warn(`축제 ${item.id} 썸네일 조회 실패:`, e);
+        }
+
+        return {
+          ...item,
+          files_info: filesInfo,
+          thumbnail_url: thumbnailUrl
+        };
+      })
+    );
 
     // 총 개수 조회
     const total = result.count || items.length;

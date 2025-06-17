@@ -1,9 +1,9 @@
 <template>
   <div class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-orange-300 hover:shadow-md smooth-transition transform hover:-translate-y-1">
     <!-- 이미지 섹션 -->
-    <div v-if="firstImageUrl" class="h-40 overflow-hidden relative">
+    <div v-if="thumbnailUrl" class="h-40 overflow-hidden relative">
       <img
-        :src="firstImageUrl"
+        :src="thumbnailUrl"
         :alt="item.title"
         class="w-full h-full object-cover"
         @error="handleImageError"
@@ -80,6 +80,7 @@ interface FestivalItem {
   written_date: Date | string;
   files_info?: any;
   fetched_at: Date | string;
+  thumbnail_url?: string; // 썸네일 이미지 URL 추가
 }
 
 const props = defineProps<{
@@ -100,8 +101,14 @@ function handleImageError(e: Event) {
   }
 }
 
-// 첫 번째 이미지 URL 추출
-const firstImageUrl = computed(() => {
+// 썸네일 이미지 URL (우선순위: 축제 이미지 테이블 썸네일 > files_info의 첫 번째 이미지)
+const thumbnailUrl = computed(() => {
+  // 1. 축제 이미지 테이블의 썸네일 우선 사용
+  if (props.item?.thumbnail_url) {
+    return props.item.thumbnail_url;
+  }
+
+  // 2. 기존 files_info에서 이미지 추출 (fallback)
   if (!props.item?.files_info) return null;
 
   let files = props.item.files_info;

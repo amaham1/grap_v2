@@ -52,7 +52,6 @@
               {{ festival.writer_name || '작성자 정보 없음' }}
             </span>
           </div>
-
           <div class="flex flex-wrap gap-4 text-sm text-gray-500">
             <div class="flex items-center">
               <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,6 +66,26 @@
               업데이트: {{ formatDate(festival.fetched_at) }}
             </div>
           </div>
+        </div>
+
+        <!-- 이미지 슬라이더 -->
+        <div v-if="festival" class="p-6 border-b border-gray-100">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">축제 이미지</h2>
+          <ClientOnly>
+            <FestivalImageSlider :festival-id="Number(festival.id)" />
+            <template #fallback>
+              <div class="text-center py-8 text-gray-500">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                <p>이미지를 불러오는 중...</p>
+              </div>
+            </template>
+          </ClientOnly>
+        </div>
+
+        <!-- festival이 없을 때 표시 -->
+        <div v-else class="p-6 border-b border-gray-100">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">축제 이미지</h2>
+          <p class="text-gray-500">축제 정보를 불러오는 중...</p>
         </div>
 
         <!-- 콘텐츠 -->
@@ -141,6 +160,9 @@
 definePageMeta({
   layout: 'public'
 });
+
+// 컴포넌트 직접 임포트
+import FestivalImageSlider from '~/components/public/FestivalImageSlider.vue';
 
 const route = useRoute();
 const id = route.params.id;
