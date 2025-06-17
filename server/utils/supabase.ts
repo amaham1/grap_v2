@@ -51,7 +51,7 @@ export async function executeSupabaseQuery<T = any>(
     select?: string
     data?: any
     filters?: Record<string, any>
-    orderBy?: { column: string; ascending?: boolean }
+    orderBy?: { column: string; ascending?: boolean } | Array<{ column: string; ascending?: boolean }>
     limit?: number
     offset?: number
     onConflict?: string // upsert 시 conflict resolution 컬럼 지정
@@ -94,7 +94,15 @@ export async function executeSupabaseQuery<T = any>(
 
         // 정렬
         if (options.orderBy) {
-          query = query.order(options.orderBy.column, { ascending: options.orderBy.ascending ?? true })
+          if (Array.isArray(options.orderBy)) {
+            // 배열인 경우 여러 정렬 조건 적용
+            options.orderBy.forEach(order => {
+              query = query.order(order.column, { ascending: order.ascending ?? true })
+            })
+          } else {
+            // 단일 객체인 경우
+            query = query.order(options.orderBy.column, { ascending: options.orderBy.ascending ?? true })
+          }
         }
 
         // 페이징

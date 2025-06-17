@@ -94,6 +94,13 @@ export default defineNuxtConfig({
     jwtSecretKey: process.env.JWT_SECRET_KEY,
     jwtExpiresIn: process.env.JWT_EXPIRES_IN,
 
+    // Cloudflare R2 설정 (서버 사이드)
+    r2AccessKeyId: process.env.R2_ACCESS_KEY_ID,
+    r2SecretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+    r2Endpoint: process.env.R2_ENDPOINT,
+    r2BucketName: process.env.R2_BUCKET_NAME,
+    r2PublicUrl: process.env.R2_PUBLIC_URL,
+
     public: {
       // 클라이언트에서도 접근 가능한 환경 변수들
       kakaoMapApiKey: process.env.KAKAO_MAP_API_KEY || 'f7c0b5b7e8a4c5d6e7f8a9b0c1d2e3f4',

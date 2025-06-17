@@ -146,6 +146,28 @@ CREATE TABLE welfare_services (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP -- 수정 시간
 );
 
+-- 7. 축제 이미지 테이블
+CREATE TABLE festival_images (
+    id SERIAL PRIMARY KEY,
+    festival_id INTEGER NOT NULL, -- festivals 테이블의 id 참조
+    original_filename VARCHAR(255) NOT NULL, -- 원본 파일명
+    stored_filename VARCHAR(255) NOT NULL, -- 저장된 파일명 (UUID 기반)
+    file_path TEXT NOT NULL, -- Cloudflare R2 저장 경로
+    file_url TEXT NOT NULL, -- 접근 가능한 이미지 URL
+    file_size INTEGER NOT NULL, -- 파일 크기 (bytes)
+    mime_type VARCHAR(100) NOT NULL, -- MIME 타입 (image/jpeg, image/png 등)
+    width INTEGER, -- 이미지 가로 크기 (픽셀)
+    height INTEGER, -- 이미지 세로 크기 (픽셀)
+    is_thumbnail BOOLEAN DEFAULT FALSE, -- 썸네일 여부 (축제당 하나만 true)
+    display_order INTEGER DEFAULT 0, -- 표시 순서 (0부터 시작)
+    alt_text VARCHAR(500), -- 이미지 대체 텍스트 (접근성)
+    description TEXT, -- 이미지 설명
+    upload_status VARCHAR(20) DEFAULT 'uploaded' CHECK (upload_status IN ('uploading', 'uploaded', 'failed', 'deleted')), -- 업로드 상태
+    uploaded_by VARCHAR(100), -- 업로드한 관리자 ID
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP, -- 생성 시간
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP -- 수정 시간
+);
+
 -- 인덱스 생성
 CREATE INDEX idx_welfare_services_original_api_id ON welfare_services(original_api_id);
 CREATE INDEX idx_welfare_services_service_name ON welfare_services(service_name);
@@ -154,6 +176,23 @@ CREATE INDEX idx_welfare_services_is_all_location ON welfare_services(is_all_loc
 CREATE INDEX idx_welfare_services_is_jeju_location ON welfare_services(is_jeju_location);
 CREATE INDEX idx_welfare_services_is_seogwipo_location ON welfare_services(is_seogwipo_location);
 CREATE INDEX idx_welfare_services_fetched_at ON welfare_services(fetched_at);
+
+-- 축제 이미지 인덱스 생성
+CREATE INDEX idx_festival_images_festival_id ON festival_images(festival_id);
+CREATE INDEX idx_festival_images_is_thumbnail ON festival_images(is_thumbnail);
+CREATE INDEX idx_festival_images_display_order ON festival_images(festival_id, display_order);
+CREATE INDEX idx_festival_images_upload_status ON festival_images(upload_status);
+CREATE INDEX idx_festival_images_created_at ON festival_images(created_at);
+
+-- 외래키 제약조건 (festivals 테이블과 연결)
+ALTER TABLE festival_images
+ADD CONSTRAINT fk_festival_images_festival_id
+FOREIGN KEY (festival_id) REFERENCES festivals(id) ON DELETE CASCADE;
+
+-- 축제당 썸네일은 하나만 허용하는 유니크 제약조건
+CREATE UNIQUE INDEX idx_festival_images_unique_thumbnail
+ON festival_images(festival_id)
+WHERE is_thumbnail = TRUE;
 
 -- 7. 로그 테이블 (API 호출 로그 등)
 CREATE TABLE api_logs (
@@ -199,12 +238,37 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+-- 썸네일 설정 시 기존 썸네일 해제 트리거 함수
+CREATE OR REPLACE FUNCTION ensure_single_thumbnail()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- 새로 삽입/업데이트되는 레코드가 썸네일로 설정되는 경우
+    IF NEW.is_thumbnail = TRUE THEN
+        -- 같은 축제의 다른 이미지들의 썸네일 설정을 해제
+        UPDATE festival_images
+        SET is_thumbnail = FALSE, updated_at = CURRENT_TIMESTAMP
+        WHERE festival_id = NEW.festival_id
+        AND id != NEW.id
+        AND is_thumbnail = TRUE;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- 각 테이블에 updated_at 트리거 적용
 CREATE TRIGGER update_gas_stations_updated_at BEFORE UPDATE ON gas_stations FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_gas_prices_updated_at BEFORE UPDATE ON gas_prices FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_exhibitions_updated_at BEFORE UPDATE ON exhibitions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_festivals_updated_at BEFORE UPDATE ON festivals FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_welfare_services_updated_at BEFORE UPDATE ON welfare_services FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_festival_images_updated_at BEFORE UPDATE ON festival_images FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- 썸네일 설정 트리거 생성
+CREATE TRIGGER trigger_ensure_single_thumbnail
+    BEFORE INSERT OR UPDATE ON festival_images
+    FOR EACH ROW
+    EXECUTE FUNCTION ensure_single_thumbnail();
 
 -- 6. 사용자 테이블
 CREATE TABLE users (

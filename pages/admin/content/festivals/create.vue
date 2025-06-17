@@ -124,6 +124,21 @@
           />
         </div>
 
+        <!-- 이미지 업로드 안내 -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div class="flex items-start">
+            <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+              <h4 class="text-sm font-medium text-blue-800 mb-1">이미지 업로드 안내</h4>
+              <p class="text-sm text-blue-700">
+                축제를 먼저 등록한 후, 수정 페이지에서 이미지를 업로드할 수 있습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <!-- 버튼 영역 -->
         <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
           <button
@@ -226,11 +241,18 @@ async function handleSubmit() {
 
     // @ts-ignore
     if (response.success) {
-      toast.value = { message: '축제가 성공적으로 등록되었습니다.', type: 'success' };
+      toast.value = { message: '축제가 성공적으로 등록되었습니다. 이미지 업로드를 위해 수정 페이지로 이동합니다.', type: 'success' };
 
-      // 2초 후 목록 페이지로 이동
+      // @ts-ignore
+      const festivalId = response.data?.id;
+
+      // 2초 후 수정 페이지로 이동 (이미지 업로드를 위해)
       setTimeout(() => {
-        goBack();
+        if (festivalId && import.meta.client) {
+          window.location.href = `/admin/content/festivals/${festivalId}`;
+        } else {
+          goBack();
+        }
       }, 2000);
     } else {
       // @ts-ignore

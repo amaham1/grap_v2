@@ -138,6 +138,25 @@
           </p>
         </div>
 
+        <!-- 이미지 업로드 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            축제 이미지
+          </label>
+          <p class="text-sm text-gray-500 mb-4">
+            축제와 관련된 이미지를 업로드하세요. 첫 번째 이미지가 썸네일로 사용됩니다.
+          </p>
+          <AdminImageUploader
+            v-if="formData && formData.id"
+            :festival-id="formData.id"
+            :max-images="20"
+            @upload-success="handleImageUploadSuccess"
+            @upload-error="handleImageUploadError"
+            @delete-success="handleImageDeleteSuccess"
+            @thumbnail-changed="handleThumbnailChanged"
+          />
+        </div>
+
         <!-- 관리자 메모 -->
         <div>
           <label for="admin_memo" class="block text-sm font-medium text-gray-700 mb-2">
@@ -353,6 +372,57 @@ function goBack() {
 
 function dismissToast() {
   toast.value = null;
+}
+
+// 이미지 업로드 성공 핸들러
+function handleImageUploadSuccess(image: any) {
+  console.log('이미지 업로드 성공:', image);
+  toast.value = {
+    message: `이미지 "${image.original_filename}"가 성공적으로 업로드되었습니다.`,
+    type: 'success'
+  };
+
+  // 3초 후 토스트 자동 제거
+  setTimeout(() => {
+    toast.value = null;
+  }, 3000);
+}
+
+// 이미지 업로드 오류 핸들러
+function handleImageUploadError(error: string) {
+  console.error('이미지 업로드 오류:', error);
+  toast.value = {
+    message: `이미지 업로드 실패: ${error}`,
+    type: 'error'
+  };
+}
+
+// 이미지 삭제 성공 핸들러
+function handleImageDeleteSuccess(imageId: number) {
+  console.log('이미지 삭제 성공:', imageId);
+  toast.value = {
+    message: '이미지가 성공적으로 삭제되었습니다.',
+    type: 'success'
+  };
+
+  // 3초 후 토스트 자동 제거
+  setTimeout(() => {
+    toast.value = null;
+  }, 3000);
+}
+
+// 썸네일 변경 핸들러
+function handleThumbnailChanged(imageId: number) {
+  console.log('썸네일 변경:', imageId);
+  toast.value = {
+    message: '썸네일이 성공적으로 변경되었습니다.',
+    type: 'success'
+  };
+
+  // 3초 후 토스트 자동 제거
+  setTimeout(() => {
+    toast.value = null;
+  }, 3000);
 }
 
 // 컴포넌트 마운트 시 축제 정보 로드
