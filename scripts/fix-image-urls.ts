@@ -50,7 +50,9 @@ async function fixImageUrls() {
         !img.file_url.startsWith('http') ||
         img.file_url.includes('r2.cloudflarestorage.com') ||
         img.file_url.includes('pub-82da20568b30724b79be07d76b86ebe5.r2.dev') ||
-        img.file_url.includes('pub-9ff6cd90524e49408d5bd12d36b26bd7.r2.dev')
+        img.file_url.includes('pub-9ff6cd90524e49408d5bd12d36b26bd7.r2.dev') ||
+        img.file_url.includes('/grap-image/') ||
+        img.file_url.includes('/grap-images/')
       )
     );
 
@@ -71,7 +73,7 @@ async function fixImageUrls() {
         relativePath = oldUrl.substring(1);
       } else if (oldUrl.includes('r2.cloudflarestorage.com')) {
         // 기존 R2 URL에서 경로 추출
-        const pathMatch = oldUrl.match(/\/grap-image\/(.+)$/);
+        const pathMatch = oldUrl.match(/\/(.+)$/);
         relativePath = pathMatch ? pathMatch[1] : oldUrl;
       } else if (oldUrl.includes('.r2.dev/')) {
         // 기존 R2.dev URL에서 경로 추출

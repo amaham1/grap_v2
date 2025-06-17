@@ -76,8 +76,9 @@ export async function uploadToR2(
     // 파일 URL 생성
     let fileUrl = `${config.publicUrl}/${filePath}`;
 
-    // R2.dev 서브도메인을 사용하는 경우 버킷명 추가하지 않음
-    if (config.publicUrl.includes('.r2.dev')) {
+    // 커스텀 도메인(images.grap.co.kr)을 사용하는 경우 버킷명 추가하지 않음
+    // R2.dev 서브도메인을 사용하는 경우도 버킷명 추가하지 않음
+    if (config.publicUrl.includes('.r2.dev') || config.publicUrl.includes('images.grap.co.kr')) {
       fileUrl = `${config.publicUrl}/${filePath}`;
     } else if (!config.publicUrl.includes(config.bucket)) {
       // 기존 방식: publicUrl이 버킷명을 포함하지 않는 경우 추가
