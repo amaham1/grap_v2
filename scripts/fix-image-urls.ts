@@ -79,6 +79,14 @@ async function fixImageUrls() {
         // 기존 R2.dev URL에서 경로 추출
         const pathMatch = oldUrl.match(/\.r2\.dev\/(.+)$/);
         relativePath = pathMatch ? pathMatch[1] : oldUrl;
+      } else if (oldUrl.includes('/grap-image/')) {
+        // grap-image 경로가 포함된 경우 제거
+        const pathMatch = oldUrl.match(/\/grap-image\/(.+)$/);
+        relativePath = pathMatch ? pathMatch[1] : oldUrl;
+      } else if (oldUrl.includes('/grap-images/')) {
+        // grap-images 경로가 포함된 경우 제거
+        const pathMatch = oldUrl.match(/\/grap-images\/(.+)$/);
+        relativePath = pathMatch ? pathMatch[1] : oldUrl;
       } else {
         relativePath = oldUrl;
       }
