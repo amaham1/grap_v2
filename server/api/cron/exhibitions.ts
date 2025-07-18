@@ -82,6 +82,9 @@ export default defineEventHandler(async (event) => {
 
         for (const item of allRawDataItems) {
           try {
+            // 기존 데이터 확인하여 is_exposed 값 유지
+            const existingExhibition = await exhibitionDAO.getExhibitionByOriginalApiId(item.seq.toString());
+            
             const exhibitionData: exhibitionDAO.Exhibition = {
               original_api_id: item.seq.toString(),
               title: item.title || '',
@@ -91,7 +94,8 @@ export default defineEventHandler(async (event) => {
               written_date: new Date(item.writeDate) || new Date(),
               files_info: item.files || [],
               api_raw_data: item,
-              is_exposed: false
+              // 기존 데이터가 있으면 기존 is_exposed 값 유지, 없으면 false (새 데이터)
+              is_exposed: existingExhibition ? existingExhibition.is_exposed : false
             };
 
             exhibitionDataList.push(exhibitionData);
