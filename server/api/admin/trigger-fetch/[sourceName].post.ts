@@ -88,11 +88,30 @@ export default defineEventHandler(async (event) => {
         });
         resultMessage = `Gas station data fetch triggered successfully via /api/cron/gas-stations.`;
         break;
+      case 'all':
+        console.log(`🚀 [ADMIN-TRIGGER] 통합 데이터 동기화 트리거 시작`);
+        console.log(`📡 동기화 순서:`);
+        console.log(`  1. 주유소 정보 + 가격 정보 (Foreign Key 순서 보장)`);
+        console.log(`  2. 축제/행사 정보`);
+        console.log(`  3. 전시회/공연 정보`);
+        console.log(`  4. 복지서비스 정보`);
+        console.log(`🔄 예상 소요시간: 약 8-10분`);
+
+        fetchPromise = $fetch('/api/admin/sync-all-data', {
+          method: 'POST',
+          headers: {
+            'x-admin-trigger': 'true',
+            'x-cron-source': 'admin-manual'
+          },
+          timeout: 600000 // 10분 타임아웃
+        });
+        resultMessage = `Integrated data synchronization triggered successfully via /api/admin/sync-all-data.`;
+        break;
       default:
         throw createError({
           statusCode: 400,
           statusMessage: 'Bad Request',
-          message: `Invalid source name: ${sourceNameParam}. Valid sources are festivals, exhibitions, welfare-services, gas-stations.`,
+          message: `Invalid source name: ${sourceNameParam}. Valid sources are festivals, exhibitions, welfare-services, gas-stations, all.`,
         });
     }
 

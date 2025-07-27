@@ -3,6 +3,7 @@ import { defineEventHandler, getHeader, createError } from 'h3';
 import { gasStationDAO, logDAO } from '~/server/dao/supabase';
 import { convertKatecToWgs84 } from '~/utils/gasStationUtils';
 import { callJejuApi } from '~/server/utils/httpApiClient';
+import { safelyBatchUpsertGasPrices } from '~/server/utils/gasPriceErrorHandler';
 
 const MAX_RETRIES = 2; // 최대 재시도 횟수
 const SOURCE_NAME = 'gas_stations'; // 데이터 소스명
@@ -341,29 +342,48 @@ export default defineEventHandler(async (event) => {
           console.log(`  ❌ 실패: ${priceProcessingErrors}개`);
           console.log(`  📊 총 처리: ${priceResponse.info.length}개`);
 
-          // 배치로 가격 정보 저장/업데이트
+          // 배치로 가격 정보 저장/업데이트 (강화된 오류 처리 포함)
           if (gasPriceDataList.length > 0) {
             const priceDbStartTime = Date.now();
             console.log(`💾 [DATABASE] 가격 정보 데이터베이스 저장 시작`);
             console.log(`📊 [DATABASE] 저장할 가격 데이터: ${gasPriceDataList.length}개`);
 
-            const batchResult = await gasStationDAO.batchUpsertGasPrices(gasPriceDataList);
+            // 안전한 배치 저장 (Foreign Key 검증 및 오류 처리 포함)
+            const safeUpsertResult = await safelyBatchUpsertGasPrices(gasPriceDataList);
             const priceDbDuration = Date.now() - priceDbStartTime;
 
-            if (batchResult.error) {
-              console.error(`❌ [DATABASE] 가격 정보 저장 실패 (${priceDbDuration}ms)`);
-              console.error(`🔍 [DATABASE] 오류 상세: ${batchResult.error}`);
-              console.error(`🔧 [DATABASE] 해결 방안:`);
-              console.error(`  1. 데이터베이스 연결 상태 확인`);
-              console.error(`  2. 가격 데이터 형식 유효성 확인`);
-              console.error(`  3. 중복 키 제약 조건 확인`);
-              console.error(`  4. 데이터베이스 트랜잭션 상태 확인`);
-              throw new Error(`Gas prices batch upsert failed: ${batchResult.error}`);
-            } else {
+            if (safeUpsertResult.success) {
               console.log(`✅ [DATABASE] 가격 정보 저장 성공 (${priceDbDuration}ms)`);
-              console.log(`📊 [DATABASE] 처리 결과: ${batchResult.insertedCount || gasPriceDataList.length}개 가격 정보 저장/업데이트`);
-              console.log(`⚡ [DATABASE] 저장 속도: ${Math.round((batchResult.insertedCount || gasPriceDataList.length) / (priceDbDuration / 1000))} 건/초`);
-              processedPrices = batchResult.insertedCount || gasPriceDataList.length;
+              console.log(`📊 [DATABASE] 처리 결과: ${safeUpsertResult.processedCount}개 가격 정보 저장/업데이트`);
+              console.log(`⚡ [DATABASE] 저장 속도: ${Math.round(safeUpsertResult.processedCount / (priceDbDuration / 1000))} 건/초`);
+              processedPrices = safeUpsertResult.processedCount;
+
+              if (safeUpsertResult.skippedCount > 0) {
+                console.warn(`⚠️ [DATABASE] ${safeUpsertResult.skippedCount}개의 가격 데이터는 Foreign Key 검증으로 제외됨`);
+              }
+
+              // 권장사항 출력
+              if (safeUpsertResult.recommendations.length > 0) {
+                console.log(`💡 [DATABASE] 권장사항:`);
+                safeUpsertResult.recommendations.forEach(rec => console.log(`  ${rec}`));
+              }
+            } else {
+              console.error(`❌ [DATABASE] 가격 정보 저장 실패 (${priceDbDuration}ms)`);
+              console.error(`🔍 [DATABASE] 오류 상세: ${safeUpsertResult.error}`);
+
+              // 권장사항 출력
+              if (safeUpsertResult.recommendations.length > 0) {
+                console.error(`🔧 [DATABASE] 해결 방안:`);
+                safeUpsertResult.recommendations.forEach(rec => console.error(`  ${rec}`));
+              }
+
+              // 부분적으로라도 처리된 데이터가 있으면 계속 진행
+              if (safeUpsertResult.processedCount > 0) {
+                console.warn(`⚠️ [DATABASE] 부분적 성공: ${safeUpsertResult.processedCount}개 처리됨`);
+                processedPrices = safeUpsertResult.processedCount;
+              } else {
+                throw new Error(`Gas prices batch upsert failed: ${safeUpsertResult.error}`);
+              }
             }
           } else {
             console.warn(`⚠️ [DATABASE] 저장할 가격 데이터가 없습니다.`);

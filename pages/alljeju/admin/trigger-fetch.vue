@@ -84,6 +84,46 @@
       </div>
     </div>
 
+    <!-- 통합 데이터 동기화 섹션 -->
+    <div class="mt-8">
+      <h3 class="text-xl font-semibold mb-4">통합 데이터 동기화</h3>
+      <div class="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow border-2 border-blue-200">
+        <div class="flex items-center mb-4">
+          <svg class="w-8 h-8 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          <h4 class="text-xl font-semibold text-blue-800">모든 데이터 통합 동기화</h4>
+        </div>
+        <p class="text-sm text-blue-700 mb-4">
+          모든 데이터 소스를 올바른 순서로 동기화합니다. Foreign Key 제약 조건을 고려하여 주유소 정보를 먼저 동기화한 후 가격 정보를 처리합니다.
+        </p>
+        <div class="text-sm text-blue-600 mb-4">
+          <p class="font-medium mb-2">동기화 순서:</p>
+          <ol class="list-decimal list-inside space-y-1 ml-4">
+            <li>주유소 정보 + 가격 정보 (Foreign Key 순서 보장)</li>
+            <li>축제/행사 정보</li>
+            <li>전시회/공연 정보</li>
+            <li>복지서비스 정보</li>
+          </ol>
+          <p class="mt-2 text-xs text-blue-500">예상 소요시간: 약 8-10분</p>
+        </div>
+        <button
+          @click="triggerFetch('all')"
+          :disabled="loading.all"
+          class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 flex items-center justify-center font-medium">
+          <svg v-if="loading.all" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          {{ loading.all ? '통합 동기화 진행 중...' : '🔄 통합 데이터 동기화 실행' }}
+        </button>
+        <div v-if="results.all" class="mt-4 p-4 rounded-md text-sm"
+             :class="results.all.success ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'">
+          {{ results.all.message }}
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -95,22 +135,24 @@ definePageMeta({
   middleware: ['auth']
 });
 
-type SourceName = 'festivals' | 'exhibitions' | 'welfare-services' | 'gas-stations';
+type SourceName = 'festivals' | 'exhibitions' | 'welfare-services' | 'gas-stations' | 'all';
 
 const loading = ref({
   festivals: false,
   exhibitions: false,
   welfareServices: false, // welfare-services 키를 카멜 케이스로 변경
   gasStations: false, // gas-stations 키를 카멜 케이스로 변경
+  all: false, // 통합 동기화
 });
 
 const results = ref<{
-  [key in SourceName | 'welfareServices' | 'gasStations']?: { success: boolean; message: string }
+  [key in SourceName | 'welfareServices' | 'gasStations' | 'all']?: { success: boolean; message: string }
 }>({});
 
 async function triggerFetch(sourceName: SourceName) {
   const key = sourceName === 'welfare-services' ? 'welfareServices' :
-              sourceName === 'gas-stations' ? 'gasStations' : sourceName;
+              sourceName === 'gas-stations' ? 'gasStations' :
+              sourceName === 'all' ? 'all' : sourceName;
   loading.value[key] = true;
   results.value[key] = undefined; // 이전 결과 초기화
 
