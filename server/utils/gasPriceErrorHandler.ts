@@ -1,5 +1,6 @@
 // server/utils/gasPriceErrorHandler.ts
 import { gasStationDAO } from '~/server/dao/supabase';
+import { supabase } from '~/server/utils/supabase';
 import { callJejuApi } from '~/server/utils/httpApiClient';
 import { convertKatecToWgs84 } from '~/utils/gasStationUtils';
 
@@ -491,7 +492,29 @@ export async function safelyBatchUpsertGasPrices(gasPriceData: any[]): Promise<{
       };
     }
 
-    // 2. 실제 저장 시도
+    // 2. 최종 FK 사전검증: gas_stations에 존재하는 opinet_id만 남기기 (배치 조회)
+    try {
+      const uniqueIds = Array.from(new Set(filteredData.map(p => (p.opinet_id || '').trim())));
+      if (uniqueIds.length > 0) {
+        const existCheck = await supabase
+          .from('gas_stations')
+          .select('opinet_id')
+          .in('opinet_id', uniqueIds);
+        if (!existCheck.error && existCheck.data) {
+          const existSet = new Set((existCheck.data as any[]).map(r => (r.opinet_id || '').trim()));
+          const beforeLen = filteredData.length;
+          filteredData = filteredData.filter(p => existSet.has((p.opinet_id || '').trim()));
+          const removed = beforeLen - filteredData.length;
+          if (removed > 0) {
+            recommendations.push(`⚠️ 최종 검증에서 ${removed}개 데이터가 gas_stations에 없어 제외되었습니다.`);
+          }
+        }
+      }
+    } catch (precheckErr) {
+      console.warn('⚠️ [SAFE-UPSERT] 최종 FK 사전검증 중 경고:', precheckErr);
+    }
+
+    // 3. 실제 저장 시도
     const result = await gasStationDAO.batchUpsertGasPrices(filteredData);
 
     if (result.error) {
