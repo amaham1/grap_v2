@@ -28,9 +28,14 @@ export function isForeignKeyError(error: string): boolean {
  */
 export async function validateGasPriceData(gasPriceData: any[]): Promise<GasPriceValidationResult> {
   console.log(`🔍 [VALIDATION] 가격 데이터 검증 시작: ${gasPriceData.length}개`);
-  
+
+  // opinet_id 정규화 및 빈 값 제거
+  const normalizedData = gasPriceData
+    .map(p => ({ ...p, opinet_id: (p.opinet_id || '').trim() }))
+    .filter(p => !!p.opinet_id);
+
   // 중복 제거된 opinet_id 목록 생성
-  const uniqueOpinetIds = [...new Set(gasPriceData.map(price => price.opinet_id))];
+  const uniqueOpinetIds = [...new Set(normalizedData.map(price => price.opinet_id))];
   console.log(`🔍 [VALIDATION] 검증할 고유 opinet_id: ${uniqueOpinetIds.length}개`);
 
   const validationResults = await Promise.all(
@@ -55,8 +60,8 @@ export async function validateGasPriceData(gasPriceData: any[]): Promise<GasPric
       .map(result => result.opinet_id)
   );
 
-  const validData = gasPriceData.filter(price => validOpinetIds.has(price.opinet_id));
-  const invalidIds = gasPriceData
+  const validData = normalizedData.filter(price => validOpinetIds.has(price.opinet_id));
+  const invalidIds = normalizedData
     .filter(price => !validOpinetIds.has(price.opinet_id))
     .map(price => price.opinet_id);
 

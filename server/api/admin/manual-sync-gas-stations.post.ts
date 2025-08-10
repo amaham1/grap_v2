@@ -70,16 +70,22 @@ export default defineEventHandler(async (event) => {
               }
             }
 
+            const normalizedId = (station.id || '').trim();
+            if (!normalizedId) {
+              // 빈 ID는 스킵
+              continue;
+            }
+
             const gasStationData = {
-              opinet_id: station.id,
-              station_name: station.osnm,
-              brand_code: station.poll,
-              brand_name: station.poll,
-              gas_brand_code: station.gpoll,
-              gas_brand_name: station.gpoll,
-              zip_code: station.zip,
-              address: station.adr,
-              phone: station.tel,
+              opinet_id: normalizedId,
+              station_name: (station.osnm || '').trim(),
+              brand_code: (station.poll || '').trim(),
+              brand_name: (station.poll || '').trim(),
+              gas_brand_code: (station.gpoll || '').trim(),
+              gas_brand_name: (station.gpoll || '').trim(),
+              zip_code: (station.zip || '').trim(),
+              address: (station.adr || '').trim(),
+              phone: (station.tel || '').trim(),
               station_type: station.lpgyn === 'Y' ? 'Y' : 'N',
               katec_x: katecX,
               katec_y: katecY,
@@ -115,10 +121,16 @@ export default defineEventHandler(async (event) => {
 
         for (const price of priceData.info) {
           try {
+            const normalizedId = (price.id || '').trim();
+            if (!normalizedId) {
+              // 빈 ID는 스킵
+              continue;
+            }
+
             syncResults.pricesProcessed++;
-            
+
             const gasPriceData = {
-              opinet_id: price.id,
+              opinet_id: normalizedId,
               gasoline_price: parseInt(price.gasoline) || 0,
               premium_gasoline_price: parseInt(price.premium_gasoline) || 0,
               diesel_price: parseInt(price.diesel) || 0,
@@ -128,9 +140,13 @@ export default defineEventHandler(async (event) => {
               updated_at: new Date().toISOString()
             };
 
-            const result = await gasStationDAO.upsertGasPrice(gasPriceData);
-            if (!result.error) {
-              syncResults.pricesUpdated++;
+            // 안전 저장 유틸 사용으로 FK 검증 및 자동 복구
+            const { safelyBatchUpsertGasPrices } = await import('~/server/utils/gasPriceErrorHandler');
+            const safeResult = await safelyBatchUpsertGasPrices([gasPriceData]);
+            if (safeResult.success) {
+              syncResults.pricesUpdated += safeResult.processedCount;
+            } else if (safeResult.recommendations?.length) {
+              safeResult.recommendations.forEach(r => syncResults.errors.push(r));
             }
           } catch (error: any) {
             syncResults.errors.push(`가격 ${price.opinet_id}: ${error.message}`);

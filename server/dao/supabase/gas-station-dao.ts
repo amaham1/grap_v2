@@ -125,8 +125,12 @@ export async function getGasStationById(id: number) {
  * opinet_id로 주유소 조회
  */
 export async function getGasStationByOpinetId(opinet_id: string) {
+  // Normalize and guard against empty IDs
+  const normalized = (opinet_id || '').trim()
+  if (!normalized) return null
+
   const result = await executeSupabaseQuery<GasStation>('gas_stations', 'select', {
-    filters: { opinet_id }
+    filters: { opinet_id: normalized }
   })
 
   return result.data?.[0] || null

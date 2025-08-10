@@ -161,16 +161,22 @@ export default defineEventHandler(async (event) => {
                   coordConvertFailed++;
                 }
 
+                const normalizedId = (item.id || '').trim();
+                if (!normalizedId) {
+                  // 빈 ID는 스킵
+                  return null;
+                }
+
                 const gasStationData: gasStationDAO.GasStation = {
-                  opinet_id: item.id || '',
-                  station_name: item.osnm || '',
-                  brand_code: item.poll || '',
-                  brand_name: item.poll || '',
-                  gas_brand_code: item.gpoll || '',
-                  gas_brand_name: item.gpoll || '',
-                  zip_code: item.zip || '',
-                  address: item.adr || '',
-                  phone: item.tel || '',
+                  opinet_id: normalizedId,
+                  station_name: (item.osnm || '').trim(),
+                  brand_code: (item.poll || '').trim(),
+                  brand_name: (item.poll || '').trim(),
+                  gas_brand_code: (item.gpoll || '').trim(),
+                  gas_brand_name: (item.gpoll || '').trim(),
+                  zip_code: (item.zip || '').trim(),
+                  address: (item.adr || '').trim(),
+                  phone: (item.tel || '').trim(),
                   station_type: item.lpgyn === 'Y' ? 'Y' : 'N',
                   katec_x: katecX,
                   katec_y: katecY,
@@ -289,8 +295,14 @@ export default defineEventHandler(async (event) => {
 
           for (const item of priceResponse.info) {
             try {
+              const normalizedId = (item.id || '').trim();
+              if (!normalizedId) {
+                // 빈 ID는 스킵
+                continue;
+              }
+
               const gasPriceData: gasStationDAO.GasPrice = {
-                opinet_id: item.id || '',
+                opinet_id: normalizedId,
                 gasoline_price: parseInt(item.gasoline) || 0,
                 premium_gasoline_price: parseInt(item.premium_gasoline) || 0,
                 diesel_price: parseInt(item.diesel) || 0,

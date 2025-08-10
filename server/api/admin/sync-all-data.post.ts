@@ -188,7 +188,7 @@ export default defineEventHandler(async (event) => {
     if (errors.length > 0) {
       console.log(`오류 발생:`);
       if (syncResults.gasStations.error) {
-        console.log(`- gasPrice: ${syncResults.gasStations.error}`);
+        console.log(`- gasStations: ${syncResults.gasStations.error}`);
       }
       if (syncResults.festivals.error) {
         console.log(`- festivals: ${syncResults.festivals.error}`);
