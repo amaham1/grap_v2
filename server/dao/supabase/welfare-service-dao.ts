@@ -55,7 +55,7 @@ export async function getWelfareServices(options: GetWelfareServicesOptions = {}
   return await executeSupabaseQuery<WelfareService>('welfare_services', 'select', {
     select: 'id, original_api_id, service_name, is_all_location, is_jeju_location, is_seogwipo_location, is_exposed, fetched_at',
     filters,
-    orderBy: { column: 'service_name', ascending: true },
+    orderBy: { column: 'fetched_at', ascending: false },
     limit,
     offset
   })
@@ -85,7 +85,7 @@ export async function getPublicWelfareServices(options: GetWelfareServicesOption
   return await executeSupabaseQuery<WelfareService>('welfare_services', 'select', {
     select: 'id, service_name, is_all_location, is_jeju_location, is_seogwipo_location, support_target_html, support_content_html, application_info_html, fetched_at',
     filters,
-    orderBy: { column: 'service_name', ascending: true },
+    orderBy: { column: 'fetched_at', ascending: false },
     limit,
     offset
   })
@@ -247,7 +247,7 @@ export async function searchWelfareServices(searchTerm: string, limit: number = 
       is_exposed: true,
       service_name: `%${searchTerm}%`
     },
-    orderBy: { column: 'service_name', ascending: true },
+    orderBy: { column: 'fetched_at', ascending: false },
     limit: Math.floor(limit / 3)
   })
 
@@ -258,7 +258,7 @@ export async function searchWelfareServices(searchTerm: string, limit: number = 
       is_exposed: true,
       support_target_html: `%${searchTerm}%`
     },
-    orderBy: { column: 'service_name', ascending: true },
+    orderBy: { column: 'fetched_at', ascending: false },
     limit: Math.floor(limit / 3)
   })
 
@@ -269,7 +269,7 @@ export async function searchWelfareServices(searchTerm: string, limit: number = 
       is_exposed: true,
       support_content_html: `%${searchTerm}%`
     },
-    orderBy: { column: 'service_name', ascending: true },
+    orderBy: { column: 'fetched_at', ascending: false },
     limit: Math.floor(limit / 3)
   })
 
